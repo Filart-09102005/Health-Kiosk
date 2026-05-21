@@ -1,0 +1,53 @@
+<?php
+
+use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\HealthRecordController as AdminHealthRecordController;
+use App\Http\Controllers\Admin\KioskSessionController as AdminKioskSessionController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\EmailVerificationController;
+use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\User\DashboardController as UserDashboardController;
+use App\Http\Controllers\User\MeasurementController;
+use App\Http\Controllers\User\SessionController;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('auth')->group(function () {
+    Route::post('/check-barcode', [AuthController::class, 'checkBarcode'])->middleware('throttle:barcode-check');
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+    Route::post('/barcode-login', [AuthController::class, 'barcodeLogin'])->middleware('throttle:barcode-login');
+    Route::post('/forgot-password', [PasswordResetController::class, 'forgot'])->middleware('throttle:verification-resend');
+    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:verification-resend');
+    Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])
+        ->middleware('throttle:verification-resend');
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [AuthController::class, 'logout']);
+    });
+
+    Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+        Route::get('/user', [AuthController::class, 'user']);
+    });
+});
+
+Route::middleware(['auth:sanctum', 'verified', 'role:admin'])
+    ->prefix('admin')
+    ->group(function () {
+        Route::get('/dashboard', AdminDashboardController::class);
+        Route::get('/users', [UserController::class, 'index']);
+        Route::get('/activity-logs', [ActivityLogController::class, 'index']);
+        Route::get('/health-records', [AdminHealthRecordController::class, 'index']);
+        Route::get('/sessions', [AdminKioskSessionController::class, 'index']);
+    });
+
+Route::middleware(['auth:sanctum', 'verified', 'role:student,teacher'])
+    ->prefix('user')
+    ->group(function () {
+        Route::get('/dashboard', UserDashboardController::class);
+        Route::get('/session', [SessionController::class, 'current']);
+        Route::post('/session/end', [SessionController::class, 'end']);
+        Route::get('/measurements/summary', [MeasurementController::class, 'summary']);
+        Route::post('/measurements', [MeasurementController::class, 'store'])->middleware('throttle:60,1');
+    });

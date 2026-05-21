@@ -1,0 +1,40 @@
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class HealthRecordResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'session_id' => $this->kiosk_session_id,
+            'heart_rate' => $this->heart_rate,
+            'spo2' => $this->spo2,
+            'temperature' => $this->temperature,
+            'height' => $this->height,
+            'weight' => $this->weight,
+            'bmi' => $this->bmi,
+            'bmi_category' => $this->bmi_category,
+            'health_status' => $this->health_status,
+            'missing_measurements' => $this->missing_measurements ?? [],
+            'advice' => $this->advice,
+            'created_at' => $this->created_at,
+            'user' => $this->whenLoaded('user', fn () => [
+                'id' => $this->user->id,
+                'name' => $this->user->full_name,
+                'barcode' => $this->user->barcode,
+                'role' => $this->user->role,
+                'department' => $this->user->department,
+            ]),
+            'session' => $this->whenLoaded('kioskSession', fn () => [
+                'session_number' => $this->kioskSession->session_number,
+                'status' => $this->kioskSession->status,
+                'started_at' => $this->kioskSession->started_at,
+            ]),
+        ];
+    }
+}
