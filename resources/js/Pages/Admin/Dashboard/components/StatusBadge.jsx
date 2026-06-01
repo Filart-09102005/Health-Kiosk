@@ -5,10 +5,12 @@ const toneMap = {
     Resolved: "success",
     Open: "error",
     Alert: "error",
+    "High Risk": "error",
     high: "error",
     Incomplete: "error",
     offline: "error",
     Watch: "primary",
+    "Needs Review": "primary",
     Reviewing: "primary",
     medium: "primary",
     warning: "primary",
@@ -28,6 +30,7 @@ const colorVar = {
 export default function StatusBadge({ label, tone }) {
     const resolvedTone = tone || toneMap[label] || "muted";
     const color = colorVar[resolvedTone] || colorVar.muted;
+    const displayLabel = label === "Watch" ? "Needs Review" : label === "Alert" ? "High Risk" : label;
 
     return (
         <span
@@ -37,7 +40,7 @@ export default function StatusBadge({ label, tone }) {
                 backgroundColor: "color-mix(in srgb, currentColor 12%, transparent)",
             }}
         >
-            {typeof label === "string" ? label.charAt(0).toUpperCase() + label.slice(1) : label}
+            {typeof displayLabel === "string" ? displayLabel.charAt(0).toUpperCase() + displayLabel.slice(1) : displayLabel}
         </span>
     );
 }

@@ -71,6 +71,10 @@ export const authService = {
         return axios.get("/api/admin/dashboard");
     },
 
+    adminAnalytics() {
+        return axios.get("/api/admin/analytics");
+    },
+
     userDashboard() {
         return axios.get("/api/user/dashboard");
     },

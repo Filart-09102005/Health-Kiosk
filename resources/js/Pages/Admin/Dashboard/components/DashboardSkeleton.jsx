@@ -6,13 +6,7 @@ export const ADMIN_DASHBOARD_SKELETON_MIN_MS = 600;
 const statSkeletonItems = [0, 1, 2, 3, 4, 5, 6, 7];
 const chartSkeletonItems = [
     { key: "daily", type: "chart", variant: "line" },
-    { key: "health", type: "pie", items: 3 },
-    { key: "bmi", type: "chart", variant: "bar" },
-    { key: "temperature", type: "chart", variant: "area" },
-    { key: "heart", type: "chart", variant: "line" },
-    { key: "spo2", type: "chart", variant: "area" },
     { key: "users", type: "table" },
-    { key: "sessions", type: "pie", items: 2 },
 ];
 
 function sectionMotion(shouldReduceMotion, delay = 0) {

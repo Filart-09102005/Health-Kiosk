@@ -1,30 +1,25 @@
-import BMIDistributionChart from "./BMIDistributionChart";
+import { motion, useReducedMotion } from "framer-motion";
 import DailyHealthChecksChart from "./DailyHealthChecksChart";
-import HealthStatusChart from "./HealthStatusChart";
-import HeartRateAnalyticsChart from "./HeartRateAnalyticsChart";
 import SectionHeader from "./SectionHeader";
-import SessionCompletionChart from "./SessionCompletionChart";
 import SessionUsersTable from "./SessionUsersTable";
-import SpO2AnalyticsChart from "./SpO2AnalyticsChart";
-import TemperatureAnalyticsChart from "./TemperatureAnalyticsChart";
 
 export default function DashboardCharts() {
+    const shouldReduceMotion = useReducedMotion();
+
     return (
-        <section>
+        <motion.section
+            initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 1.24, duration: 0.34, ease: "easeOut" }}
+        >
             <SectionHeader
-                title="Clinical analytics"
-                description="Vitals, BMI, and session insights from kiosk demo telemetry."
+                title="Session overview"
+                description="Kiosk session activity and users included in today's completion count."
             />
             <div className="grid gap-4 xl:grid-cols-2">
                 <DailyHealthChecksChart />
-                <HealthStatusChart />
-                <BMIDistributionChart />
-                <TemperatureAnalyticsChart />
-                <HeartRateAnalyticsChart />
-                <SpO2AnalyticsChart />
                 <SessionUsersTable />
-                <SessionCompletionChart />
             </div>
-        </section>
+        </motion.section>
     );
 }

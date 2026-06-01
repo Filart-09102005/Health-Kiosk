@@ -6,9 +6,13 @@ import BarcodeLoginForm from "./components/BarcodeLoginForm";
 import Loader from "../Global/Loader";
 import { useToast } from "../Global/Toast";
 import { authService, getErrorMessage, getValidationErrors } from "./services/authService";
+import AssistantToggle from "../User/AI-Assistant/components/AssistantToggle";
+import AssistantStatusBadge from "../User/AI-Assistant/components/AssistantStatusBadge";
+import { useAssistant } from "../User/AI-Assistant/context/AssistantProvider";
 
 export default function Login({ navigate }) {
     const { showToast } = useToast();
+    const { speak } = useAssistant();
     const [form, setForm] = useState({
         email: "",
         password: "",
@@ -32,6 +36,11 @@ export default function Login({ navigate }) {
             message: response.data.message,
         });
         navigate(response.data.redirect);
+    };
+
+    const changeLoginMode = (mode) => {
+        setLoginMode(mode);
+        speak(mode === "barcode" ? "loginBarcode" : "loginEmail");
     };
 
     const submit = async (event) => {
@@ -84,10 +93,21 @@ export default function Login({ navigate }) {
         >
             {loading ? <Loader label="Signing in" fullscreen /> : null}
 
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-3 auth-panel">
+                <div>
+                    <p className="text-sm font-black auth-strong-text">Assistant Mode</p>
+                    <p className="mt-1 text-xs font-semibold auth-muted-text">Free local browser voice guidance</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <AssistantToggle />
+                    <AssistantStatusBadge />
+                </div>
+            </div>
+
             <div className="mt-8 grid grid-cols-2 rounded-xl border p-1 auth-panel">
                 <button
                     type="button"
-                    onClick={() => setLoginMode("barcode")}
+                    onClick={() => changeLoginMode("barcode")}
                     className="flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 text-sm font-black transition"
                     style={{
                         backgroundColor: loginMode === "barcode" ? "var(--auth-control)" : "transparent",
@@ -99,7 +119,7 @@ export default function Login({ navigate }) {
                 </button>
                 <button
                     type="button"
-                    onClick={() => setLoginMode("email")}
+                    onClick={() => changeLoginMode("email")}
                     className="flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 text-sm font-black transition"
                     style={{
                         backgroundColor: loginMode === "email" ? "var(--auth-control)" : "transparent",

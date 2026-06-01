@@ -1,12 +1,12 @@
 export const dashboardStats = [
     { key: "students", label: "Total Students", value: 1248, change: 4.2, trend: "up", icon: "students" },
     { key: "teachers", label: "Total Teachers", value: 86, change: 1.1, trend: "up", icon: "teachers" },
-    { key: "checks_today", label: "Health Checks Today", value: 342, change: 12.8, trend: "up", icon: "checks" },
-    { key: "alerts", label: "Active Alerts", value: 7, change: -18.4, trend: "down", icon: "alerts" },
-    { key: "completed", label: "Completed Sessions", value: 318, change: 9.3, trend: "up", icon: "completed" },
-    { key: "incomplete", label: "Incomplete Sessions", value: 24, change: -6.2, trend: "down", icon: "incomplete" },
-    { key: "active_sessions", label: "Active Kiosk Session", value: 1, change: 0, trend: "neutral", icon: "active" },
-    { key: "devices_online", label: "Devices Online", value: 6, change: 0, trend: "neutral", icon: "devices" },
+    { key: "checks_today", label: "Total Sessions Today", value: 342, change: 12.4, trend: "up", icon: "checks" },
+    { key: "alerts", label: "Active Alerts", value: 18, change: 2.1, trend: "up", icon: "alerts" },
+    { key: "completed", label: "Completed Sessions", value: 318, change: 9.1, trend: "up", icon: "completed" },
+    { key: "incomplete", label: "Incomplete Sessions", value: 24, change: -5.2, trend: "down", icon: "incomplete" },
+    { key: "kiosk_users", label: "Total Kiosk Users", value: 1334, change: 0, trend: "neutral", icon: "students", description: "Students and teachers registered" },
+    { key: "devices_online", label: "Devices Online", value: 6, change: 0, trend: "neutral", icon: "devices", description: "Connected kiosk devices online" },
 ];
 
 export const dailyHealthChecks = [
@@ -21,8 +21,8 @@ export const dailyHealthChecks = [
 
 export const healthStatusDistribution = [
     { name: "Normal", value: 68, color: "var(--color-success)" },
-    { name: "Watch", value: 22, color: "var(--color-primary)" },
-    { name: "Alert", value: 10, color: "var(--color-error)" },
+    { name: "Needs Review", value: 22, color: "var(--color-primary)" },
+    { name: "High Risk", value: 10, color: "var(--color-error)" },
 ];
 
 export const bmiDistribution = [
@@ -63,9 +63,9 @@ export const sessionCompletion = [
 
 export const recentHealthRecords = [
     { id: 1, name: "Hans Kurvey", barcode: "C-230204", vitals: "78 bpm · 98% · 36.6°C", bmi: 21.3, status: "Normal", date: "Today, 8:20 AM" },
-    { id: 2, name: "Maria Santos", barcode: "C-230118", vitals: "88 bpm · 96% · 37.2°C", bmi: 23.8, status: "Watch", date: "Today, 8:45 AM" },
-    { id: 3, name: "Faculty User", barcode: "F-1001", vitals: "92 bpm · 97% · 37.1°C", bmi: 24.2, status: "Watch", date: "Today, 9:05 AM" },
-    { id: 4, name: "Juan Dela Cruz", barcode: "C-229901", vitals: "102 bpm · 94% · 37.8°C", bmi: 27.1, status: "Alert", date: "Today, 9:18 AM" },
+    { id: 2, name: "Maria Santos", barcode: "C-230118", vitals: "88 bpm · 96% · 37.2°C", bmi: 23.8, status: "Needs Review", date: "Today, 8:45 AM" },
+    { id: 3, name: "Faculty User", barcode: "F-1001", vitals: "92 bpm · 97% · 37.1°C", bmi: 24.2, status: "Needs Review", date: "Today, 9:05 AM" },
+    { id: 4, name: "Juan Dela Cruz", barcode: "C-229901", vitals: "102 bpm · 94% · 37.8°C", bmi: 27.1, status: "High Risk", date: "Today, 9:18 AM" },
     { id: 5, name: "Ana Reyes", barcode: "C-230045", vitals: "72 bpm · 99% · 36.4°C", bmi: 19.8, status: "Normal", date: "Today, 9:32 AM" },
 ];
 
@@ -89,13 +89,14 @@ export const recentActivityLogs = [
 ];
 
 export const deviceStatuses = [
-    { id: 1, name: "Arduino Controller", status: "online" },
-    { id: 2, name: "MAX30102 Sensor", status: "online" },
+    { id: 1, name: "Mega Board", status: "pending" },
+    { id: 2, name: "Heart Rate & SpO2 Sensor", status: "online" },
     { id: 3, name: "Temperature Sensor", status: "online" },
     { id: 4, name: "Height Sensor", status: "warning" },
-    { id: 5, name: "Weight Sensor", status: "online" },
-    { id: 6, name: "Barcode Scanner", status: "online" },
-    { id: 7, name: "Internet Connection", status: "online" },
+    { id: 5, name: "Weight Sensor", status: "offline" },
+    { id: 6, name: "Barcode Scanner", status: "pending" },
+    { id: 7, name: "User Presence Detection", status: "online" },
+    { id: 8, name: "Mini PC / Server", status: "online" },
 ];
 
 export const activeSessions = [

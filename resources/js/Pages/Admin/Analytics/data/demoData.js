@@ -1,14 +1,8 @@
 export const overviewMetrics = [
-    { key: "temp", label: "Average Temperature", value: "36.7°C", change: -0.2, trend: "down", icon: "temp", spark: [36.4, 36.6, 36.7, 36.5, 36.8, 36.7, 36.6] },
-    { key: "hr", label: "Average Heart Rate", value: "79 bpm", change: 1.8, trend: "up", icon: "hr", spark: [74, 76, 78, 81, 79, 77, 80] },
-    { key: "spo2", label: "Average SpO2", value: "97.6%", change: 0.4, trend: "up", icon: "spo2", spark: [97, 98, 97, 98, 97, 98, 98] },
-    { key: "bmi", label: "Average BMI", value: "22.4", change: 0.3, trend: "up", icon: "bmi", spark: [21.8, 22.1, 22.3, 22.5, 22.2, 22.4, 22.4] },
-    { key: "today", label: "Total Measurements Today", value: 342, change: 12.4, trend: "up", icon: "measure", spark: [280, 295, 310, 330, 342, 318, 342] },
+    { key: "today", label: "Total Sessions Today", value: 342, change: 12.4, trend: "up", icon: "measure", spark: [280, 295, 310, 330, 342, 318, 342] },
     { key: "completed", label: "Completed Sessions", value: 318, change: 9.1, trend: "up", icon: "completed", spark: [290, 300, 305, 312, 318, 301, 318] },
     { key: "incomplete", label: "Incomplete Sessions", value: 24, change: -5.2, trend: "down", icon: "incomplete", spark: [32, 28, 26, 25, 24, 27, 24] },
     { key: "alerts", label: "Active Alerts", value: 18, change: 2.1, trend: "up", icon: "alerts", spark: [12, 14, 15, 16, 18, 17, 18] },
-    { key: "completion", label: "Measurement Completion Rate", value: "93%", change: 1.6, trend: "up", icon: "rate", spark: [88, 89, 90, 91, 92, 93, 93] },
-    { key: "duration", label: "Average Session Duration", value: "3m 42s", change: -4.0, trend: "down", icon: "duration", spark: [240, 235, 228, 225, 222, 220, 222] },
 ];
 
 export const temperatureTrend = [
@@ -50,32 +44,66 @@ export const bmiDistribution = [
 
 export const healthStatusDistribution = [
     { name: "Normal", value: 214 },
-    { name: "Watch", value: 26 },
-    { name: "Alert", value: 18 },
+    { name: "Needs Review", value: 26 },
+    { name: "High Risk", value: 18 },
     { name: "Incomplete", value: 12 },
 ];
 
 export const measurementCompletion = { completed: 93, incomplete: 7 };
 
 export const weeklyAnalytics = [
-    { week: "W1", temperature: 36.5, heartRate: 77, spo2: 97.4 },
-    { week: "W2", temperature: 36.6, heartRate: 78, spo2: 97.6 },
-    { week: "W3", temperature: 36.7, heartRate: 79, spo2: 97.8 },
-    { week: "W4", temperature: 36.8, heartRate: 80, spo2: 97.9 },
+    { label: "W1", temperature: 36.5, heartRate: 77, spo2: 97.4 },
+    { label: "W2", temperature: 36.6, heartRate: 78, spo2: 97.6 },
+    { label: "W3", temperature: 36.7, heartRate: 79, spo2: 97.8 },
+    { label: "W4", temperature: 36.8, heartRate: 80, spo2: 97.9 },
 ];
 
+export const vitalTrendAnalytics = {
+    weekly: weeklyAnalytics,
+    monthly: [
+        { label: "Jan", temperature: 36.4, heartRate: 76, spo2: 97.2 },
+        { label: "Feb", temperature: 36.5, heartRate: 77, spo2: 97.4 },
+        { label: "Mar", temperature: 36.7, heartRate: 79, spo2: 97.7 },
+        { label: "Apr", temperature: 36.6, heartRate: 78, spo2: 97.8 },
+        { label: "May", temperature: 36.8, heartRate: 80, spo2: 97.9 },
+    ],
+    yearly: [
+        { label: "2022", temperature: 36.3, heartRate: 75, spo2: 97.1 },
+        { label: "2023", temperature: 36.5, heartRate: 77, spo2: 97.3 },
+        { label: "2024", temperature: 36.6, heartRate: 78, spo2: 97.6 },
+        { label: "2025", temperature: 36.7, heartRate: 79, spo2: 97.8 },
+        { label: "2026", temperature: 36.8, heartRate: 80, spo2: 97.9 },
+    ],
+};
+
 export const monthlyAnalytics = [
-    { month: "Jan", vitals: 820, bmi: 640, sessions: 760 },
-    { month: "Feb", vitals: 880, bmi: 690, sessions: 810 },
-    { month: "Mar", vitals: 940, bmi: 720, sessions: 860 },
-    { month: "Apr", vitals: 1010, bmi: 780, sessions: 920 },
-    { month: "May", vitals: 1080, bmi: 840, sessions: 980 },
+    { month: "Jan", completed: 760, incomplete: 58, alerts: 42 },
+    { month: "Feb", completed: 810, incomplete: 52, alerts: 38 },
+    { month: "Mar", completed: 860, incomplete: 46, alerts: 34 },
+    { month: "Apr", completed: 920, incomplete: 39, alerts: 31 },
+    { month: "May", completed: 980, incomplete: 32, alerts: 28 },
 ];
+
+export const sessionTrendAnalytics = {
+    weekly: [
+        { label: "W1", completed: 182, incomplete: 16, alerts: 12 },
+        { label: "W2", completed: 196, incomplete: 14, alerts: 10 },
+        { label: "W3", completed: 211, incomplete: 12, alerts: 9 },
+        { label: "W4", completed: 228, incomplete: 10, alerts: 8 },
+    ],
+    monthly: monthlyAnalytics.map(({ month, ...values }) => ({ label: month, ...values })),
+    yearly: [
+        { label: "2022", completed: 6840, incomplete: 420, alerts: 310 },
+        { label: "2023", completed: 7920, incomplete: 386, alerts: 284 },
+        { label: "2024", completed: 8840, incomplete: 342, alerts: 246 },
+        { label: "2025", completed: 9560, incomplete: 318, alerts: 224 },
+        { label: "2026", completed: 10320, incomplete: 276, alerts: 198 },
+    ],
+};
 
 export const sessionAnalytics = [
     { name: "Completed", value: 318 },
     { name: "Incomplete", value: 24 },
-    { name: "Timeout", value: 8 },
 ];
 
 export const peakUsageHours = [
@@ -118,12 +146,8 @@ export const measurementAccuracy = [
 ];
 
 export const insights = [
-    { title: "Most common abnormal reading", value: "Elevated temperature", detail: "42 cases this week", trend: "up", change: 8 },
     { title: "Most incomplete measurement", value: "Height sensor", detail: "11 sessions skipped module", trend: "down", change: 3 },
-    { title: "Highest BMI recorded", value: "31.8", detail: "Student screening on Thu", trend: "up", change: 0.6 },
-    { title: "Lowest SpO2 detected", value: "91%", detail: "Flagged for nurse review", trend: "down", change: 2 },
     { title: "Most active kiosk hour", value: "9:00 AM", detail: "72 measurements peak", trend: "up", change: 12 },
-    { title: "Average daily sessions", value: "68", detail: "Across all kiosk units", trend: "up", change: 5 },
     { title: "Most repeated measurement", value: "Weight retry", detail: "18 retried readings", trend: "neutral", change: 0 },
     { title: "Most common alert type", value: "Low SpO2", detail: "28 alert events logged", trend: "up", change: 4 },
 ];
@@ -131,7 +155,7 @@ export const insights = [
 export const healthMetricsTable = [
     { id: 1, metric: "Temperature", average: "36.7°C", min: "35.8°C", max: "38.1°C", status: "Normal", trend: "+0.1%" },
     { id: 2, metric: "Heart Rate", average: "79 bpm", min: "62 bpm", max: "112 bpm", status: "Normal", trend: "+1.8%" },
-    { id: 3, metric: "SpO2", average: "97.6%", min: "91%", max: "99%", status: "Watch", trend: "+0.4%" },
+    { id: 3, metric: "SpO2", average: "97.6%", min: "91%", max: "99%", status: "Needs Review", trend: "+0.4%" },
     { id: 4, metric: "BMI", average: "22.4", min: "16.8", max: "31.8", status: "Normal", trend: "+0.3%" },
 ];
 
@@ -143,7 +167,7 @@ export const topAlertsTable = [
 ];
 
 export const recentAnalyticsTable = [
-    { id: 1, event: "Weekly vitals spike", module: "Temperature", time: "Today, 9:40 AM", impact: "Watch" },
+    { id: 1, event: "Weekly vitals spike", module: "Temperature", time: "Today, 9:40 AM", impact: "Needs Review" },
     { id: 2, event: "Session completion improved", module: "Sessions", time: "Today, 8:15 AM", impact: "Normal" },
     { id: 3, event: "SpO2 alert cluster", module: "SpO2", time: "Yesterday, 2:20 PM", impact: "Alert" },
 ];

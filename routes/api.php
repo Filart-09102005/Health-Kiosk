@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\AnalyticsController as AdminAnalyticsController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\HealthRecordController as AdminHealthRecordController;
 use App\Http\Controllers\Admin\KioskSessionController as AdminKioskSessionController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\ThermalReceiptController;
 use App\Http\Controllers\User\DashboardController as UserDashboardController;
 use App\Http\Controllers\User\MeasurementController;
 use App\Http\Controllers\User\SessionController;
@@ -36,6 +38,7 @@ Route::middleware(['auth:sanctum', 'verified', 'role:admin'])
     ->prefix('admin')
     ->group(function () {
         Route::get('/dashboard', AdminDashboardController::class);
+        Route::get('/analytics', AdminAnalyticsController::class);
         Route::get('/users', [UserController::class, 'index']);
         Route::get('/activity-logs', [ActivityLogController::class, 'index']);
         Route::get('/health-records', [AdminHealthRecordController::class, 'index']);
@@ -51,3 +54,7 @@ Route::middleware(['auth:sanctum', 'verified', 'role:student,teacher'])
         Route::get('/measurements/summary', [MeasurementController::class, 'summary']);
         Route::post('/measurements', [MeasurementController::class, 'store'])->middleware('throttle:60,1');
     });
+
+Route::middleware(['auth:sanctum', 'verified'])
+    ->post('/receipt/print', [ThermalReceiptController::class, 'print'])
+    ->middleware('throttle:30,1');

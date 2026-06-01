@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 
-export default function DrawerShell({ open, onClose, title, description, children, footer }) {
+export default function DrawerShell({ open, onClose, title, description, children, footer, closeOnOverlay = true, closeLabel = "Close" }) {
     useEffect(() => {
         if (! open) return undefined;
 
@@ -26,7 +26,7 @@ export default function DrawerShell({ open, onClose, title, description, childre
                     <button
                         type="button"
                         aria-label="Close drawer"
-                        onClick={onClose}
+                        onClick={closeOnOverlay ? onClose : undefined}
                         className="absolute inset-0 cursor-default"
                         style={{
                             backgroundColor: "color-mix(in srgb, var(--color-bg) 54%, transparent)",
@@ -59,11 +59,12 @@ export default function DrawerShell({ open, onClose, title, description, childre
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition hk-soft-hover"
+                                className="flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-black transition hk-soft-hover"
                                 style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
-                                aria-label="Close"
+                                aria-label={closeLabel}
                             >
                                 <X size={18} />
+                                <span className="hidden sm:inline">{closeLabel}</span>
                             </button>
                         </div>
 

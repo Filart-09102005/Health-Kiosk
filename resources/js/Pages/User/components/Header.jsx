@@ -6,7 +6,6 @@ import {
     FileClock,
     HeartPulse,
     LogOut,
-    Settings,
     UserRound,
 } from "lucide-react";
 import ThemeToggle from "../../Global/ThemeToggle";
@@ -14,16 +13,19 @@ import ConfirmDialog from "../../Global/ConfirmDialog";
 import Appearance from "../Drawers/Appearance";
 import HealthRecordsDrawer from "../Drawers/HealthRecordsDrawer";
 import ProfileDrawer from "../Drawers/ProfileDrawer";
-import SettingsDrawer from "../Drawers/SettingsDrawer";
+import AssistantToggle from "../AI-Assistant/components/AssistantToggle";
+import { useAssistant } from "../AI-Assistant/context/AssistantProvider";
 
 const drawerInitialState = {
     appearance: false,
     profile: false,
     records: false,
-    settings: false,
 };
 
-export default function Header({ user, onLogout, navigate }) {
+const accountHintTargets = new Set(["profile", "records", "logout"]);
+
+export default function Header({ user, onLogout, navigate, guidedHint = null }) {
+    const { speak } = useAssistant();
     const [clock, setClock] = useState(() => new Date());
     const [profileOpen, setProfileOpen] = useState(false);
     const [notificationOpen, setNotificationOpen] = useState(false);
@@ -45,6 +47,15 @@ export default function Header({ user, onLogout, navigate }) {
     const openDrawer = (name) => {
         setProfileOpen(false);
         setNotificationOpen(false);
+        if (name === "records") {
+            speak("Opening Health Records. You can view previous health check details and print a receipt again if needed.");
+        }
+        if (name === "profile") {
+            speak("Opening your profile. You can review your account information here.");
+        }
+        if (name === "appearance") {
+            speak("Opening Appearance. You can change the kiosk display theme, including light mode and dark mode.");
+        }
         setDrawers((current) => ({ ...current, [name]: true }));
     };
 
@@ -53,9 +64,8 @@ export default function Header({ user, onLogout, navigate }) {
     };
 
     const menuItems = [
-        { label: "Profile", icon: UserRound, action: () => openDrawer("profile") },
-        { label: "Health Records", icon: FileClock, action: () => openDrawer("records") },
-        { label: "Settings", icon: Settings, action: () => openDrawer("settings") },
+        { label: "Profile", icon: UserRound, hint: "profile", action: () => openDrawer("profile") },
+        { label: "Health Records", icon: FileClock, hint: "records", action: () => openDrawer("records") },
     ];
 
     return (
@@ -98,7 +108,8 @@ export default function Header({ user, onLogout, navigate }) {
                                 {clock.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                             </div>
 
-                            <ThemeToggle onClick={() => openDrawer("appearance")} />
+                            <ThemeToggle onClick={() => openDrawer("appearance")} className={guidedHint === "appearance" ? "hk-start-measure-hint" : ""} />
+                            <AssistantToggle />
 
                             <div className="relative">
                                 <button
@@ -158,10 +169,16 @@ export default function Header({ user, onLogout, navigate }) {
                                 <button
                                     type="button"
                                     onClick={() => {
-                                        setProfileOpen((current) => ! current);
+                                        setProfileOpen((current) => {
+                                            const nextOpen = ! current;
+                                            if (nextOpen) {
+                                                speak("This is your account menu. Press Health Records to view previous results, view details, and print again.");
+                                            }
+                                            return nextOpen;
+                                        });
                                         setNotificationOpen(false);
                                     }}
-                                    className="flex items-center gap-3 rounded-2xl border px-3 py-2 transition hk-soft-hover"
+                                    className={`flex items-center gap-3 rounded-2xl border px-3 py-2 transition hk-soft-hover ${accountHintTargets.has(guidedHint) ? "hk-start-measure-hint" : ""}`}
                                     style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
                                     aria-expanded={profileOpen}
                                 >
@@ -209,7 +226,7 @@ export default function Header({ user, onLogout, navigate }) {
                                                             key={item.label}
                                                             type="button"
                                                             onClick={item.action}
-                                                            className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-bold transition hk-soft-hover"
+                                                            className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-bold transition hk-soft-hover ${guidedHint === item.hint ? "hk-flow-action-hint" : ""}`}
                                                             style={{ color: "var(--color-text)" }}
                                                         >
                                                             <Icon size={17} style={{ color: "var(--color-muted)" }} />
@@ -226,7 +243,7 @@ export default function Header({ user, onLogout, navigate }) {
                                                         setProfileOpen(false);
                                                         setLogoutOpen(true);
                                                     }}
-                                                    className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-black transition hk-danger-hover"
+                                                    className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-black transition hk-danger-hover ${guidedHint === "logout" ? "hk-flow-action-hint" : ""}`}
                                                     style={{ color: "var(--color-error)" }}
                                                 >
                                                     <LogOut size={17} />
@@ -245,7 +262,6 @@ export default function Header({ user, onLogout, navigate }) {
             <Appearance open={drawers.appearance} onClose={() => closeDrawer("appearance")} />
             <ProfileDrawer open={drawers.profile} onClose={() => closeDrawer("profile")} user={user} />
             <HealthRecordsDrawer open={drawers.records} onClose={() => closeDrawer("records")} user={user} />
-            <SettingsDrawer open={drawers.settings} onClose={() => closeDrawer("settings")} />
             <ConfirmDialog
                 open={logoutOpen}
                 title="Log out?"
@@ -253,7 +269,10 @@ export default function Header({ user, onLogout, navigate }) {
                 cancelLabel="No, stay"
                 confirmLabel="Log out"
                 onCancel={() => setLogoutOpen(false)}
-                onConfirm={onLogout}
+                onConfirm={() => {
+                    speak("logout");
+                    onLogout?.();
+                }}
             />
         </>
     );

@@ -13,12 +13,12 @@ export default function AuthLayout({
     const loginPanel = variant === "login";
 
     return (
-        <main className="auth-screen min-h-screen overflow-hidden px-5 py-6">
-            <div className="absolute right-6 top-6 z-20">
+        <main className="auth-screen h-screen overflow-hidden px-5 py-6">
+            <div className="fixed right-6 top-6 z-30">
                 <ThemeToggle label="Light Mode" />
             </div>
 
-            <section className="relative z-10 mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-7xl items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+            <section className="relative z-10 mx-auto grid h-[calc(100vh-3rem)] w-full max-w-7xl items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
                 <div className="flex min-h-[640px] flex-col justify-between py-10 lg:pl-10">
                     <BrandLockup caption={loginPanel ? "Student Health Monitoring" : "Health Monitoring System"} />
 
@@ -34,7 +34,7 @@ export default function AuthLayout({
                     </div>
                 </div>
 
-                <div className="mx-auto w-full max-w-[450px] py-10">
+                <div className="hk-auth-form-scroll mx-auto max-h-[calc(100vh-4.5rem)] w-full max-w-[450px] overflow-y-auto overscroll-contain py-10 pr-1">
                     <p className="auth-eyebrow" style={{ color: variant === "register" ? "#22d3ee" : "var(--color-primary)" }}>
                         {eyebrow}
                     </p>

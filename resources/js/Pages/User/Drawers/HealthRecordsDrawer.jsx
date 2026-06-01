@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Barcode, CalendarClock, Printer } from "lucide-react";
 import DrawerShell from "../../Global/DrawerShell";
 import { printHealthReceipt } from "../../Global/receiptPrinter";
+import { useAssistant } from "../AI-Assistant/context/AssistantProvider";
 
 const sampleRecords = [
     {
@@ -60,6 +61,7 @@ const detailRows = (record) => [
 ];
 
 export default function HealthRecordsDrawer({ open, onClose, user = {} }) {
+    const { enabled: assistantEnabled, speak } = useAssistant();
     const [selectedRecord, setSelectedRecord] = useState(null);
 
     const records = useMemo(() => sampleRecords.map((record) => ({
@@ -73,22 +75,44 @@ export default function HealthRecordsDrawer({ open, onClose, user = {} }) {
         onClose();
     };
 
+    useEffect(() => {
+        if (!open || !assistantEnabled) return;
+
+        if (selectedRecord) {
+            speak("Record details are open. Review the full measurement summary, then press Print receipt if you want to print this record again.");
+            return;
+        }
+
+        speak("These are your Health Records. Press View details to see the full measurement summary. You can print the receipt again inside the details screen.");
+    }, [assistantEnabled, open, selectedRecord, speak]);
+
     return (
         <DrawerShell
             open={open}
             onClose={close}
             title={selectedRecord ? "Record Details" : "Health Records"}
             description={selectedRecord ? "Full kiosk reading summary for this visit." : "Recent kiosk readings and thermal receipt actions."}
+            closeOnOverlay={false}
+            closeLabel="Exit"
         >
             {selectedRecord ? (
-                <RecordDetails record={selectedRecord} onBack={() => setSelectedRecord(null)} />
+                <RecordDetails
+                    record={selectedRecord}
+                    onBack={() => {
+                        speak("Returning to your Health Records list.");
+                        setSelectedRecord(null);
+                    }}
+                />
             ) : (
                 <div className="space-y-4">
                     {records.map((record) => (
                         <RecordCard
                             key={record.id}
                             record={record}
-                            onView={() => setSelectedRecord(record)}
+                            onView={() => {
+                                speak("Opening record details. You can review the full summary and print this receipt again.");
+                                setSelectedRecord(record);
+                            }}
                         />
                     ))}
                 </div>
@@ -119,23 +143,14 @@ function RecordCard({ record, onView }) {
                 ))}
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-4">
                 <button
                     type="button"
                     onClick={onView}
-                    className="rounded-2xl border px-3 py-3 text-sm font-black transition hk-soft-hover"
+                    className="w-full rounded-2xl border px-3 py-3 text-sm font-black transition hk-soft-hover"
                     style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}
                 >
                     View details
-                </button>
-                <button
-                    type="button"
-                    onClick={() => printHealthReceipt(record)}
-                    className="flex items-center justify-center gap-2 rounded-2xl px-3 py-3 text-sm font-black text-white transition hk-primary-hover"
-                    style={{ backgroundColor: "var(--color-primary)" }}
-                >
-                    <Printer size={16} />
-                    Print
                 </button>
             </div>
         </article>
@@ -189,17 +204,39 @@ function RecordDetails({ record, onBack }) {
                     <p className="mt-2 text-sm leading-6">{record.advice}</p>
                 </div>
 
-                <button
-                    type="button"
-                    onClick={() => printHealthReceipt(record)}
-                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white transition hk-primary-hover"
-                    style={{ backgroundColor: "var(--color-primary)" }}
-                >
-                    <Printer size={16} />
-                    Print receipt
-                </button>
+                <PrintRecordButton record={record} label="Print receipt" fullWidth />
             </section>
         </div>
+    );
+}
+
+function PrintRecordButton({ record, label, fullWidth = false }) {
+    const { enabled: assistantEnabled, speak } = useAssistant();
+    const [printing, setPrinting] = useState(false);
+
+    const handlePrint = async () => {
+        if (printing) return;
+
+        setPrinting(true);
+        try {
+            speak("Printing this health record again. Please wait for the receipt.");
+            await printHealthReceipt(record);
+        } finally {
+            setPrinting(false);
+        }
+    };
+
+    return (
+        <button
+            type="button"
+            onClick={handlePrint}
+            disabled={printing}
+            className={`${fullWidth ? "mt-5 w-full px-4" : "px-3"} flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-black text-white transition hk-primary-hover disabled:cursor-not-allowed disabled:opacity-70 ${assistantEnabled ? "hk-flow-action-hint" : ""}`}
+            style={{ backgroundColor: "var(--color-primary)" }}
+        >
+            <Printer size={16} />
+            {printing ? "Printing..." : label}
+        </button>
     );
 }
 

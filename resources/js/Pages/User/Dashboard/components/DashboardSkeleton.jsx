@@ -59,42 +59,51 @@ export default function DashboardSkeleton() {
                         <SkeletonBlock className="mt-5 h-4 w-[34rem] max-w-full" />
                         <SkeletonBlock className="mt-3 h-4 w-[28rem] max-w-full" />
                         <div className="mt-8 flex flex-wrap gap-3">
-                            <SkeletonBlock className="h-14 w-52 rounded-2xl" />
+                            <SkeletonBlock className="h-14 w-40 rounded-2xl" />
+                            <SkeletonBlock className="h-14 w-44 rounded-2xl" />
                             <SkeletonBlock className="h-14 w-48 rounded-2xl" />
                         </div>
                     </SkeletonCard>
 
-                    <div className="grid gap-5">
-                        <SkeletonCard className="rounded-[2rem] p-6">
-                            <SkeletonBlock className="h-4 w-32" />
-                            <div className="mt-5 space-y-4">
-                                {Array.from({ length: 3 }).map((_, index) => (
-                                    <div key={index} className="flex items-center justify-between gap-4">
-                                        <SkeletonBlock className="h-4 w-36" />
-                                        <SkeletonBlock className="h-5 w-5 rounded-full" />
-                                    </div>
-                                ))}
+                    <SkeletonCard className="rounded-[2rem] p-6">
+                        <div className="flex items-start gap-3">
+                            <SkeletonBlock className="h-11 w-11 rounded-2xl" />
+                            <div className="min-w-0 flex-1">
+                                <SkeletonBlock className="h-4 w-24" />
+                                <SkeletonBlock className="mt-2 h-3 w-56 max-w-full" />
                             </div>
-                        </SkeletonCard>
+                        </div>
+                        <div className="mt-5 grid gap-3">
+                            {Array.from({ length: 6 }).map((_, index) => (
+                                <div key={index} className="flex items-center gap-3 rounded-2xl border px-4 py-3" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                                    <SkeletonBlock className="h-5 w-5 rounded-md" />
+                                    <SkeletonBlock className="h-4 w-44 max-w-full" />
+                                </div>
+                            ))}
+                        </div>
+                    </SkeletonCard>
+                </section>
 
-                        <SkeletonCard className="rounded-[2rem] p-6">
-                            <div className="flex items-center justify-between gap-4">
+                <section className="mt-6">
+                    <SkeletonCard className="rounded-[2rem] p-6">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
                                 <SkeletonBlock className="h-4 w-40" />
-                                <SkeletonBlock className="h-4 w-10" />
+                                <SkeletonBlock className="mt-2 h-4 w-28" />
                             </div>
-                            <SkeletonBlock className="mt-4 h-3 w-full rounded-full" />
-                            <SkeletonBlock className="mt-4 h-4 w-28" />
-                            <SkeletonBlock className="mt-3 h-4 w-full" />
-                            <div className="mt-4 grid gap-2">
-                                {Array.from({ length: 4 }).map((_, index) => (
-                                    <div key={index} className="flex items-center justify-between gap-4">
-                                        <SkeletonBlock className="h-3 w-40" />
-                                        <SkeletonBlock className="h-4 w-4 rounded-full" />
-                                    </div>
-                                ))}
-                            </div>
-                        </SkeletonCard>
-                    </div>
+                            <SkeletonBlock className="h-8 w-16" />
+                        </div>
+                        <SkeletonBlock className="mt-4 h-3 w-full rounded-full" />
+                        <SkeletonBlock className="mt-4 h-4 w-[32rem] max-w-full" />
+                        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            {Array.from({ length: 4 }).map((_, index) => (
+                                <div key={index} className="flex items-center justify-between gap-3 rounded-2xl border p-4" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                                    <SkeletonBlock className="h-4 w-32" />
+                                    <SkeletonBlock className="h-5 w-5 rounded-full" />
+                                </div>
+                            ))}
+                        </div>
+                    </SkeletonCard>
                 </section>
 
                 <section className="mt-8 border-t pt-6" style={{ borderColor: "var(--color-border)" }}>

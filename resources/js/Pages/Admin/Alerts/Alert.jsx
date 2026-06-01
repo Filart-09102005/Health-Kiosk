@@ -1,16 +1,20 @@
-import { useMemo, useState } from "react";
-import { Activity, BellRing, Clock3, ShieldAlert, Siren, Thermometer, TrendingUp, UserRoundCheck } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { BellRing, Clock3, Gauge, ShieldAlert, Siren, Thermometer, TrendingUp, UserRoundCheck } from "lucide-react";
 import AlertsHeader from "./components/AlertsHeader";
 import AlertsOverviewGrid from "./components/AlertsOverviewGrid";
 import AlertsToolbar from "./components/AlertsToolbar";
 import AlertsTable from "./components/AlertsTable";
 import AlertDetailsDrawer from "./components/AlertDetailsDrawer";
-import AlertAnalyticsPanel from "./components/AlertAnalyticsPanel";
 import RecentCriticalAlerts from "./components/RecentCriticalAlerts";
 import RealtimeAlertFeed from "./components/RealtimeAlertFeed";
-import AlertInsightsPanel from "./components/AlertInsightsPanel";
-import NotificationPreviewCard from "./components/NotificationPreviewCard";
 import EmptyState from "./components/EmptyState";
+import {
+    ALERT_SETTINGS_CHANGE_EVENT,
+    applySensitivityToAlerts,
+    getAlertSensitivityProfile,
+    getStoredAlertSensitivity,
+    isAlertsEnabled,
+} from "./utils/alertSensitivity";
 
 const alerts = [
     {
@@ -85,29 +89,80 @@ const alerts = [
         bmi: "29.4",
         advice: "Provide lifestyle reminder and encourage regular monitoring.",
     },
-];
-
-const overview = [
-    { label: "Total Alerts Today", value: "24", trend: "+12%", severity: "Medium", icon: BellRing },
-    { label: "Critical Alerts", value: "3", trend: "+2", severity: "Critical", icon: Siren },
-    { label: "Warning Alerts", value: "11", trend: "-4%", severity: "High", icon: ShieldAlert },
-    { label: "Resolved Alerts", value: "18", trend: "+8%", severity: "Low", icon: UserRoundCheck },
-    { label: "Pending Alerts", value: "6", trend: "+1", severity: "Medium", icon: Clock3 },
-    { label: "Average Response Time", value: "6m", trend: "-2m", severity: "Low", icon: Activity },
-    { label: "Active Health Warnings", value: "9", trend: "+3", severity: "High", icon: Thermometer },
-    { label: "Escalated Cases", value: "4", trend: "+1", severity: "Critical", icon: TrendingUp },
+    {
+        id: "ALT-2026-005",
+        schoolId: "C-230245",
+        fullName: "Ana Reyes",
+        role: "student",
+        alertType: "Needs Attention Temperature",
+        measurementValue: "37.3 C",
+        severity: "Medium",
+        status: "Pending",
+        sessionStatus: "Completed",
+        triggeredAt: "Today, 9:18 AM",
+        reviewedBy: "Unassigned",
+        department: "COLLEGE",
+        heartRate: "84 bpm",
+        spo2: "98%",
+        bmi: "19.8",
+        advice: "Repeat temperature reading after a short rest period.",
+    },
 ];
 
 export default function Alert() {
     const [selectedAlert, setSelectedAlert] = useState(null);
     const [search, setSearch] = useState("");
+    const [sensitivity, setSensitivity] = useState(getStoredAlertSensitivity);
+    const [alertsEnabled, setAlertsEnabled] = useState(isAlertsEnabled);
+
+    useEffect(() => {
+        const refreshAlertSettings = () => {
+            setSensitivity(getStoredAlertSensitivity());
+            setAlertsEnabled(isAlertsEnabled());
+        };
+
+        window.addEventListener("storage", refreshAlertSettings);
+        window.addEventListener(ALERT_SETTINGS_CHANGE_EVENT, refreshAlertSettings);
+
+        return () => {
+            window.removeEventListener("storage", refreshAlertSettings);
+            window.removeEventListener(ALERT_SETTINGS_CHANGE_EVENT, refreshAlertSettings);
+        };
+    }, []);
+
+    const sensitivityProfile = useMemo(() => getAlertSensitivityProfile(sensitivity), [sensitivity]);
+    const queuedAlerts = useMemo(() => {
+        if (! alertsEnabled) return [];
+
+        return applySensitivityToAlerts(alerts, sensitivity);
+    }, [alertsEnabled, sensitivity]);
+
+    const overview = useMemo(() => {
+        const criticalCount = queuedAlerts.filter((alert) => alert.severity === "Critical").length;
+        const highCount = queuedAlerts.filter((alert) => alert.severity === "High").length;
+        const resolvedCount = queuedAlerts.filter((alert) => alert.status === "Resolved").length;
+        const pendingCount = queuedAlerts.filter((alert) => alert.status === "Pending").length;
+        const activeCount = queuedAlerts.filter((alert) => alert.status !== "Resolved").length;
+        const escalatedCount = queuedAlerts.filter((alert) => alert.status === "Escalated").length;
+
+        return [
+            { label: "Queued Alerts", value: String(queuedAlerts.length), trend: alertsEnabled ? `${sensitivityProfile.queueRate}%` : "Off", severity: "Medium", icon: BellRing },
+            { label: "Critical Alerts", value: String(criticalCount), trend: alertsEnabled ? "Immediate" : "Off", severity: "Critical", icon: Siren },
+            { label: "High Alerts", value: String(highCount), trend: sensitivityProfile.delayLabel, severity: "High", icon: ShieldAlert },
+            { label: "Resolved Alerts", value: String(resolvedCount), trend: "Reviewed", severity: "Low", icon: UserRoundCheck },
+            { label: "Pending Alerts", value: String(pendingCount), trend: alertsEnabled ? "+live" : "Paused", severity: "Medium", icon: Clock3 },
+            { label: "Detection Rate", value: alertsEnabled ? `${sensitivityProfile.queueRate}%` : "0%", trend: sensitivityProfile.label, severity: alertsEnabled ? "Low" : "High", icon: Gauge },
+            { label: "Active Health Warnings", value: String(activeCount), trend: sensitivityProfile.delayLabel, severity: "High", icon: Thermometer },
+            { label: "Escalated Cases", value: String(escalatedCount), trend: alertsEnabled ? "Clinic" : "Paused", severity: "Critical", icon: TrendingUp },
+        ];
+    }, [alertsEnabled, queuedAlerts, sensitivityProfile]);
 
     const filteredAlerts = useMemo(() => {
         const term = search.trim().toLowerCase();
 
-        if (! term) return alerts;
+        if (! term) return queuedAlerts;
 
-        return alerts.filter((alert) => [
+        return queuedAlerts.filter((alert) => [
             alert.id,
             alert.schoolId,
             alert.fullName,
@@ -116,36 +171,26 @@ export default function Alert() {
             alert.severity,
             alert.status,
         ].some((value) => String(value).toLowerCase().includes(term)));
-    }, [search]);
+    }, [queuedAlerts, search]);
 
-    const criticalAlerts = alerts.filter((alert) => ["Critical", "High"].includes(alert.severity));
+    const criticalAlerts = queuedAlerts.filter((alert) => ["Critical", "High"].includes(alert.severity));
 
     return (
         <div className="mt-5 space-y-5">
-            <AlertsHeader />
+            <AlertsHeader alertsEnabled={alertsEnabled} sensitivityProfile={sensitivityProfile} />
             <AlertsOverviewGrid metrics={overview} />
             <AlertsToolbar search={search} onSearch={setSearch} />
 
-            <div className="grid gap-5 xl:grid-cols-[1.6fr_0.8fr]">
-                {filteredAlerts.length ? (
-                    <AlertsTable alerts={filteredAlerts} onView={setSelectedAlert} />
-                ) : (
-                    <EmptyState title="No matching alerts" description="Try adjusting severity, status, date range, or search terms." />
-                )}
-                <div className="space-y-5">
-                    <RealtimeAlertFeed alerts={alerts} />
-                    <RecentCriticalAlerts alerts={criticalAlerts} onView={setSelectedAlert} />
-                </div>
+            <div className="grid gap-5 md:grid-cols-2">
+                <RealtimeAlertFeed alerts={queuedAlerts} alertsEnabled={alertsEnabled} sensitivityProfile={sensitivityProfile} />
+                <RecentCriticalAlerts alerts={criticalAlerts} onView={setSelectedAlert} />
             </div>
 
-            <AlertAnalyticsPanel />
-            <AlertInsightsPanel />
-
-            <section className="grid gap-5 lg:grid-cols-3">
-                <NotificationPreviewCard type="Alert notification" title="Critical temperature detected" message="ALT-2026-001 requires clinic review." />
-                <NotificationPreviewCard type="Email preview" title="Health alert summary" message="A critical kiosk alert has been queued for clinic staff." />
-                <NotificationPreviewCard type="System warning" title="Escalation reminder" message="Unresolved high severity alert approaching response limit." />
-            </section>
+            {filteredAlerts.length ? (
+                <AlertsTable alerts={filteredAlerts} onView={setSelectedAlert} />
+            ) : (
+                <EmptyState title="No matching alerts" description="Try adjusting severity, status, date range, or search terms." />
+            )}
 
             <AlertDetailsDrawer alert={selectedAlert} open={Boolean(selectedAlert)} onClose={() => setSelectedAlert(null)} />
         </div>

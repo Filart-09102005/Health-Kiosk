@@ -22,6 +22,7 @@ class AuthController extends Controller
     {
         $validated = $request->validated();
         $barcode = ($validated['barcode'] ?? null) ?: User::generateUniqueBarcode();
+        $academicInfo = $this->academicInfoForDepartment($validated);
 
         $user = User::create([
             'firstname' => $validated['firstname'],
@@ -31,6 +32,10 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
             'department' => $validated['department'],
+            'grade_level' => $academicInfo['grade_level'],
+            'strand' => $academicInfo['strand'],
+            'year_level' => $academicInfo['year_level'],
+            'program' => $academicInfo['program'],
             'age' => $validated['age'],
             'gender' => $validated['gender'],
             'barcode' => $barcode,
@@ -212,10 +217,32 @@ class AuthController extends Controller
             'email_verified_at' => $user->email_verified_at,
             'role' => $user->role,
             'department' => $user->department,
+            'grade_level' => $user->grade_level,
+            'strand' => $user->strand,
+            'year_level' => $user->year_level,
+            'program' => $user->program,
             'age' => $user->age,
             'gender' => $user->gender,
             'barcode' => $user->barcode,
             'is_active' => $user->is_active,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array{grade_level: ?string, strand: ?string, year_level: ?string, program: ?string}
+     */
+    private function academicInfoForDepartment(array $validated): array
+    {
+        $department = $validated['department'];
+        $gradeLevel = $department === 'BED' ? ($validated['grade_level'] ?? null) : null;
+        $needsStrand = in_array($gradeLevel, ['Grade 11', 'Grade 12'], true);
+
+        return [
+            'grade_level' => $gradeLevel,
+            'strand' => $department === 'BED' && $needsStrand ? ($validated['strand'] ?? null) : null,
+            'year_level' => $department === 'COLLEGE' ? ($validated['year_level'] ?? null) : null,
+            'program' => $department === 'COLLEGE' ? ($validated['program'] ?? null) : null,
         ];
     }
 }

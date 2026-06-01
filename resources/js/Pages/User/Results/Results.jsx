@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
-import { Activity, Printer, ShieldCheck } from "lucide-react";
+import { Activity, ArrowLeft, Printer, RotateCcw, ShieldCheck } from "lucide-react";
 import Header from "../components/Header";
 import { authService } from "../../Auth/services/authService";
 import { useToast } from "../../Global/Toast";
 import { printHealthReceipt } from "../../Global/receiptPrinter";
 import { measurementService } from "../Measurements/services/measurementService";
+import { useAssistant } from "../AI-Assistant/context/AssistantProvider";
 
 export default function Results({ navigate }) {
     const { showToast } = useToast();
+    const { enabled: assistantEnabled, speak } = useAssistant();
     const [data, setData] = useState({ session: null, record: null });
+    const [printing, setPrinting] = useState(false);
+    const [showPrintHint, setShowPrintHint] = useState(false);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -21,6 +25,19 @@ export default function Results({ navigate }) {
         return () => controller.abort();
     }, [showToast]);
 
+    useEffect(() => {
+        if (!assistantEnabled) {
+            setShowPrintHint(false);
+            return undefined;
+        }
+
+        speak("Your health measurements are now available. Please press Print receipt to print your health result.");
+        setShowPrintHint(true);
+
+        const timer = window.setTimeout(() => setShowPrintHint(false), 8000);
+        return () => window.clearTimeout(timer);
+    }, [assistantEnabled, speak]);
+
     const logout = async () => {
         await authService.logout();
         showToast({ type: "info", title: "Logged out", message: "Your session has ended." });
@@ -30,8 +47,11 @@ export default function Results({ navigate }) {
     const record = data.record || {};
     const user = data.session?.user || {};
     const receipt = {
+        id: record.id || data.session?.id || data.session?.session_number,
         name: user.name,
+        school_id: user.barcode,
         barcode: user.barcode,
+        role: user.role,
         session_number: data.session?.session_number,
         date: new Date().toLocaleString(),
         heart_rate: record.heart_rate,
@@ -42,6 +62,29 @@ export default function Results({ navigate }) {
         bmi: record.bmi,
         status: record.health_status || "Incomplete",
         advice: record.advice,
+    };
+
+    const handlePrintReceipt = async () => {
+        if (printing) return;
+
+        setShowPrintHint(false);
+        setPrinting(true);
+        try {
+            speak("Printing your health result. Please wait for the receipt.");
+            await printHealthReceipt(receipt);
+        } finally {
+            setPrinting(false);
+        }
+    };
+
+    const handleContinueMeasurements = () => {
+        speak("You can take another measurement to confirm your result. Choose the health check you want to repeat.");
+        navigate("/measurements");
+    };
+
+    const handleBackToDashboard = () => {
+        speak("Returning to the dashboard.");
+        navigate("/user/dashboard");
     };
 
     const metrics = [
@@ -100,12 +143,17 @@ export default function Results({ navigate }) {
                     </section>
 
                     <div className="mt-6 flex flex-wrap justify-center gap-3">
-                        <button type="button" onClick={() => printHealthReceipt(receipt)} className="flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-black text-white transition hk-primary-hover" style={{ backgroundColor: "var(--color-primary)" }}>
+                        <button type="button" onClick={handlePrintReceipt} disabled={printing} className={`flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-black text-white transition hk-primary-hover disabled:cursor-not-allowed disabled:opacity-70 ${showPrintHint ? "hk-flow-action-hint" : ""}`} style={{ backgroundColor: "var(--color-primary)" }}>
                             <Printer size={18} />
-                            Print receipt
+                            {printing ? "Printing..." : "Print receipt"}
                         </button>
-                        <button type="button" onClick={() => navigate("/measurements")} className="rounded-2xl border px-5 py-4 text-sm font-black transition hk-soft-hover" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+                        <button type="button" onClick={handleContinueMeasurements} className="flex items-center gap-2 rounded-2xl border px-5 py-4 text-sm font-black transition hk-soft-hover" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+                            <RotateCcw size={17} />
                             Continue measurements
+                        </button>
+                        <button type="button" onClick={handleBackToDashboard} className="flex items-center gap-2 rounded-2xl border px-5 py-4 text-sm font-black transition hk-soft-hover" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+                            <ArrowLeft size={17} />
+                            Back to Dashboard
                         </button>
                     </div>
                 </section>

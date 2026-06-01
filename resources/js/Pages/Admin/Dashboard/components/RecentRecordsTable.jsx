@@ -3,10 +3,17 @@ import { printHealthReceipt } from "../../../Global/receiptPrinter";
 
 const statusColor = (status) => {
     if (status === "Normal") return "var(--color-success)";
-    if (status === "Alert") return "var(--color-error)";
-    if (status === "Watch") return "var(--color-primary)";
+    if (status === "Alert" || status === "High Risk") return "var(--color-error)";
+    if (status === "Watch" || status === "Needs Review") return "var(--color-primary)";
 
     return "var(--color-gray)";
+};
+
+const statusLabel = (status) => {
+    if (status === "Watch") return "Needs Review";
+    if (status === "Alert") return "High Risk";
+
+    return status;
 };
 
 export default function RecentRecordsTable({ records = [] }) {
@@ -49,7 +56,7 @@ export default function RecentRecordsTable({ records = [] }) {
                                             backgroundColor: "color-mix(in srgb, currentColor 10%, transparent)",
                                         }}
                                     >
-                                        {record.status}
+                                        {statusLabel(record.status)}
                                     </span>
                                 </td>
                                 <td className="border-b px-3 py-4" style={{ borderColor: "var(--color-border)" }}>

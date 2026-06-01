@@ -15,7 +15,7 @@ export default function WelcomeBanner() {
         <motion.section
             initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 0.22, duration: 0.28, ease: "easeOut" }}
+            transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 0.08, duration: 0.3, ease: "easeOut" }}
             className={`relative overflow-hidden ${cardClassName} p-6`}
             style={cardStyle}
         >

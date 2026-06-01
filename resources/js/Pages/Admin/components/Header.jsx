@@ -1,9 +1,15 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bell, ChevronDown, LogOut, ShieldCheck } from "lucide-react";
 import ThemeToggle from "../../Global/ThemeToggle";
 import ConfirmDialog from "../../Global/ConfirmDialog";
 import Appearance from "../../User/Drawers/Appearance";
+import {
+    ALERT_SETTINGS_CHANGE_EVENT,
+    applySensitivityToAlerts,
+    getStoredAlertSensitivity,
+    isAlertsEnabled,
+} from "../Alerts/utils/alertSensitivity";
 
 const adminUser = {
     firstname: "Health",
@@ -19,16 +25,19 @@ const notifications = [
         title: "Records updated",
         message: "Recent kiosk readings are available for review.",
         time: "2m ago",
+        severity: "Low",
     },
     {
         title: "Devices online",
         message: "All kiosk sensors are currently reachable.",
         time: "18m ago",
+        severity: "Medium",
     },
     {
         title: "Alert acknowledged",
         message: "Elevated temperature alert for Juan Dela Cruz was reviewed.",
         time: "1h ago",
+        severity: "High",
     },
 ];
 
@@ -36,7 +45,29 @@ export default function Header({ onLogout, eyebrow = "Admin Dashboard", title = 
     const [profileOpen, setProfileOpen] = useState(false);
     const [notificationOpen, setNotificationOpen] = useState(false);
     const [logoutOpen, setLogoutOpen] = useState(false);
+    const [loggingOut, setLoggingOut] = useState(false);
     const [appearanceOpen, setAppearanceOpen] = useState(false);
+    const [alertsEnabled, setAlertsEnabled] = useState(isAlertsEnabled);
+    const [alertSensitivity, setAlertSensitivity] = useState(getStoredAlertSensitivity);
+
+    useEffect(() => {
+        const refreshAlertsSetting = () => {
+            setAlertsEnabled(isAlertsEnabled());
+            setAlertSensitivity(getStoredAlertSensitivity());
+        };
+
+        window.addEventListener("storage", refreshAlertsSetting);
+        window.addEventListener(ALERT_SETTINGS_CHANGE_EVENT, refreshAlertsSetting);
+
+        return () => {
+            window.removeEventListener("storage", refreshAlertsSetting);
+            window.removeEventListener(ALERT_SETTINGS_CHANGE_EVENT, refreshAlertsSetting);
+        };
+    }, []);
+
+    const visibleNotifications = useMemo(() => {
+        return alertsEnabled ? applySensitivityToAlerts(notifications, alertSensitivity) : [];
+    }, [alertSensitivity, alertsEnabled]);
 
     const openAppearance = () => {
         setProfileOpen(false);
@@ -49,12 +80,25 @@ export default function Header({ onLogout, eyebrow = "Admin Dashboard", title = 
         setNotificationOpen(false);
     };
 
+    const confirmLogout = async () => {
+        if (loggingOut) return;
+
+        setLoggingOut(true);
+
+        try {
+            await onLogout?.();
+            setLogoutOpen(false);
+        } finally {
+            setLoggingOut(false);
+        }
+    };
+
     return (
         <>
             <header
-                className="rounded-2xl border p-4 shadow-xl backdrop-blur-xl sm:p-5"
+                className="sticky top-6 z-20 rounded-2xl border p-4 shadow-xl backdrop-blur-xl sm:p-5"
                 style={{
-                    backgroundColor: "color-mix(in srgb, var(--color-card) 90%, transparent)",
+                    backgroundColor: "color-mix(in srgb, var(--color-card) 92%, transparent)",
                     borderColor: "var(--color-border)",
                 }}
             >
@@ -81,10 +125,12 @@ export default function Header({ onLogout, eyebrow = "Admin Dashboard", title = 
                                 aria-expanded={notificationOpen}
                             >
                                 <Bell size={18} />
-                                <span
-                                    className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full"
-                                    style={{ backgroundColor: "var(--color-error)", boxShadow: "0 0 0 2px var(--color-card)" }}
-                                />
+                                {visibleNotifications.length ? (
+                                    <span
+                                        className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full"
+                                        style={{ backgroundColor: "var(--color-error)", boxShadow: "0 0 0 2px var(--color-card)" }}
+                                    />
+                                ) : null}
                             </button>
 
                             <AnimatePresence>
@@ -103,11 +149,11 @@ export default function Header({ onLogout, eyebrow = "Admin Dashboard", title = 
                                         <div className="border-b px-4 py-3" style={{ borderColor: "var(--color-border)" }}>
                                             <p className="font-black">Admin notifications</p>
                                             <p className="mt-1 text-xs" style={{ color: "var(--color-muted)" }}>
-                                                System alerts and clinic activity
+                                                {alertsEnabled ? `${alertSensitivity} sensitivity notification queue` : "Alerts are disabled in Settings"}
                                             </p>
                                         </div>
                                         <div className="max-h-72 space-y-2 overflow-y-auto p-2">
-                                            {notifications.map((item) => (
+                                            {visibleNotifications.length ? visibleNotifications.map((item) => (
                                                 <button
                                                     key={item.title}
                                                     type="button"
@@ -124,7 +170,14 @@ export default function Header({ onLogout, eyebrow = "Admin Dashboard", title = 
                                                         {item.message}
                                                     </p>
                                                 </button>
-                                            ))}
+                                            )) : (
+                                                <div className="rounded-xl p-4 text-center" style={{ backgroundColor: "var(--color-surface)" }}>
+                                                    <p className="text-sm font-black">No alert notifications</p>
+                                                    <p className="mt-1 text-xs leading-5" style={{ color: "var(--color-muted)" }}>
+                                                        Enable Alerts in Settings to show abnormal-reading notifications here.
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </motion.div>
                                 ) : null}
@@ -214,9 +267,11 @@ export default function Header({ onLogout, eyebrow = "Admin Dashboard", title = 
                 title="Log out?"
                 message="Your admin session will end and the kiosk will return to login."
                 cancelLabel="No, stay"
-                confirmLabel="Log out"
-                onCancel={() => setLogoutOpen(false)}
-                onConfirm={onLogout}
+                confirmLabel={loggingOut ? "Logging out..." : "Log out"}
+                onCancel={() => {
+                    if (! loggingOut) setLogoutOpen(false);
+                }}
+                onConfirm={confirmLogout}
             />
         </>
     );

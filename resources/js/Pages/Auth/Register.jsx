@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     ArrowLeft,
     ArrowRight,
+    ChevronDown,
     Check,
     Eye,
     EyeOff,
@@ -30,15 +32,29 @@ const initialForm = {
     age: "",
     gender: "",
     department: "",
+    grade_level: "",
+    strand: "",
+    year_level: "",
+    program: "",
     password: "",
     password_confirmation: "",
 };
 
-const departments = [
-    "COLLEGE",
-    "FACULTY",
-    "BED",
+const studentDepartments = ["COLLEGE", "BED"];
+
+const gradeLevels = [
+    "Grade 7",
+    "Grade 8",
+    "Grade 9",
+    "Grade 10",
+    "Grade 11",
+    "Grade 12",
 ];
+
+const seniorHighGrades = ["Grade 11", "Grade 12"];
+const strands = ["ABM", "HUMSS", "STEM"];
+const yearLevels = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
+const programs = ["BSIT", "BSED", "BEED", "BSHM", "BSBA"];
 
 export default function Register({ navigate }) {
     const { showToast } = useToast();
@@ -75,6 +91,11 @@ export default function Register({ navigate }) {
             : strengthLabel === "Medium"
               ? "var(--color-primary)"
               : "var(--color-error)";
+    const isBed = form.department === "BED";
+    const isCollege = form.department === "COLLEGE";
+    const isFaculty = form.department === "FACULTY";
+    const needsStrand = isBed && seniorHighGrades.includes(form.grade_level);
+    const departmentOptions = form.role === "teacher" ? ["FACULTY"] : studentDepartments;
 
     const updateField = (field, value) => {
         setForm((current) => ({ ...current, [field]: value }));
@@ -109,6 +130,64 @@ export default function Register({ navigate }) {
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
     }, [step]);
+
+    useEffect(() => {
+        setForm((current) => {
+            if (current.role === "teacher" && current.department !== "FACULTY") {
+                return {
+                    ...current,
+                    department: "FACULTY",
+                    grade_level: "",
+                    strand: "",
+                    year_level: "",
+                    program: "",
+                };
+            }
+
+            if (current.role === "student" && current.department === "FACULTY") {
+                return {
+                    ...current,
+                    department: "",
+                    grade_level: "",
+                    strand: "",
+                    year_level: "",
+                    program: "",
+                };
+            }
+
+            return current;
+        });
+        setErrors((current) => ({ ...current, department: undefined }));
+    }, [form.role]);
+
+    useEffect(() => {
+        setForm((current) => {
+            const next = { ...current };
+
+            if (current.department !== "BED") {
+                next.grade_level = "";
+                next.strand = "";
+            }
+
+            if (current.department !== "COLLEGE") {
+                next.year_level = "";
+                next.program = "";
+            }
+
+            if (! seniorHighGrades.includes(current.grade_level)) {
+                next.strand = "";
+            }
+
+            return JSON.stringify(next) === JSON.stringify(current) ? current : next;
+        });
+        setErrors((current) => ({
+            ...current,
+            grade_level: form.department === "BED" ? current.grade_level : undefined,
+            strand: needsStrand ? current.strand : undefined,
+            year_level: form.department === "COLLEGE" ? current.year_level : undefined,
+            program: form.department === "COLLEGE" ? current.program : undefined,
+        }));
+    }, [form.department, form.grade_level]);
 
     useEffect(() => {
         if (step !== 0 || ! form.barcode || barcodeState.checking || barcodeState.available) {
@@ -177,7 +256,11 @@ export default function Register({ navigate }) {
                     form.email &&
                     form.age &&
                     form.gender &&
-                    form.department,
+                    form.department &&
+                    (! isBed || form.grade_level) &&
+                    (! needsStrand || form.strand) &&
+                    (! isCollege || (form.year_level && form.program)) &&
+                    (! isFaculty || form.department),
             );
         }
         if (step === 3) return strengthScore === 5 && form.password === form.password_confirmation;
@@ -202,10 +285,16 @@ export default function Register({ navigate }) {
         setErrors({});
 
         try {
-            await authService.register({
+            const registrationPayload = {
                 ...form,
                 email: form.email.trim(),
-            });
+                grade_level: isBed ? form.grade_level : undefined,
+                strand: needsStrand ? form.strand : undefined,
+                year_level: isCollege ? form.year_level : undefined,
+                program: isCollege ? form.program : undefined,
+            };
+
+            await authService.register(registrationPayload);
             showToast({
                 type: "success",
                 title: "Registration saved",
@@ -292,10 +381,44 @@ export default function Register({ navigate }) {
                                 ["other", "Other"],
                                 ["prefer_not_to_say", "Prefer not to say"],
                             ]} />
-                            <SelectField label="Department" value={form.department} error={errors.department} onChange={(value) => updateField("department", value)} options={[
-                                ["", "Choose department"],
-                                ...departments.map((department) => [department, department]),
-                            ]} />
+                            <SelectField
+                                label="Department"
+                                value={form.department}
+                                error={errors.department}
+                                disabled={form.role === "teacher"}
+                                helper={form.role === "teacher" ? "Teachers are assigned to Faculty." : ""}
+                                onChange={(value) => updateField("department", value)}
+                                options={[
+                                    ["", "Choose department"],
+                                    ...departmentOptions.map((department) => [department, department]),
+                                ]}
+                            />
+                            {isBed ? (
+                                <>
+                                    <SelectField label="Grade Level" value={form.grade_level} error={errors.grade_level} onChange={(value) => updateField("grade_level", value)} options={[
+                                        ["", "Choose grade level"],
+                                        ...gradeLevels.map((gradeLevel) => [gradeLevel, gradeLevel]),
+                                    ]} />
+                                    {needsStrand ? (
+                                        <SelectField label="Strand" value={form.strand} error={errors.strand} onChange={(value) => updateField("strand", value)} options={[
+                                            ["", "Choose strand"],
+                                            ...strands.map((strand) => [strand, strand]),
+                                        ]} />
+                                    ) : null}
+                                </>
+                            ) : null}
+                            {isCollege ? (
+                                <>
+                                    <SelectField label="Year Level" value={form.year_level} error={errors.year_level} onChange={(value) => updateField("year_level", value)} options={[
+                                        ["", "Choose year level"],
+                                        ...yearLevels.map((yearLevel) => [yearLevel, yearLevel]),
+                                    ]} />
+                                    <SelectField label="Program" value={form.program} error={errors.program} onChange={(value) => updateField("program", value)} options={[
+                                        ["", "Choose program"],
+                                        ...programs.map((program) => [program, program]),
+                                    ]} />
+                                </>
+                            ) : null}
                         </div>
                     </div>
                 ) : null}
@@ -357,8 +480,8 @@ export default function Register({ navigate }) {
                                         goNext();
                                     }
                                 }}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl px-5 py-4 font-black text-white shadow-[0_20px_55px_rgba(34,197,94,0.2)] transition hover:-translate-y-0.5"
-                                style={{ backgroundColor: "var(--color-success)" }}
+                                className="flex w-full items-center justify-center gap-2 rounded-xl px-5 py-4 font-black text-white shadow-[0_20px_55px_rgba(37,99,235,0.2)] transition hover:-translate-y-0.5"
+                                style={{ backgroundColor: "var(--color-primary)" }}
                             >
                                 <Save size={18} />
                                 Save and Register
@@ -465,10 +588,10 @@ function SchoolEmailField({ value, onChange, error }) {
     const previewEmail = `${localPart}${schoolEmailDomain}`;
 
     return (
-        <label className="block text-left">
+        <label className="block text-left md:col-span-2">
             <span className="text-sm font-black auth-strong-text">School Email</span>
             <div
-                className="mt-2 flex min-h-[3.25rem] items-center gap-3 rounded-xl border px-4 auth-control"
+                className="mt-2 flex min-h-[3.25rem] w-full flex-wrap items-center gap-3 rounded-xl border px-4 py-2 auth-control sm:flex-nowrap"
                 style={{ borderColor: error ? "var(--color-error)" : undefined }}
             >
                 <Mail size={18} style={{ color: "var(--color-muted)" }} />
@@ -477,10 +600,10 @@ function SchoolEmailField({ value, onChange, error }) {
                     value={localPart}
                     onChange={(event) => onChange(event.target.value)}
                     placeholder="firstname.lastname"
-                    className="min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none"
+                    className="min-w-[12rem] flex-1 bg-transparent text-sm font-semibold outline-none"
                     autoComplete="username"
                 />
-                <span className="shrink-0 rounded-lg px-2 py-1 text-[0.65rem] font-black text-blue-500" style={{ backgroundColor: "var(--auth-panel)" }}>
+                <span className="shrink-0 rounded-lg px-3 py-1.5 text-[0.7rem] font-black text-blue-500" style={{ backgroundColor: "var(--auth-panel)" }}>
                     {schoolEmailDomain}
                 </span>
             </div>
@@ -505,37 +628,109 @@ function SchoolEmailField({ value, onChange, error }) {
     );
 }
 
-function SelectField({ label, value, onChange, error, options }) {
+function SelectField({ label, value, onChange, error, options, disabled, helper }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [dropdownPosition, setDropdownPosition] = useState("bottom");
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const toggleDropdown = () => {
+        if (disabled) return;
+        if (!isOpen && dropdownRef.current) {
+            const rect = dropdownRef.current.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const spaceAbove = rect.top;
+            if (spaceBelow < 250 && spaceAbove > spaceBelow) {
+                setDropdownPosition("top");
+            } else {
+                setDropdownPosition("bottom");
+            }
+        }
+        setIsOpen(!isOpen);
+    };
+
+    const selectedOption = options.find((opt) => opt[0] === value) || options[0];
+
     return (
-        <label className="block text-left">
+        <div className="block text-left" ref={dropdownRef}>
             <span className="text-sm font-black auth-strong-text">{label}</span>
             <div className="relative mt-2">
-                <select
-                    value={value}
-                    onChange={(event) => onChange(event.target.value)}
-                    className="min-h-[3.25rem] w-full appearance-none rounded-xl border px-4 pr-12 text-sm font-bold uppercase outline-none transition hover:-translate-y-0.5 auth-control"
+                <button
+                    type="button"
+                    onClick={toggleDropdown}
+                    className={`min-h-[3.25rem] w-full flex items-center justify-between rounded-xl border px-4 text-sm font-bold uppercase outline-none transition auth-control ${disabled ? "opacity-50 cursor-not-allowed" : "hover:-translate-y-0.5"}`}
                     style={{
                         borderColor: error ? "var(--color-error)" : undefined,
-                        color: value ? "#ffffff" : "var(--color-muted)",
+                        color: value ? "var(--auth-text)" : "var(--color-muted)",
                     }}
                 >
-                    {options.map(([optionValue, optionLabel]) => (
-                        <option key={optionValue} value={optionValue}>
-                            {optionLabel}
-                        </option>
-                    ))}
-                </select>
-                <span
-                    className="pointer-events-none absolute right-4 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-xl text-xs auth-muted-text"
-                    style={{
-                        backgroundColor: "rgba(255,255,255,0.06)",
-                    }}
-                >
-                    ▼
-                </span>
+                    <span className="truncate">{selectedOption[1]}</span>
+                    <span
+                        className="flex items-center justify-center transition-transform duration-300 text-muted-foreground"
+                        style={{
+                            color: "var(--auth-muted)",
+                            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)"
+                        }}
+                    >
+                        <ChevronDown size={18} strokeWidth={1.5} />
+                    </span>
+                </button>
+
+                <AnimatePresence>
+                    {isOpen && (
+                        <motion.div
+                            initial={{ opacity: 0, y: dropdownPosition === "top" ? 10 : -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: dropdownPosition === "top" ? 10 : -10 }}
+                            transition={{ duration: 0.15 }}
+                            className={`absolute left-0 z-50 w-full rounded-xl border p-1 shadow-xl overflow-hidden auth-panel ${
+                                dropdownPosition === "top" ? "bottom-full mb-2" : "top-full mt-2"
+                            }`}
+                            style={{ 
+                                borderColor: "var(--color-border)", 
+                                backgroundColor: "var(--color-card)",
+                                backdropFilter: "blur(12px)" 
+                            }}
+                        >
+                            <div className="max-h-60 overflow-y-auto hk-sidebar-scroll space-y-0.5 p-1">
+                                {options.map(([optionValue, optionLabel], idx) => {
+                                    if (idx === 0) return null; // Skip the "Choose..." placeholder in the list
+
+                                    return (
+                                        <button
+                                            key={optionValue}
+                                            type="button"
+                                            className={`w-full flex items-center px-4 py-3 text-sm font-bold uppercase rounded-lg transition-colors text-left ${value === optionValue ? '' : 'hover:opacity-75'}`}
+                                            style={{
+                                                color: value === optionValue ? "var(--color-primary)" : "var(--color-text)",
+                                                backgroundColor: value === optionValue ? "color-mix(in srgb, var(--color-primary), transparent 90%)" : undefined
+                                            }}
+                                            onClick={() => {
+                                                onChange(optionValue);
+                                                setIsOpen(false);
+                                            }}
+                                        >
+                                            {optionLabel}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
+            {helper ? <span className="mt-1 block text-xs" style={{ color: "var(--color-muted)" }}>{helper}</span> : null}
             {error ? <span className="mt-1 block text-xs" style={{ color: "var(--color-error)" }}>{error[0]}</span> : null}
-        </label>
+        </div>
     );
 }
 

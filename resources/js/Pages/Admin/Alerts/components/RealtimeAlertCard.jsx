@@ -10,6 +10,11 @@ export default function RealtimeAlertCard({ alert }) {
                     <div>
                         <p className="text-sm font-black">{alert.alertType} detected</p>
                         <p className="mt-1 text-xs font-bold" style={{ color: "var(--color-muted)" }}>{alert.fullName} - {alert.measurementValue}</p>
+                        {alert.queueDelay ? (
+                            <p className="mt-1 text-[0.68rem] font-black uppercase tracking-wide" style={{ color: "var(--color-muted)" }}>
+                                {alert.queueMode} - {alert.detectionRate} - {alert.queueDelay}
+                            </p>
+                        ) : null}
                     </div>
                 </div>
                 <AlertSeverityBadge severity={alert.severity} />

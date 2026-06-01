@@ -1,8 +1,15 @@
-import { RefreshCw } from "lucide-react";
-import ExportButton from "./ExportButton";
+import { FileSpreadsheet, FileText, Printer, RefreshCw } from "lucide-react";
+import { exportToExcel, exportToPdf, printRecords } from "../utils/exportRecords";
 import RecordsSearch from "./RecordsSearch";
 
-export default function TableToolbar({ search, onSearchChange, isSearching, onRefresh, activeFilterCount = 0 }) {
+export default function TableToolbar({
+    search,
+    onSearchChange,
+    isSearching,
+    onRefresh,
+    activeFilterCount = 0,
+    filteredRecords = [],
+}) {
     return (
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
             <div className="w-full xl:max-w-xl">
@@ -23,7 +30,36 @@ export default function TableToolbar({ search, onSearchChange, isSearching, onRe
                     <RefreshCw size={14} />
                     Refresh
                 </button>
-                <ExportButton label="Export records" />
+                <button
+                    type="button"
+                    onClick={() => exportToExcel(filteredRecords)}
+                    className="inline-flex h-11 items-center gap-2 rounded-xl border px-4 text-xs font-black transition hk-soft-hover text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+                    style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
+                    title="Export all filtered records to Excel spreadsheet"
+                >
+                    <FileSpreadsheet size={14} className="text-emerald-600" />
+                    Excel
+                </button>
+                <button
+                    type="button"
+                    onClick={() => exportToPdf(filteredRecords)}
+                    className="inline-flex h-11 items-center gap-2 rounded-xl border px-4 text-xs font-black transition hk-soft-hover text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                    style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
+                    title="Export all filtered records to PDF report"
+                >
+                    <FileText size={14} className="text-rose-600" />
+                    PDF
+                </button>
+                <button
+                    type="button"
+                    onClick={() => printRecords(filteredRecords)}
+                    className="inline-flex h-11 items-center gap-2 rounded-xl border px-4 text-xs font-black transition hk-soft-hover text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                    style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
+                    title="Print out structured clinic health records report"
+                >
+                    <Printer size={14} className="text-blue-600" />
+                    Print
+                </button>
             </div>
         </div>
     );

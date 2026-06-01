@@ -24,7 +24,9 @@ const iconMap = {
     devices: RadioTower,
 };
 
-export default function StatCard({ stat, index = 0 }) {
+const metricCardClassName = cardClassName.replace(" transition hk-soft-hover", "");
+
+export default function StatCard({ stat }) {
     const shouldReduceMotion = useReducedMotion();
     const Icon = iconMap[stat.icon] || Activity;
     const TrendIcon = stat.trend === "down" ? TrendingDown : TrendingUp;
@@ -32,12 +34,21 @@ export default function StatCard({ stat, index = 0 }) {
 
     return (
         <motion.article
-            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 26, scale: 0.975 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 0.52 + index * 0.08, duration: 0.52, ease: [0.16, 1, 0.3, 1] }}
-            whileHover={shouldReduceMotion ? undefined : { y: -4 }}
-            className={`${cardClassName} transform-gpu p-5 will-change-transform`}
-            style={cardStyle}
+            layout={false}
+            variants={{
+                hidden: shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 },
+                show: {
+                    opacity: 1,
+                    y: 0,
+                    transition: shouldReduceMotion
+                        ? { duration: 0.01 }
+                        : { duration: 0.48, ease: "easeOut" },
+                },
+                exit: shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 },
+            }}
+            transformTemplate={(_, generated) => `${generated} translateZ(0)`}
+            className={`${metricCardClassName} transform-gpu p-5`}
+            style={{ ...cardStyle, willChange: "transform, opacity" }}
         >
             <div className="flex items-start justify-between gap-3">
                 <div
@@ -65,7 +76,7 @@ export default function StatCard({ stat, index = 0 }) {
                 {stat.label}
             </p>
             <p className="mt-2 text-xs font-semibold" style={{ color: "var(--color-muted)" }}>
-                {stat.trend === "up" ? "Increased" : stat.trend === "down" ? "Decreased" : "No change"} vs last week
+                {stat.description || `${stat.trend === "up" ? "Increased" : stat.trend === "down" ? "Decreased" : "No change"} vs last week`}
             </p>
         </motion.article>
     );

@@ -1,6 +1,7 @@
-import { GraduationCap, MailCheck, ScanBarcode, UsersRound } from "lucide-react";
+import { GraduationCap, School, UsersRound } from "lucide-react";
 import AdminShell from "../../components/AdminShell";
 import AdminModulePage from "../../components/AdminModulePage";
+import StudentsTable from "./components/StudentsTable";
 
 const rows = [
     {
@@ -48,6 +49,156 @@ const rows = [
         created_at: "2026-05-17",
         updated_at: "2026-05-17",
     },
+    {
+        id: 4,
+        firstname: "Jessa",
+        lastname: "Dizon",
+        student_id: "C-230207",
+        email: "jessa.dizon@smcbi.edu.ph",
+        email_verified_at: "2026-05-16 10:12",
+        role: "student",
+        department: "BED",
+        age: 16,
+        gender: "Female",
+        barcode: "C-230207",
+        created_at: "2026-05-16",
+        updated_at: "2026-05-17",
+    },
+    {
+        id: 5,
+        firstname: "Kevin",
+        lastname: "Soriano",
+        student_id: "C-230208",
+        email: "kevin.soriano@smcbi.edu.ph",
+        email_verified_at: "2026-05-15 09:48",
+        role: "student",
+        department: "COLLEGE",
+        age: 22,
+        gender: "Male",
+        barcode: "C-230208",
+        created_at: "2026-05-15",
+        updated_at: "2026-05-18",
+    },
+    {
+        id: 6,
+        firstname: "Mika",
+        lastname: "Santos",
+        student_id: "C-230209",
+        email: "mika.santos@smcbi.edu.ph",
+        email_verified_at: "Pending",
+        role: "student",
+        department: "BED",
+        age: 15,
+        gender: "Female",
+        barcode: "C-230209",
+        created_at: "2026-05-14",
+        updated_at: "2026-05-14",
+    },
+    {
+        id: 7,
+        firstname: "Rafael",
+        lastname: "Torres",
+        student_id: "C-230210",
+        email: "rafael.torres@smcbi.edu.ph",
+        email_verified_at: "2026-05-14 13:35",
+        role: "student",
+        department: "COLLEGE",
+        age: 19,
+        gender: "Male",
+        barcode: "C-230210",
+        created_at: "2026-05-14",
+        updated_at: "2026-05-16",
+    },
+    {
+        id: 8,
+        firstname: "Bianca",
+        lastname: "Navarro",
+        student_id: "C-230211",
+        email: "bianca.navarro@smcbi.edu.ph",
+        email_verified_at: "2026-05-13 11:22",
+        role: "student",
+        department: "BED",
+        age: 17,
+        gender: "Female",
+        barcode: "C-230211",
+        created_at: "2026-05-13",
+        updated_at: "2026-05-14",
+    },
+    {
+        id: 9,
+        firstname: "Carlo",
+        lastname: "Lim",
+        student_id: "C-230212",
+        email: "carlo.lim@smcbi.edu.ph",
+        email_verified_at: "2026-05-12 15:04",
+        role: "student",
+        department: "COLLEGE",
+        age: 20,
+        gender: "Male",
+        barcode: "C-230212",
+        created_at: "2026-05-12",
+        updated_at: "2026-05-13",
+    },
+    {
+        id: 10,
+        firstname: "Elena",
+        lastname: "Garcia",
+        student_id: "C-230213",
+        email: "elena.garcia@smcbi.edu.ph",
+        email_verified_at: "2026-05-11 08:26",
+        role: "student",
+        department: "BED",
+        age: 16,
+        gender: "Female",
+        barcode: "C-230213",
+        created_at: "2026-05-11",
+        updated_at: "2026-05-12",
+    },
+    {
+        id: 11,
+        firstname: "Nathan",
+        lastname: "Bautista",
+        student_id: "C-230214",
+        email: "nathan.bautista@smcbi.edu.ph",
+        email_verified_at: "Pending",
+        role: "student",
+        department: "COLLEGE",
+        age: 21,
+        gender: "Male",
+        barcode: "C-230214",
+        created_at: "2026-05-10",
+        updated_at: "2026-05-10",
+    },
+    {
+        id: 12,
+        firstname: "Sofia",
+        lastname: "Mendoza",
+        student_id: "C-230215",
+        email: "sofia.mendoza@smcbi.edu.ph",
+        email_verified_at: "2026-05-09 12:18",
+        role: "student",
+        department: "BED",
+        age: 15,
+        gender: "Female",
+        barcode: "C-230215",
+        created_at: "2026-05-09",
+        updated_at: "2026-05-11",
+    },
+    {
+        id: 13,
+        firstname: "Gabriel",
+        lastname: "Ramos",
+        student_id: "C-230216",
+        email: "gabriel.ramos@smcbi.edu.ph",
+        email_verified_at: "2026-05-08 16:30",
+        role: "student",
+        department: "COLLEGE",
+        age: 22,
+        gender: "Male",
+        barcode: "C-230216",
+        created_at: "2026-05-08",
+        updated_at: "2026-05-09",
+    },
 ];
 
 export default function Students({ navigate }) {
@@ -60,13 +211,13 @@ export default function Students({ navigate }) {
                 description="Manage student kiosk access, school email verification, barcode identity, and department grouping."
                 stats={[
                     { label: "Students", value: "186", caption: "Registered accounts", icon: UsersRound },
-                    { label: "Verified", value: "172", caption: "Can access kiosk", icon: MailCheck },
+                    { label: "BED", value: "68", caption: "Department split", icon: School },
                     { label: "College", value: "118", caption: "Department split", icon: GraduationCap },
-                    { label: "Barcodes", value: "186", caption: "Unique IDs", icon: ScanBarcode },
                 ]}
-                columns={["ID", "Firstname", "Lastname", "Student ID", "Email", "Email Verified At", "Role", "Department", "Age", "Gender", "Barcode", "Created At", "Updated At"]}
-                rows={rows}
-            />
+                showHeaderActions={false}
+            >
+                <StudentsTable rows={rows} />
+            </AdminModulePage>
         </AdminShell>
     );
 }

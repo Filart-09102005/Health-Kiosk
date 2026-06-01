@@ -3,7 +3,6 @@ import { AlertTriangle } from "lucide-react";
 import { recordsAnalytics } from "../data/demoData";
 import { cardClassName, cardStyle } from "../utils/surface";
 import HealthStatusDistribution from "./HealthStatusDistribution";
-import MeasurementCompletionCard from "./MeasurementCompletionCard";
 import SectionHeader from "./SectionHeader";
 
 export default function RecordsAnalyticsPanel() {
@@ -13,9 +12,8 @@ export default function RecordsAnalyticsPanel() {
                 title="Records analytics"
                 description="Mini insights for screening outcomes, completion, and clinic alerts."
             />
-            <div className="grid gap-4 lg:grid-cols-3">
+            <div className="grid gap-4 lg:grid-cols-2">
                 <HealthStatusDistribution />
-                <MeasurementCompletionCard />
                 <motion.article
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}

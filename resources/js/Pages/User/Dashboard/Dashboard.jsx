@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Circle, HeartPulse, Ruler, Scale, Thermometer } from "lucide-react";
+import { ArrowRight, CheckCircle2, Circle, FileClock, HeartPulse, HelpCircle, LogOut, Palette, Printer, RefreshCcw, Ruler, Scale, Thermometer, UserRound } from "lucide-react";
 import Header from "../components/Header";
 import { useToast } from "../../Global/Toast";
 import { authService, getErrorMessage } from "../../Auth/services/authService";
 import DashboardSkeleton, { USER_DASHBOARD_SKELETON_MIN_MS } from "./components/DashboardSkeleton";
+import { useAssistant } from "../AI-Assistant/context/AssistantProvider";
 
 const hasReading = (value) => value !== null && value !== undefined && value !== "";
 
@@ -52,11 +53,81 @@ const measurementCards = [
     },
 ];
 
+const assistantHelpItems = [
+    {
+        key: "records",
+        title: "How to view health records",
+        icon: FileClock,
+        hint: "records",
+        answer: "To view Health Records, tap your account menu at the top right, then press Health Records. You can view details and print a receipt again inside the details screen.",
+    },
+    {
+        key: "profile",
+        title: "How to view my profile",
+        icon: UserRound,
+        hint: "profile",
+        answer: "To view your profile, tap your account menu at the top right, then press Profile. Your account information will open in a side panel.",
+    },
+    {
+        key: "appearance",
+        title: "How to change appearance",
+        icon: Palette,
+        hint: "appearance",
+        answer: "To change appearance, press the Appearance button at the top. You can choose light mode, dark mode, or follow the system theme.",
+    },
+    {
+        key: "print",
+        title: "How to print results",
+        icon: Printer,
+        hint: "results",
+        answer: "To print your health result, press Review Results, then press Print receipt. Please wait for the receipt to finish printing.",
+    },
+    {
+        key: "repeat",
+        title: "How to check again",
+        icon: RefreshCcw,
+        hint: "measure",
+        answer: "If you want to make sure your result is accurate, press Check Again or Continue measurements, then choose the measurement you want to repeat.",
+    },
+    {
+        key: "logout",
+        title: "How to log out",
+        icon: LogOut,
+        hint: "logout",
+        answer: "To log out, tap your account menu at the top right, press Logout, then confirm. The kiosk will return to the login screen.",
+    },
+];
+
+const revealViewport = { once: false, amount: 0.18, margin: "0px 0px -80px 0px" };
+const revealVariants = {
+    hidden: { opacity: 0, y: 34, filter: "blur(3px)" },
+    visible: {
+        opacity: 1,
+        y: 0,
+        filter: "blur(0px)",
+        transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] },
+    },
+};
+
+const softRevealVariants = {
+    hidden: { opacity: 0, y: 22 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.45, ease: "easeOut" },
+    },
+};
+
 export default function Dashboard({ navigate }) {
     const { showToast } = useToast();
+    const { enabled: assistantEnabled, speak } = useAssistant();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [showStartHint, setShowStartHint] = useState(false);
+    const [activeHelpHint, setActiveHelpHint] = useState(null);
+    const helpHintTimer = useRef(null);
     const shouldReduceMotion = useReducedMotion();
+    const stableMeasurementCards = useMemo(() => measurementCards, []);
 
     useEffect(() => {
         let alive = true;
@@ -102,15 +173,33 @@ export default function Dashboard({ navigate }) {
         navigate("/login");
     };
 
+    const showHelpTargetHint = (hint) => {
+        if (helpHintTimer.current) {
+            window.clearTimeout(helpHintTimer.current);
+        }
+
+        setActiveHelpHint(hint);
+        helpHintTimer.current = window.setTimeout(() => setActiveHelpHint(null), 8000);
+    };
+
+    useEffect(() => {
+        return () => {
+            if (helpHintTimer.current) {
+                window.clearTimeout(helpHintTimer.current);
+            }
+        };
+    }, []);
+
     const user = data?.user || {};
     const metrics = data?.metrics || {};
     const firstName = user?.firstname || "User";
-    const progressItems = measurementCards.map((card) => ({
+    const progressItems = stableMeasurementCards.map((card) => ({
         key: card.key,
         title: card.title,
         complete: card.isComplete(metrics),
     }));
     const completedCount = progressItems.filter((item) => item.complete).length;
+    const allMeasurementsComplete = completedCount === progressItems.length;
     const progressPercent = Math.round((completedCount / progressItems.length) * 100);
     const missingItems = progressItems.filter((item) => ! item.complete).map((item) => item.title);
     const progressMessage = completedCount === 0
@@ -118,6 +207,25 @@ export default function Dashboard({ navigate }) {
         : completedCount === progressItems.length
             ? "All required readings are captured for this kiosk session."
             : `${completedCount} of ${progressItems.length} readings captured. Missing ${missingItems.join(", ")}.`;
+
+    useEffect(() => {
+        if (!loading && assistantEnabled) {
+            if (allMeasurementsComplete) {
+                speak(`${firstName}, all required health readings are complete. Please press Review Results to view or print your health result. You may press Start Measurement only if you want to check again.`);
+                setShowStartHint(false);
+                return undefined;
+            }
+
+            speak(`Welcome, ${firstName}. To check your health, press Start Measurement and choose the measurement you want to take.`);
+            setShowStartHint(true);
+
+            const timer = window.setTimeout(() => setShowStartHint(false), 8000);
+            return () => window.clearTimeout(timer);
+        }
+
+        setShowStartHint(false);
+        return undefined;
+    }, [allMeasurementsComplete, assistantEnabled, firstName, loading, speak]);
 
     return (
         <AnimatePresence mode="wait" initial={false}>
@@ -135,17 +243,19 @@ export default function Dashboard({ navigate }) {
                 >
                     <div className="mx-auto max-w-7xl">
                         <motion.div
-                            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={shouldReduceMotion ? { duration: 0.01 } : { duration: 0.24, ease: "easeOut" }}
+                            initial={shouldReduceMotion ? { opacity: 1 } : "hidden"}
+                            whileInView={shouldReduceMotion ? { opacity: 1 } : "visible"}
+                            viewport={revealViewport}
+                            variants={softRevealVariants}
                         >
-                            <Header user={user} onLogout={logout} navigate={navigate} />
+                            <Header user={user} onLogout={logout} navigate={navigate} guidedHint={activeHelpHint} />
                         </motion.div>
 
                 <motion.section
-                    initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 0.22, duration: 0.28, ease: "easeOut" }}
+                    initial={shouldReduceMotion ? { opacity: 1 } : "hidden"}
+                    whileInView={shouldReduceMotion ? { opacity: 1 } : "visible"}
+                    viewport={revealViewport}
+                    variants={revealVariants}
                     className="mt-8 grid gap-5 lg:grid-cols-[1.35fr_0.65fr]"
                 >
                     <div
@@ -170,13 +280,31 @@ export default function Dashboard({ navigate }) {
                         <div className="mt-8 flex flex-wrap gap-3">
                             <button
                                 type="button"
-                                onClick={() => navigate("/measurements")}
-                                className="flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-black text-white transition hk-primary-hover"
+                                onClick={() => {
+                                    setShowStartHint(false);
+                                    speak(allMeasurementsComplete ? "You can repeat a measurement to confirm your result. Choose the health check you want to take again." : "startMeasurement");
+                                    navigate("/measurements");
+                                }}
+                                className={`flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-black text-white transition hk-primary-hover ${showStartHint || activeHelpHint === "measure" ? "hk-start-measure-hint" : ""}`}
                                 style={{ backgroundColor: "var(--color-primary)" }}
                             >
-                                Start Measurement
+                                {allMeasurementsComplete ? "Check Again" : "Start Measurement"}
                                 <ArrowRight size={18} />
                             </button>
+                            {allMeasurementsComplete ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        speak("Opening your health results. You can print your receipt on the results screen.");
+                                        navigate("/results");
+                                    }}
+                                    className={`flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-black text-white transition hk-primary-hover ${activeHelpHint === "results" || allMeasurementsComplete ? "hk-flow-action-hint" : ""}`}
+                                    style={{ backgroundColor: "var(--color-success)" }}
+                                >
+                                    Review Results
+                                    <ArrowRight size={18} />
+                                </button>
+                            ) : null}
                             <div
                                 className="flex items-center gap-2 rounded-2xl border px-5 py-4 text-sm font-black"
                                 style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
@@ -187,50 +315,37 @@ export default function Dashboard({ navigate }) {
                         </div>
                     </div>
 
-                    <div className="grid gap-5">
+                    <div>
                         <article className="rounded-[2rem] border p-6 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
-                            <p className="text-sm font-black">Kiosk readiness</p>
-                            <div className="mt-5 space-y-4">
-                                {["Scanner connected", "Sensors idle", "Receipt printer ready"].map((item) => (
-                                    <div key={item} className="flex items-center justify-between">
-                                        <span className="text-sm font-bold" style={{ color: "var(--color-muted)" }}>{item}</span>
-                                        <CheckCircle2 size={18} style={{ color: "var(--color-success)" }} />
-                                    </div>
-                                ))}
+                            <div className="flex items-start gap-3">
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: "var(--color-surface)", color: "var(--color-primary)" }}>
+                                    <HelpCircle size={22} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-black">Voice help</p>
+                                    <p className="mt-1 text-xs leading-5" style={{ color: "var(--color-muted)" }}>
+                                        Tap a question to hear a fixed assistant answer.
+                                    </p>
+                                </div>
                             </div>
-                        </article>
-
-                        <article className="rounded-[2rem] border p-6 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
-                            <div className="flex items-center justify-between">
-                                <p className="text-sm font-black">Measurement progress</p>
-                                <span className="text-sm font-black" style={{ color: "var(--color-primary)" }}>{progressPercent}%</span>
-                            </div>
-                            <div className="mt-4 h-3 overflow-hidden rounded-full" style={{ backgroundColor: "var(--color-surface)" }}>
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${progressPercent}%` }}
-                                    transition={{ duration: 0.45, ease: "easeOut" }}
-                                    className="h-full rounded-full"
-                                    style={{ backgroundColor: "var(--color-primary)" }}
-                                />
-                            </div>
-                            <p className="mt-4 text-sm font-bold leading-6" style={{ color: "var(--color-muted)" }}>
-                                {completedCount} / {progressItems.length} completed
-                            </p>
-                            <p className="mt-1 text-sm leading-6" style={{ color: "var(--color-muted)" }}>
-                                {progressMessage}
-                            </p>
-                            <div className="mt-4 grid gap-2">
-                                {progressItems.map((item) => {
-                                    const Icon = item.complete ? CheckCircle2 : Circle;
+                            <div className="mt-5 grid gap-3">
+                                {assistantHelpItems.map((item) => {
+                                    const Icon = item.icon;
 
                                     return (
-                                        <div key={item.key} className="flex items-center justify-between gap-3 text-xs font-black">
-                                            <span style={{ color: item.complete ? "var(--color-text)" : "var(--color-muted)" }}>
-                                                {item.title}
-                                            </span>
-                                            <Icon size={16} style={{ color: item.complete ? "var(--color-success)" : "var(--color-muted)" }} />
-                                        </div>
+                                        <button
+                                            key={item.key}
+                                            type="button"
+                                            onClick={() => {
+                                                speak(item.answer);
+                                                showHelpTargetHint(item.hint);
+                                            }}
+                                            className="flex items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm font-black transition hk-soft-hover"
+                                            style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-text)" }}
+                                        >
+                                            <Icon size={17} style={{ color: "var(--color-primary)" }} />
+                                            <span className="min-w-0 flex-1">{item.title}</span>
+                                        </button>
                                     );
                                 })}
                             </div>
@@ -238,7 +353,60 @@ export default function Dashboard({ navigate }) {
                     </div>
                 </motion.section>
 
-                <section className="mt-8 border-t pt-6" style={{ borderColor: "var(--color-border)" }}>
+                <motion.section
+                    initial={shouldReduceMotion ? { opacity: 1 } : "hidden"}
+                    whileInView={shouldReduceMotion ? { opacity: 1 } : "visible"}
+                    viewport={revealViewport}
+                    variants={revealVariants}
+                    className="mt-[29px]"
+                >
+                    <article className="rounded-[2rem] border p-6 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <p className="text-sm font-black">Measurement progress</p>
+                                <p className="mt-1 text-sm" style={{ color: "var(--color-muted)" }}>
+                                    {completedCount} / {progressItems.length} completed
+                                </p>
+                            </div>
+                            <span className="text-2xl font-black" style={{ color: "var(--color-primary)" }}>{progressPercent}%</span>
+                        </div>
+                        <div className="mt-4 h-3 overflow-hidden rounded-full" style={{ backgroundColor: "var(--color-surface)" }}>
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${progressPercent}%` }}
+                                transition={{ duration: 0.45, ease: "easeOut" }}
+                                className="h-full rounded-full"
+                                style={{ backgroundColor: "var(--color-primary)" }}
+                            />
+                        </div>
+                        <p className="mt-4 text-sm leading-6" style={{ color: "var(--color-muted)" }}>
+                            {progressMessage}
+                        </p>
+                        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            {progressItems.map((item) => {
+                                const Icon = item.complete ? CheckCircle2 : Circle;
+
+                                return (
+                                    <div key={item.key} className="flex items-center justify-between gap-3 rounded-2xl border p-4 text-sm font-black" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
+                                        <span style={{ color: item.complete ? "var(--color-text)" : "var(--color-muted)" }}>
+                                            {item.title}
+                                        </span>
+                                        <Icon size={18} style={{ color: item.complete ? "var(--color-success)" : "var(--color-muted)" }} />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </article>
+                </motion.section>
+
+                <motion.section
+                    initial={shouldReduceMotion ? { opacity: 1 } : "hidden"}
+                    whileInView={shouldReduceMotion ? { opacity: 1 } : "visible"}
+                    viewport={{ once: false, amount: 0.12, margin: "0px 0px -100px 0px" }}
+                    variants={revealVariants}
+                    className="mt-8 border-t pt-6"
+                    style={{ borderColor: "var(--color-border)" }}
+                >
                     <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
                         <div>
                             <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--color-primary)" }}>
@@ -260,17 +428,19 @@ export default function Dashboard({ navigate }) {
                     <motion.div
                         className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
                         initial="hidden"
-                        animate="show"
+                        whileInView="show"
+                        viewport={{ once: false, amount: 0.2 }}
+                        layout={false}
                         variants={{
                             hidden: {},
                             show: {
                                 transition: shouldReduceMotion
                                     ? { staggerChildren: 0 }
-                                    : { delayChildren: 0.52, staggerChildren: 0.12 },
+                                    : { staggerChildren: 0.06 },
                             },
                         }}
                     >
-                        {measurementCards.map((card, index) => {
+                        {stableMeasurementCards.map((card) => {
                             const Icon = card.icon;
                             const readings = card.readings(metrics);
                             const hasValue = card.isComplete(metrics);
@@ -278,21 +448,23 @@ export default function Dashboard({ navigate }) {
                             return (
                                 <motion.article
                                     key={card.key}
+                                    layout={false}
                                     variants={{
                                         hidden: shouldReduceMotion
-                                            ? { opacity: 1 }
-                                            : { opacity: 0, y: 26, scale: 0.975 },
+                                            ? { opacity: 1, y: 0 }
+                                            : { opacity: 0, y: 16 },
                                         show: {
                                             opacity: 1,
                                             y: 0,
-                                            scale: 1,
                                             transition: shouldReduceMotion
                                                 ? { duration: 0.01 }
-                                                : { duration: 0.52, ease: [0.16, 1, 0.3, 1] },
+                                                : { duration: 0.48, ease: "easeOut" },
                                         },
+                                        exit: shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 },
                                     }}
-                                    className="cursor-default transform-gpu rounded-[1.5rem] border p-5 shadow-sm will-change-transform"
-                                    style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
+                                    transformTemplate={(_, generated) => `${generated} translateZ(0)`}
+                                    className="cursor-default transform-gpu rounded-[1.5rem] border p-5 shadow-sm"
+                                    style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", willChange: "transform, opacity" }}
                                 >
                                     <div className="flex items-start justify-between gap-4">
                                         <div
@@ -328,7 +500,7 @@ export default function Dashboard({ navigate }) {
                             );
                         })}
                     </motion.div>
-                </section>
+                </motion.section>
                     </div>
                 </motion.main>
             )}

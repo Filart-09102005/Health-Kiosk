@@ -8,8 +8,8 @@ export default function HealthStatusChart() {
     const data = useMemo(
         () => [
             { name: "Normal", value: 68, color: theme.success },
-            { name: "Watch", value: 22, color: theme.primary },
-            { name: "Alert", value: 10, color: theme.error },
+            { name: "Needs Review", value: 22, color: theme.primary },
+            { name: "High Risk", value: 10, color: theme.error },
         ],
         [theme],
     );

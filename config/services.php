@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'thermal_printer' => [
+        'path' => env('THERMAL_PRINTER_PATH'),
+        'school_name' => env('THERMAL_RECEIPT_SCHOOL_NAME', env('APP_NAME', 'Health Kiosk')),
+        'cut' => env('THERMAL_PRINTER_CUT', true),
+    ],
+
 ];

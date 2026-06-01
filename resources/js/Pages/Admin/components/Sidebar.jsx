@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     Activity,
     BarChart3,
@@ -17,8 +17,6 @@ import {
     UserCog,
     UsersRound,
 } from "lucide-react";
-import { sidebarMotion, sidebarPanelStyle } from "../Animations/sidebarMotion";
-import { useSidebarUI } from "../hooks/useSidebarUI";
 
 const mainItems = [
     { label: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
@@ -44,141 +42,262 @@ const accountItems = [
     { label: "Profile", icon: UserCog, path: "/admin/profile" },
 ];
 
-export default function Sidebar({ navigate, pathname = "" }) {
-    const [collapsed, setCollapsed] = useState(false);
-    const [userManagementOpen, setUserManagementOpen] = useState(false);
-    const activePath = pathname;
-    const userManagementActive = useMemo(
-        () => userItems.some((item) => item.path === activePath),
-        [activePath],
-    );
-    const {
-        tooltipRef,
-        tooltipLabelRef,
-        flyoutRef,
-        showTooltip,
-        hideTooltip,
-        openUserFlyout,
-        scheduleUserFlyoutClose,
-        keepUserFlyoutOpen,
-        closeFloatingUI,
-    } = useSidebarUI({ collapsed });
+const SIDEBAR_SCROLL_KEY = "healthKioskAdminSidebarScrollTop";
+const SIDEBAR_USER_GROUP_KEY = "healthKioskAdminSidebarUserGroupOpen";
+const SIDEBAR_COLLAPSED_KEY = "healthKioskAdminSidebarCollapsed";
+const SIDEBAR_ACTIVE_PATH_KEY = "healthKioskAdminSidebarActivePath";
 
-    const toggleCollapsed = useCallback(() => {
-        closeFloatingUI();
-        setCollapsed((current) => ! current);
-    }, [closeFloatingUI]);
+export default function Sidebar({ navigate, pathname }) {
+    const [collapsed, setCollapsed] = useState(() => window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true");
+    const [userManagementOpen, setUserManagementOpen] = useState(() => window.localStorage.getItem(SIDEBAR_USER_GROUP_KEY) === "true");
+    const [tooltip, setTooltip] = useState(null);
+    const [userFlyout, setUserFlyout] = useState(null);
+    const sidebarScrollRef = useRef(null);
+    const activeItemRef = useRef(null);
+    const flyoutTimer = useRef(null);
+    const saveScrollFrame = useRef(null);
+    const currentPath = pathname || window.location.pathname;
+    const userManagementActive = userItems.some((item) => item.path === currentPath);
 
-    const handleNavigate = useCallback((path) => {
-        closeFloatingUI();
-        if (path && navigate) navigate(path);
-    }, [closeFloatingUI, navigate]);
-
-    const toggleUserManagement = useCallback((event) => {
-        if (collapsed) {
-            openUserFlyout(event);
-            return;
+    useEffect(() => {
+        if (userManagementActive && !collapsed) {
+            setUserManagementOpen(true);
         }
+    }, [collapsed, userManagementActive]);
 
-        setUserManagementOpen((current) => ! current);
-    }, [collapsed, openUserFlyout]);
+    useEffect(() => {
+        window.localStorage.setItem(SIDEBAR_ACTIVE_PATH_KEY, currentPath);
+    }, [currentPath]);
+
+    useEffect(() => {
+        window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "true" : "false");
+    }, [collapsed]);
+
+    useEffect(() => {
+        window.localStorage.setItem(SIDEBAR_USER_GROUP_KEY, userManagementOpen ? "true" : "false");
+    }, [userManagementOpen]);
+
+    useEffect(() => {
+        const scroller = sidebarScrollRef.current;
+        if (!scroller) return undefined;
+
+        const storedScrollTop = Number(window.localStorage.getItem(SIDEBAR_SCROLL_KEY) || 0);
+        scroller.scrollTop = storedScrollTop;
+
+        const frame = window.requestAnimationFrame(() => {
+            const activeItem = activeItemRef.current;
+            if (!activeItem) return;
+
+            const scrollerRect = scroller.getBoundingClientRect();
+            const activeRect = activeItem.getBoundingClientRect();
+            const isAbove = activeRect.top < scrollerRect.top + 12;
+            const isBelow = activeRect.bottom > scrollerRect.bottom - 12;
+
+            if (isAbove || isBelow) {
+                activeItem.scrollIntoView({ block: "center", behavior: "auto" });
+            }
+        });
+
+        return () => window.cancelAnimationFrame(frame);
+    }, [collapsed, currentPath, userManagementOpen]);
+
+    useEffect(() => {
+        return () => {
+            if (saveScrollFrame.current) {
+                window.cancelAnimationFrame(saveScrollFrame.current);
+            }
+        };
+    }, []);
+
+    const showTooltip = (label, event) => {
+        if (! collapsed) return;
+
+        const rect = event.currentTarget.getBoundingClientRect();
+        setTooltip({
+            label,
+            top: rect.top + rect.height / 2,
+        });
+    };
+
+    const hideTooltip = () => setTooltip(null);
+    const saveSidebarScroll = () => {
+        if (saveScrollFrame.current) return;
+
+        saveScrollFrame.current = window.requestAnimationFrame(() => {
+            const scroller = sidebarScrollRef.current;
+            if (scroller) {
+                window.localStorage.setItem(SIDEBAR_SCROLL_KEY, String(scroller.scrollTop));
+            }
+            saveScrollFrame.current = null;
+        });
+    };
+    const openUserFlyout = (event) => {
+        if (! collapsed) return;
+
+        window.clearTimeout(flyoutTimer.current);
+
+        const rect = event.currentTarget.getBoundingClientRect();
+        setTooltip(null);
+        setUserFlyout({
+            top: rect.top + rect.height / 2,
+        });
+    };
+    const scheduleUserFlyoutClose = () => {
+        flyoutTimer.current = window.setTimeout(() => setUserFlyout(null), 120);
+    };
+    const keepUserFlyoutOpen = () => {
+        window.clearTimeout(flyoutTimer.current);
+    };
+    const goTo = (path) => {
+        if (sidebarScrollRef.current) {
+            window.localStorage.setItem(SIDEBAR_SCROLL_KEY, String(sidebarScrollRef.current.scrollTop));
+        }
+        hideTooltip();
+        setUserFlyout(null);
+
+        if (path && navigate) navigate(path);
+    };
 
     return (
-        <aside className={sidebarMotion.shell} data-collapsed={collapsed} style={{ color: "var(--color-text)" }}>
-            <div className={sidebarMotion.inner} style={sidebarPanelStyle}>
+        <aside
+            className={`sticky top-6 hidden h-[calc(100vh-3rem)] shrink-0 px-6 pb-6 lg:block ${collapsed ? "w-[8.5rem]" : "w-[21.5rem]"}`}
+            style={{ color: "var(--color-text)" }}
+        >
+            <div
+                className="flex h-full flex-col rounded-2xl border shadow-xl backdrop-blur-xl"
+                style={{
+                    backgroundColor: "color-mix(in srgb, var(--color-card) 92%, transparent)",
+                    borderColor: "var(--color-border)",
+                }}
+            >
                 <div
                     className="relative flex h-[5.75rem] shrink-0 items-center border-b px-4"
                     style={{ borderColor: "var(--color-border)" }}
                 >
                     <button
                         type="button"
-                        onClick={toggleCollapsed}
-                        className="fixed z-50 flex h-7 w-7 items-center justify-center rounded-full border shadow-sm hk-soft-hover"
-                        style={{
-                            left: collapsed ? "5.55rem" : "18.55rem",
-                            top: "5.85rem",
-                            backgroundColor: "var(--color-card)",
-                            borderColor: "var(--color-border)",
-                        }}
+                        onClick={() => setCollapsed((current) => ! current)}
+                        className="absolute -right-3 bottom-0 z-20 flex h-7 w-7 translate-y-1/2 items-center justify-center rounded-full border shadow-md hk-soft-hover"
+                        style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
                         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                     >
                         {collapsed ? <ChevronsRight size={13} /> : <ChevronsLeft size={13} />}
                     </button>
 
-                    <div className="flex w-full items-center gap-3">
+                    <div className={collapsed ? "flex w-full items-center justify-center" : "flex w-full items-center gap-3"}>
                         <div
-                            className="sidebar-logo flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
+                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
                             style={{ backgroundColor: "var(--color-text)", color: "var(--color-bg)" }}
                         >
                             <HeartPulse size={21} />
                         </div>
 
-                        <div className={sidebarMotion.label}>
-                            <p className="truncate text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--color-muted)" }}>
-                                Health Kiosk
-                            </p>
-                            <p className="truncate text-base font-black">Admin Console</p>
-                            <p className="truncate text-xs font-bold" style={{ color: "var(--color-muted)" }}>
-                                Clinic management
-                            </p>
-                        </div>
+                        {! collapsed ? (
+                            <div className="min-w-0 overflow-hidden">
+                                <p className="truncate text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--color-muted)" }}>
+                                    Health Kiosk
+                                </p>
+                                <p className="truncate text-base font-black">Admin Console</p>
+                                <p className="truncate text-xs font-bold" style={{ color: "var(--color-muted)" }}>
+                                    Clinic management
+                                </p>
+                            </div>
+                        ) : null}
                     </div>
                 </div>
 
-                <nav className="hk-sidebar-scroll min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-5">
+                <nav
+                    ref={sidebarScrollRef}
+                    onScroll={saveSidebarScroll}
+                    className="hk-sidebar-scroll min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-5"
+                >
                     <SidebarSection label="Main" collapsed={collapsed}>
                         {mainItems.map((item) => (
                             <SidebarItem
-                                key={item.path}
-                                item={item}
-                                active={activePath === item.path}
+                                key={item.label}
+                                item={{ ...item, active: currentPath === item.path }}
+                                activeRef={activeItemRef}
                                 collapsed={collapsed}
                                 onShowTooltip={showTooltip}
                                 onHideTooltip={hideTooltip}
-                                onNavigate={handleNavigate}
+                                onClick={() => goTo(item.path)}
                             />
                         ))}
                     </SidebarSection>
 
                     <SidebarSection label="User Management" collapsed={collapsed} hideLabel>
-                        <UserManagementButton
-                            active={userManagementActive}
-                            collapsed={collapsed}
-                            open={userManagementOpen}
-                            onMouseEnter={openUserFlyout}
-                            onMouseLeave={scheduleUserFlyoutClose}
-                            onClick={toggleUserManagement}
-                        />
+                        <button
+                            type="button"
+                            onMouseEnter={(event) => {
+                                if (collapsed) openUserFlyout(event);
+                            }}
+                            onMouseLeave={() => {
+                                if (collapsed) scheduleUserFlyoutClose();
+                            }}
+                            onClick={(event) => {
+                                if (collapsed) {
+                                    openUserFlyout(event);
+                                    return;
+                                }
 
-                        <div
-                            className="sidebar-tree relative ml-5 mt-1 space-y-1 overflow-hidden pl-4"
-                            data-open={userManagementOpen && ! collapsed}
+                                setUserManagementOpen((current) => ! current);
+                            }}
+                            aria-expanded={userManagementOpen}
+                            ref={userManagementActive && (collapsed || !userManagementOpen) ? activeItemRef : null}
+                            className={collapsed
+                                ? `group mx-auto flex h-12 w-12 items-center justify-center rounded-xl text-sm font-black hk-sidebar-collapsed-item hk-sidebar-nav-item${userManagementActive ? " hk-sidebar-nav-item--active" : ""}`
+                                : `group flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-black hk-sidebar-nav-item${userManagementActive ? " hk-sidebar-nav-item--active" : " hk-admin-nav-hover"}`
+                            }
+                            style={{
+                                backgroundColor: "transparent",
+                                color: userManagementActive ? "var(--color-text)" : "var(--color-muted)",
+                            }}
                         >
-                            <span
-                                className="absolute bottom-5 left-0 top-0 w-px"
-                                style={{ backgroundColor: "var(--color-border)" }}
-                            />
-                            {userItems.map((item) => (
-                                <TreeItem
-                                    key={item.path}
-                                    item={item}
-                                    active={activePath === item.path}
-                                    onNavigate={handleNavigate}
+                            {collapsed ? (
+                                <UsersRound size={18} />
+                            ) : (
+                                <>
+                                    <UsersRound size={18} className="shrink-0" />
+                                    <span className="min-w-0 flex-1 truncate">User Management</span>
+                                </>
+                            )}
+                            {! collapsed ? (
+                                <ChevronDown
+                                    size={15}
+                                    className="shrink-0"
+                                    style={{ transform: userManagementOpen ? "rotate(0deg)" : "rotate(-90deg)" }}
                                 />
-                            ))}
-                        </div>
+                            ) : null}
+                        </button>
+
+                        {userManagementOpen && ! collapsed ? (
+                            <div className="relative ml-5 mt-1 space-y-1 pl-4">
+                                <span
+                                    className="absolute bottom-5 left-0 top-0 w-px"
+                                    style={{ backgroundColor: "var(--color-border)" }}
+                                />
+                                {userItems.map((item) => (
+                                    <TreeItem
+                                        key={item.label}
+                                        item={{ ...item, active: currentPath === item.path }}
+                                        activeRef={activeItemRef}
+                                        onClick={() => goTo(item.path)}
+                                    />
+                                ))}
+                            </div>
+                        ) : null}
                     </SidebarSection>
 
                     <SidebarSection label="System" collapsed={collapsed}>
                         {systemItems.map((item) => (
                             <SidebarItem
-                                key={item.path}
-                                item={item}
-                                active={activePath === item.path}
+                                key={item.label}
+                                item={{ ...item, active: currentPath === item.path }}
+                                activeRef={activeItemRef}
                                 collapsed={collapsed}
                                 onShowTooltip={showTooltip}
                                 onHideTooltip={hideTooltip}
-                                onNavigate={handleNavigate}
+                                onClick={() => goTo(item.path)}
                             />
                         ))}
                     </SidebarSection>
@@ -186,109 +305,157 @@ export default function Sidebar({ navigate, pathname = "" }) {
                     <SidebarSection label="Account" collapsed={collapsed}>
                         {accountItems.map((item) => (
                             <SidebarItem
-                                key={item.path}
-                                item={item}
-                                active={activePath === item.path}
+                                key={item.label}
+                                item={{ ...item, active: currentPath === item.path }}
+                                activeRef={activeItemRef}
                                 collapsed={collapsed}
                                 onShowTooltip={showTooltip}
                                 onHideTooltip={hideTooltip}
-                                onNavigate={handleNavigate}
+                                onClick={() => goTo(item.path)}
                             />
                         ))}
                     </SidebarSection>
                 </nav>
 
                 <footer className="shrink-0 border-t p-3" style={{ borderColor: "var(--color-border)" }}>
-                    <SidebarFooter collapsed={collapsed} onShowTooltip={showTooltip} onHideTooltip={hideTooltip} />
+                    <div
+                        onMouseEnter={(event) => showTooltip("Health Kiosk admin", event)}
+                        onMouseLeave={hideTooltip}
+                        className={collapsed
+                            ? "flex h-14 items-center justify-center rounded-xl border px-0"
+                            : "flex h-14 items-center gap-3 rounded-xl border px-3"
+                        }
+                        style={{
+                            backgroundColor: "var(--color-surface)",
+                            borderColor: "var(--color-border)",
+                        }}
+                    >
+                        <div
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-black"
+                            style={{ backgroundColor: "var(--color-text)", color: "var(--color-bg)" }}
+                        >
+                            HK
+                        </div>
+                        {! collapsed ? (
+                            <div className="min-w-0 overflow-hidden">
+                                <p className="truncate text-sm font-black">Health Kiosk</p>
+                                <p className="truncate text-xs font-bold" style={{ color: "var(--color-muted)" }}>
+                                    Admin access active
+                                </p>
+                            </div>
+                        ) : null}
+                    </div>
                 </footer>
             </div>
 
-            <SidebarTooltip tooltipRef={tooltipRef} tooltipLabelRef={tooltipLabelRef} />
-            <UserFlyout
-                flyoutRef={flyoutRef}
-                activePath={activePath}
-                onMouseEnter={keepUserFlyoutOpen}
-                onMouseLeave={scheduleUserFlyoutClose}
-                onNavigate={handleNavigate}
-            />
+            {tooltip ? (
+                <div
+                    className="pointer-events-none fixed z-50 rounded-xl border px-3 py-2 text-xs font-black shadow-lg"
+                    style={{
+                        left: "6.4rem",
+                        top: tooltip.top,
+                        transform: "translateY(-50%)",
+                        backgroundColor: "var(--color-card)",
+                        borderColor: "var(--color-border)",
+                        color: "var(--color-text)",
+                    }}
+                >
+                    {tooltip.label}
+                </div>
+            ) : null}
+
+            {userFlyout ? (
+                <div
+                    onMouseEnter={keepUserFlyoutOpen}
+                    onMouseLeave={scheduleUserFlyoutClose}
+                    className="fixed z-50 w-56 rounded-[14px] border p-2 shadow-lg"
+                    style={{
+                        left: "6.4rem",
+                        top: userFlyout.top,
+                        transform: "translateY(-50%)",
+                        backgroundColor: "var(--color-card)",
+                        borderColor: "var(--color-border)",
+                        color: "var(--color-text)",
+                    }}
+                >
+                    <div className="border-b px-3 py-2" style={{ borderColor: "var(--color-border)" }}>
+                        <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--color-muted)" }}>
+                            User Management
+                        </p>
+                    </div>
+                    <div className="mt-2 space-y-1">
+                        {userItems.map((item) => (
+                            <FlyoutItem
+                                key={item.label}
+                                item={{ ...item, active: currentPath === item.path }}
+                                onClick={() => goTo(item.path)}
+                            />
+                        ))}
+                    </div>
+                </div>
+            ) : null}
         </aside>
     );
 }
 
-const SidebarSection = memo(function SidebarSection({ label, collapsed, hideLabel = false, children }) {
+function SidebarSection({ label, collapsed, hideLabel = false, children }) {
     return (
         <div className="mb-4">
-            {! hideLabel ? (
-                <p className={sidebarMotion.sectionLabel} data-collapsed={collapsed} style={{ color: "var(--color-muted)" }}>
+            {! collapsed && ! hideLabel ? (
+                <p className="mb-2 px-3 text-[0.68rem] font-black uppercase tracking-[0.18em]" style={{ color: "var(--color-muted)" }}>
                     {label}
                 </p>
             ) : null}
             <div className="space-y-1">{children}</div>
         </div>
     );
-});
+}
 
-const SidebarItem = memo(function SidebarItem({ item, active, collapsed, onShowTooltip, onHideTooltip, onNavigate }) {
+function SidebarItem({ item, activeRef, collapsed, onShowTooltip, onHideTooltip, onClick }) {
     const Icon = item.icon;
-    const handleClick = useCallback(() => onNavigate(item.path), [item.path, onNavigate]);
-    const handleMouseEnter = useCallback((event) => onShowTooltip(item.label, event), [item.label, onShowTooltip]);
 
     return (
         <button
+            ref={item.active ? activeRef : null}
             type="button"
-            onClick={handleClick}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={onHideTooltip}
-            className={`${sidebarMotion.navItem} ${collapsed ? sidebarMotion.navItemCollapsed : sidebarMotion.navItemExpanded}${active ? " hk-sidebar-nav-item--active" : ""}`}
-            style={{
-                backgroundColor: "transparent",
-                color: active ? "var(--color-text)" : "var(--color-muted)",
-            }}
-        >
-            <Icon size={18} className="shrink-0" />
-            <span className={sidebarMotion.label}>{item.label}</span>
-        </button>
-    );
-});
-
-const UserManagementButton = memo(function UserManagementButton({ active, collapsed, open, onMouseEnter, onMouseLeave, onClick }) {
-    return (
-        <button
-            type="button"
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave}
             onClick={onClick}
-            aria-expanded={open}
-            className={`${sidebarMotion.navItem} ${collapsed ? sidebarMotion.navItemCollapsed : sidebarMotion.navItemExpanded}${active ? " hk-sidebar-nav-item--active" : ""}`}
+            onMouseEnter={(event) => onShowTooltip(item.label, event)}
+            onMouseLeave={onHideTooltip}
+            className={collapsed
+                ? `group mx-auto flex h-12 w-12 items-center justify-center rounded-xl text-sm font-black hk-sidebar-collapsed-item hk-sidebar-nav-item${item.active ? " hk-sidebar-nav-item--active" : ""}`
+                : `group flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-black hk-sidebar-nav-item${item.active ? " hk-sidebar-nav-item--active" : " hk-admin-nav-hover"}`
+            }
             style={{
                 backgroundColor: "transparent",
-                color: active ? "var(--color-text)" : "var(--color-muted)",
+                color: item.active ? "var(--color-text)" : "var(--color-muted)",
             }}
         >
-            <UsersRound size={18} className="shrink-0" />
-            <span className={sidebarMotion.label}>User Management</span>
-            <ChevronDown
-                size={15}
-                className="sidebar-chevron shrink-0"
-                data-collapsed={collapsed}
-                style={{ transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}
-            />
+            {collapsed ? (
+                <Icon size={18} />
+            ) : (
+                <>
+                    <Icon size={18} className="shrink-0" />
+                    <span className="min-w-0 flex-1 truncate">
+                        {item.label}
+                    </span>
+                </>
+            )}
         </button>
     );
-});
+}
 
-const TreeItem = memo(function TreeItem({ item, active, onNavigate }) {
+function TreeItem({ item, activeRef, onClick }) {
     const Icon = item.icon;
-    const handleClick = useCallback(() => onNavigate(item.path), [item.path, onNavigate]);
 
     return (
         <button
+            ref={item.active ? activeRef : null}
             type="button"
-            onClick={handleClick}
-            className={`group relative flex h-10 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-bold transition-colors hk-admin-nav-hover hk-sidebar-nav-item${active ? " hk-sidebar-nav-item--active" : ""}`}
+            onClick={onClick}
+            className={`group relative flex h-10 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-bold hk-sidebar-nav-item${item.active ? " hk-sidebar-nav-item--active" : " hk-admin-nav-hover"}`}
             style={{
                 backgroundColor: "transparent",
-                color: active ? "var(--color-text)" : "var(--color-muted)",
+                color: item.active ? "var(--color-text)" : "var(--color-muted)",
             }}
         >
             <span
@@ -299,108 +466,23 @@ const TreeItem = memo(function TreeItem({ item, active, onNavigate }) {
             <span className="min-w-0 truncate">{item.label}</span>
         </button>
     );
-});
+}
 
-const FlyoutItem = memo(function FlyoutItem({ item, active, onNavigate }) {
+function FlyoutItem({ item, onClick }) {
     const Icon = item.icon;
-    const handleClick = useCallback(() => onNavigate(item.path), [item.path, onNavigate]);
 
     return (
         <button
             type="button"
-            onClick={handleClick}
-            className={`group flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-black transition-colors hk-admin-nav-hover hk-sidebar-nav-item${active ? " hk-sidebar-nav-item--active" : ""}`}
+            onClick={onClick}
+            className={`group flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-black hk-sidebar-nav-item${item.active ? " hk-sidebar-nav-item--active" : " hk-admin-nav-hover"}`}
             style={{
                 backgroundColor: "transparent",
-                color: active ? "var(--color-text)" : "var(--color-muted)",
+                color: item.active ? "var(--color-text)" : "var(--color-muted)",
             }}
         >
             <Icon size={17} className="shrink-0" />
             <span className="min-w-0 flex-1 truncate">{item.label}</span>
         </button>
     );
-});
-
-const SidebarFooter = memo(function SidebarFooter({ collapsed, onShowTooltip, onHideTooltip }) {
-    const handleMouseEnter = useCallback((event) => onShowTooltip("Health Kiosk admin", event), [onShowTooltip]);
-
-    return (
-        <div
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={onHideTooltip}
-            className={collapsed
-                ? "flex h-14 w-14 items-center justify-center rounded-xl border px-0 transition-colors"
-                : "flex h-14 items-center gap-3 rounded-xl border px-3 transition-colors"
-            }
-            style={{
-                backgroundColor: "var(--color-surface)",
-                borderColor: "var(--color-border)",
-            }}
-        >
-            <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-black"
-                style={{ backgroundColor: "var(--color-text)", color: "var(--color-bg)" }}
-            >
-                HK
-            </div>
-            <div className={sidebarMotion.label}>
-                <p className="truncate text-sm font-black">Health Kiosk</p>
-                <p className="truncate text-xs font-bold" style={{ color: "var(--color-muted)" }}>
-                    Admin access active
-                </p>
-            </div>
-        </div>
-    );
-});
-
-const SidebarTooltip = memo(function SidebarTooltip({ tooltipRef, tooltipLabelRef }) {
-    return (
-        <div
-            ref={tooltipRef}
-            className={sidebarMotion.tooltip}
-            data-open="false"
-            style={{
-                left: "6.4rem",
-                backgroundColor: "var(--color-card)",
-                borderColor: "var(--color-border)",
-                color: "var(--color-text)",
-            }}
-        >
-            <span ref={tooltipLabelRef} />
-        </div>
-    );
-});
-
-const UserFlyout = memo(function UserFlyout({ flyoutRef, activePath, onMouseEnter, onMouseLeave, onNavigate }) {
-    return (
-        <div
-            ref={flyoutRef}
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave}
-            className={sidebarMotion.flyout}
-            data-open="false"
-            style={{
-                left: "6.4rem",
-                backgroundColor: "var(--color-card)",
-                borderColor: "var(--color-border)",
-                color: "var(--color-text)",
-            }}
-        >
-            <div className="border-b px-3 py-2" style={{ borderColor: "var(--color-border)" }}>
-                <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--color-muted)" }}>
-                    User Management
-                </p>
-            </div>
-            <div className="mt-2 space-y-1">
-                {userItems.map((item) => (
-                    <FlyoutItem
-                        key={item.path}
-                        item={item}
-                        active={activePath === item.path}
-                        onNavigate={onNavigate}
-                    />
-                ))}
-            </div>
-        </div>
-    );
-});
+}

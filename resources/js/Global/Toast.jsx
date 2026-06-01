@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AlertCircle, CheckCircle2, Info, TriangleAlert, X } from "lucide-react";
 
 const ToastContext = createContext(null);
@@ -51,6 +51,16 @@ export function ToastProvider({ children }) {
         },
         [removeToast],
     );
+
+    useEffect(() => {
+        const handleToastEvent = (event) => {
+            showToast(event.detail || {});
+        };
+
+        window.addEventListener("health-kiosk:toast", handleToastEvent);
+
+        return () => window.removeEventListener("health-kiosk:toast", handleToastEvent);
+    }, [showToast]);
 
     const value = useMemo(() => ({ showToast, removeToast }), [showToast, removeToast]);
 

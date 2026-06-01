@@ -3,7 +3,7 @@ import MeasurementBadges from "./MeasurementBadges";
 import RecordActionsDropdown from "./RecordActionsDropdown";
 import SessionStatusBadge from "./SessionStatusBadge";
 
-export default function RecordTableRow({ record, onViewDetails }) {
+export default function RecordTableRow({ record, onViewDetails, onViewSession }) {
     return (
         <tr className="transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,transparent)]">
             <td className="border-b px-3 py-3.5 font-black" style={{ borderColor: "var(--color-border)" }}>{record.schoolId}</td>
@@ -29,7 +29,7 @@ export default function RecordTableRow({ record, onViewDetails }) {
                 <MeasurementBadges completed={record.measurementsCompleted} total={record.measurementsTotal} />
             </td>
             <td className="border-b px-3 py-3.5" style={{ borderColor: "var(--color-border)" }}>
-                <RecordActionsDropdown record={record} onViewDetails={onViewDetails} />
+                <RecordActionsDropdown record={record} onViewDetails={onViewDetails} onViewSession={onViewSession} />
             </td>
         </tr>
     );

@@ -20,7 +20,7 @@ const columns = [
     "Actions",
 ];
 
-export default function RecordsTable({ records, page, totalPages, onPageChange, onViewDetails, totalLabel }) {
+export default function RecordsTable({ records, page, totalPages, onPageChange, onViewDetails, onViewSession, totalLabel }) {
     return (
         <motion.article
             initial={{ opacity: 0, y: 12 }}
@@ -46,12 +46,12 @@ export default function RecordsTable({ records, page, totalPages, onPageChange, 
                     </thead>
                     <tbody>
                         {records.map((record) => (
-                            <RecordTableRow key={record.id} record={record} onViewDetails={onViewDetails} />
+                            <RecordTableRow key={record.id} record={record} onViewDetails={onViewDetails} onViewSession={onViewSession} />
                         ))}
                     </tbody>
                 </table>
             </div>
-            <div className="mt-4">
+            <div className="-mx-5 -mb-5 mt-5 border-t px-5 py-4" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                 <Pagination page={page} totalPages={totalPages} onPageChange={onPageChange} />
             </div>
         </motion.article>

@@ -4,14 +4,14 @@ import { Eye, FileDown, MoreHorizontal, Printer, Radio } from "lucide-react";
 import { printHealthReceipt } from "../../../Global/receiptPrinter";
 import { toReceiptPayload } from "./PrintReceiptButton";
 
-export default function RecordActionsDropdown({ record, onViewDetails }) {
+export default function RecordActionsDropdown({ record, onViewDetails, onViewSession }) {
     const [open, setOpen] = useState(false);
 
     const actions = [
         { label: "View details", icon: Eye, onClick: () => onViewDetails(record) },
+        { label: "View session", icon: Radio, onClick: () => onViewSession(record) },
         { label: "Print receipt", icon: Printer, onClick: () => printHealthReceipt(toReceiptPayload(record)) },
         { label: "Export record", icon: FileDown, onClick: () => setOpen(false) },
-        { label: "View session", icon: Radio, onClick: () => setOpen(false) },
     ];
 
     return (

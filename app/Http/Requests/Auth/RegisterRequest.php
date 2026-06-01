@@ -33,6 +33,27 @@ class RegisterRequest extends FormRequest
             'age' => ['required', 'integer', 'between:5,120'],
             'gender' => ['required', Rule::in(['male', 'female', 'other', 'prefer_not_to_say'])],
             'department' => ['required', Rule::in(['COLLEGE', 'FACULTY', 'BED'])],
+            'grade_level' => [
+                'nullable',
+                Rule::requiredIf(fn () => $this->input('department') === 'BED'),
+                Rule::in(['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12']),
+            ],
+            'strand' => [
+                'nullable',
+                Rule::requiredIf(fn () => $this->input('department') === 'BED'
+                    && in_array($this->input('grade_level'), ['Grade 11', 'Grade 12'], true)),
+                Rule::in(['ABM', 'HUMSS', 'STEM']),
+            ],
+            'year_level' => [
+                'nullable',
+                Rule::requiredIf(fn () => $this->input('department') === 'COLLEGE'),
+                Rule::in(['1st Year', '2nd Year', '3rd Year', '4th Year']),
+            ],
+            'program' => [
+                'nullable',
+                Rule::requiredIf(fn () => $this->input('department') === 'COLLEGE'),
+                Rule::in(['BSIT', 'BSED', 'BEED', 'BSHM', 'BSBA']),
+            ],
             'password' => [
                 'required',
                 'confirmed',
@@ -50,6 +71,10 @@ class RegisterRequest extends FormRequest
             'barcode.unique' => 'This barcode is already registered.',
             'email.ends_with' => 'Please use your school email ending in @smcbi.edu.ph.',
             'password.confirmed' => 'The password confirmation does not match.',
+            'grade_level.required' => 'Please choose a grade level for BED.',
+            'strand.required' => 'Please choose a strand for Grade 11 or Grade 12.',
+            'year_level.required' => 'Please choose a year level for College.',
+            'program.required' => 'Please choose a program for College.',
         ];
     }
 }

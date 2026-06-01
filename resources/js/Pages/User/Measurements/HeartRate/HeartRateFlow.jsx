@@ -8,12 +8,12 @@ export default function HeartRateFlow(props) {
             config={{
                 type: "heart_rate",
                 title: "Heart Rate & SpO2",
-                sensor: "Pulse oximeter",
+                sensor: "Finger pulse oximeter",
                 unit: "bpm/%",
                 icon: HeartPulse,
                 description: "Capture pulse and blood oxygen level using the kiosk oximeter.",
-                instructions: "Sit comfortably, relax your arm, and prepare one finger for the pulse oximeter.",
-                positioning: "Place your finger flat inside the sensor. Keep still while the values stabilize.",
+                instructions: "Stand in front of the kiosk and prepare one finger for the finger pulse oximeter.",
+                positioning: "Place your finger inside the SpO2 sensor. Keep your hand steady while the values stabilize.",
                 format: (value, secondary) => `${Math.round(value)} bpm / ${Math.round(secondary || 0)}%`,
             }}
         />

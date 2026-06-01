@@ -71,7 +71,7 @@ export function useThemeMode() {
     return { mode, resolvedTheme, setMode };
 }
 
-export default function ThemeToggle({ onClick, label = "Appearance" }) {
+export default function ThemeToggle({ onClick, label = "Appearance", className = "" }) {
     const { mode, resolvedTheme, setMode } = useThemeMode();
     const Icon = mode === "system" ? MonitorCog : resolvedTheme === "dark" ? Moon : Sun;
 
@@ -86,7 +86,7 @@ export default function ThemeToggle({ onClick, label = "Appearance" }) {
         <button
             type="button"
             onClick={onClick || cycleTheme}
-            className="theme-toggle"
+            className={`theme-toggle ${className}`}
             aria-label={onClick ? "Open appearance settings" : "Change appearance"}
         >
             <span className="theme-toggle__button-icon">

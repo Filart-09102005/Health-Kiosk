@@ -18,10 +18,6 @@ export default function AnalyticsHeader() {
                         </p>
                     </div>
                 </div>
-                <div className="flex flex-wrap gap-2 text-xs font-black">
-                    <span className="rounded-full px-3 py-1.5" style={{ backgroundColor: "var(--color-surface)" }}>342 measurements today</span>
-                    <span className="rounded-full px-3 py-1.5" style={{ color: "var(--color-success)", backgroundColor: "color-mix(in srgb, var(--color-success) 12%, transparent)" }}>93% completion</span>
-                </div>
             </div>
         </motion.section>
     );

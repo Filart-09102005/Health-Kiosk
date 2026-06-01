@@ -10,6 +10,8 @@ import HeightFlow from "./Height/HeightFlow";
 import WeightFlow from "./Weight/WeightFlow";
 import { measurementService } from "./services/measurementService";
 import MeasurementsSkeleton, { MEASUREMENTS_SKELETON_MIN_MS } from "./components/MeasurementsSkeleton";
+import { useAssistant } from "../AI-Assistant/context/AssistantProvider";
+import { MEASUREMENT_PROMPT_KEYS } from "../AI-Assistant/constants/assistantPrompts";
 
 const measurementOptions = [
     { key: "heart_rate", title: "Heart Rate & SpO2", description: "Pulse and oxygen saturation using the oximeter.", icon: HeartPulse, Flow: HeartRateFlow },
@@ -20,11 +22,20 @@ const measurementOptions = [
 
 export default function Measurements({ navigate }) {
     const { showToast } = useToast();
+    const { enabled: assistantEnabled, speak } = useAssistant();
     const [activeType, setActiveType] = useState(null);
     const [data, setData] = useState({ session: null, record: null });
     const [loading, setLoading] = useState(true);
+    const [showPickerHints, setShowPickerHints] = useState(false);
     const shouldReduceMotion = useReducedMotion();
     const ActiveFlow = measurementOptions.find((item) => item.key === activeType)?.Flow;
+    const allMeasurementsComplete = Boolean(
+        data.record?.heart_rate &&
+        data.record?.spo2 &&
+        data.record?.temperature &&
+        data.record?.height &&
+        data.record?.weight,
+    );
 
     useEffect(() => {
         let alive = true;
@@ -66,10 +77,29 @@ export default function Measurements({ navigate }) {
         navigate("/login");
     };
 
-    const handleSaved = (record) => {
+    const handleSaved = (record, measurementTitle) => {
         setData((current) => ({ ...current, record }));
         setActiveType(null);
+
+        const complete = Boolean(record?.heart_rate && record?.spo2 && record?.temperature && record?.height && record?.weight);
+        if (complete) {
+            speak(`${measurementTitle || "Measurement"} complete. All health checks are finished. Please press Review Results to view and print your health result.`);
+        } else {
+            speak(`${measurementTitle || "Measurement"} complete. Please continue with another health check, or review your results when all measurements are finished.`);
+        }
     };
+
+    useEffect(() => {
+        if (loading || activeType || !assistantEnabled) {
+            setShowPickerHints(false);
+            return undefined;
+        }
+
+        setShowPickerHints(true);
+        const timer = window.setTimeout(() => setShowPickerHints(false), 8000);
+
+        return () => window.clearTimeout(timer);
+    }, [activeType, assistantEnabled, loading]);
 
     return (
         <AnimatePresence mode="wait" initial={false}>
@@ -102,7 +132,7 @@ export default function Measurements({ navigate }) {
                             {ActiveFlow ? (
                                 <ActiveFlow onBack={() => setActiveType(null)} onSaved={handleSaved} showToast={showToast} />
                             ) : (
-                                <MeasurementPicker data={data} navigate={navigate} onSelect={setActiveType} />
+                                <MeasurementPicker data={data} navigate={navigate} onSelect={setActiveType} speak={speak} showHints={showPickerHints} allMeasurementsComplete={allMeasurementsComplete} assistantEnabled={assistantEnabled} />
                             )}
                         </section>
                     </div>
@@ -112,7 +142,7 @@ export default function Measurements({ navigate }) {
     );
 }
 
-function MeasurementPicker({ data, onSelect, navigate }) {
+function MeasurementPicker({ data, onSelect, navigate, speak, showHints, allMeasurementsComplete, assistantEnabled }) {
     const shouldReduceMotion = useReducedMotion();
     const record = data.record;
     const completed = [
@@ -121,6 +151,11 @@ function MeasurementPicker({ data, onSelect, navigate }) {
         record?.height ? "height" : null,
         record?.weight ? "weight" : null,
     ].filter(Boolean);
+
+    const selectMeasurement = (key) => {
+        speak?.(MEASUREMENT_PROMPT_KEYS[key]);
+        onSelect(key);
+    };
 
     return (
         <>
@@ -203,8 +238,8 @@ function MeasurementPicker({ data, onSelect, navigate }) {
                                 },
                             }}
                             whileHover={shouldReduceMotion ? undefined : { y: -4 }}
-                            onClick={() => onSelect(item.key)}
-                            className="group transform-gpu rounded-[1.5rem] border p-5 text-left shadow-sm will-change-transform hover:shadow-2xl"
+                            onClick={() => selectMeasurement(item.key)}
+                            className={`group transform-gpu rounded-[1.5rem] border p-5 text-left shadow-sm will-change-transform hover:shadow-2xl ${showHints && !done ? "hk-measurement-card-hint" : ""}`}
                             style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
                         >
                             <div className="flex items-center justify-between">
@@ -227,7 +262,7 @@ function MeasurementPicker({ data, onSelect, navigate }) {
                                 {item.description}
                             </p>
                             <div className="mt-5 flex items-center justify-between border-t pt-4 text-sm font-black" style={{ borderColor: "var(--color-border)", color: "var(--color-primary)" }}>
-                                <span>{done ? "Retake reading" : "Start reading"}</span>
+                                <span>{done ? "Retake or continue" : "Start reading"}</span>
                                 <ArrowRight size={17} />
                             </div>
                         </motion.button>
@@ -252,8 +287,11 @@ function MeasurementPicker({ data, onSelect, navigate }) {
                 </button>
                 <button
                     type="button"
-                    onClick={() => navigate("/results")}
-                    className="inline-flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-black text-white transition hk-primary-hover"
+                    onClick={() => {
+                        speak?.("results");
+                        navigate("/results");
+                    }}
+                    className={`inline-flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-black text-white transition hk-primary-hover ${assistantEnabled && allMeasurementsComplete ? "hk-flow-action-hint" : ""}`}
                     style={{ backgroundColor: "var(--color-primary)" }}
                 >
                     Review Results

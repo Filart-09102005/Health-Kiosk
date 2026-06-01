@@ -41,6 +41,7 @@ export default function RecordsFilters({
     isSearching,
     onRefresh,
     activeFilterCount,
+    filteredRecords = [],
 }) {
     return (
         <motion.section
@@ -57,6 +58,7 @@ export default function RecordsFilters({
                     isSearching={isSearching}
                     onRefresh={onRefresh}
                     activeFilterCount={activeFilterCount}
+                    filteredRecords={filteredRecords}
                 />
                 <QuickFilters active={quickFilter} onChange={onQuickFilterChange} />
             </div>

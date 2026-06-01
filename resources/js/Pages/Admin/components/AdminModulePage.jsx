@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Search, SlidersHorizontal } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 const statusColor = (status) => {
     const normalized = String(status || "").toLowerCase();
@@ -28,8 +29,28 @@ export default function AdminModulePage({
     columns = [],
     rows = [],
     filters = ["Today", "This week", "All"],
+    showHeaderActions = true,
+    tablePageSize,
     children,
 }) {
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const hasPagedTable = Boolean(tablePageSize && rows.length > tablePageSize);
+    const totalPages = hasPagedTable ? Math.ceil(rows.length / tablePageSize) : 1;
+
+    const visibleRows = useMemo(() => {
+        if (!hasPagedTable) {
+            return rows;
+        }
+
+        const start = (currentPage - 1) * tablePageSize;
+        return rows.slice(start, start + tablePageSize);
+    }, [currentPage, hasPagedTable, rows, tablePageSize]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [rows, tablePageSize]);
+
     return (
         <div className="mt-5 space-y-5">
             <motion.section
@@ -59,23 +80,25 @@ export default function AdminModulePage({
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                        <div
-                            className="flex h-11 items-center gap-2 rounded-xl border px-3"
-                            style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-muted)" }}
-                        >
-                            <Search size={17} />
-                            <span className="text-sm font-bold">Search records</span>
+                    {showHeaderActions ? (
+                        <div className="flex flex-wrap items-center gap-3">
+                            <div
+                                className="flex h-11 items-center gap-2 rounded-xl border px-3"
+                                style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-muted)" }}
+                            >
+                                <Search size={17} />
+                                <span className="text-sm font-bold">Search records</span>
+                            </div>
+                            <button
+                                type="button"
+                                className="flex h-11 items-center gap-2 rounded-xl border px-3 text-sm font-black transition hk-admin-nav-hover"
+                                style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
+                            >
+                                <SlidersHorizontal size={17} />
+                                Filters
+                            </button>
                         </div>
-                        <button
-                            type="button"
-                            className="flex h-11 items-center gap-2 rounded-xl border px-3 text-sm font-black transition hk-admin-nav-hover"
-                            style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
-                        >
-                            <SlidersHorizontal size={17} />
-                            Filters
-                        </button>
-                    </div>
+                    ) : null}
                 </div>
             </motion.section>
 
@@ -153,7 +176,7 @@ export default function AdminModulePage({
                                 </tr>
                             </thead>
                             <tbody>
-                                {rows.map((row, rowIndex) => (
+                                {visibleRows.map((row, rowIndex) => (
                                     <tr key={row.id || rowIndex}>
                                         {columns.map((column) => {
                                             const value = row[column] ?? row[column.toLowerCase().replaceAll(" ", "_")];
@@ -180,6 +203,37 @@ export default function AdminModulePage({
                             </tbody>
                         </table>
                     </div>
+
+                    {hasPagedTable ? (
+                        <div className="mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: "var(--color-border)" }}>
+                            <p className="text-xs font-bold" style={{ color: "var(--color-muted)" }}>
+                                Showing {(currentPage - 1) * tablePageSize + 1}-{Math.min(currentPage * tablePageSize, rows.length)} of {rows.length} records
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                                    className="rounded-lg border px-3 py-2 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-45 hk-admin-nav-hover"
+                                    style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
+                                >
+                                    Previous
+                                </button>
+                                <span className="px-2 text-xs font-black" style={{ color: "var(--color-muted)" }}>
+                                    Page {currentPage} of {totalPages}
+                                </span>
+                                <button
+                                    type="button"
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                                    className="rounded-lg border px-3 py-2 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-45 hk-admin-nav-hover"
+                                    style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    ) : null}
                 </section>
             ) : null}
         </div>

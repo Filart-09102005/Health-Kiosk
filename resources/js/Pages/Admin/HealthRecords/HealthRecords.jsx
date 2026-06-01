@@ -11,7 +11,7 @@ import RecordsStatsGrid from "./components/RecordsStatsGrid";
 import RecordsTable from "./components/RecordsTable";
 import { countActiveFilters, filterHealthRecords } from "./utils/filterRecords";
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 const defaultFilters = {
     dateFrom: "2026-05-12",
@@ -100,6 +100,17 @@ export default function HealthRecords() {
         }, 320);
     }, []);
 
+    const handleViewSession = useCallback((record) => {
+        setDrawerOpen(true);
+        setDrawerLoading(true);
+        setSelectedRecord(null);
+
+        window.setTimeout(() => {
+            setSelectedRecord(record);
+            setDrawerLoading(false);
+        }, 220);
+    }, []);
+
     const closeDrawer = useCallback(() => {
         setDrawerOpen(false);
         setDrawerLoading(false);
@@ -125,6 +136,7 @@ export default function HealthRecords() {
                 isSearching={isSearching}
                 onRefresh={handleRefresh}
                 activeFilterCount={activeFilterCount}
+                filteredRecords={filteredRecords}
             />
 
             {filteredRecords.length === 0 ? (
@@ -136,6 +148,7 @@ export default function HealthRecords() {
                     totalPages={totalPages}
                     onPageChange={setPage}
                     onViewDetails={handleViewDetails}
+                    onViewSession={handleViewSession}
                     totalLabel={`Showing ${paginatedRecords.length} of ${filteredRecords.length} filtered records`}
                 />
             )}
