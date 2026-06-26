@@ -17,11 +17,6 @@ export default function AlertsToolbar({ search, onSearch }) {
                     </button>
                 </div>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-                {["Critical visible", "Pending review", "Today"].map((filter) => (
-                    <span key={filter} className="rounded-full border px-3 py-1 text-xs font-black" style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}>{filter}</span>
-                ))}
-            </div>
         </section>
     );
 }

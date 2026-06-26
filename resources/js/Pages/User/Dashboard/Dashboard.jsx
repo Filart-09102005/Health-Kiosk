@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Circle, FileClock, HeartPulse, HelpCircle, LogOut, Palette, Printer, RefreshCcw, Ruler, Scale, Thermometer, UserRound } from "lucide-react";
+import { ArrowRight, CheckCircle2, Circle, FileClock, HeartPulse, HelpCircle, LockKeyhole, LogOut, Palette, Printer, RefreshCcw, Ruler, Scale, Thermometer, UserRound } from "lucide-react";
 import Header from "../components/Header";
 import { useToast } from "../../Global/Toast";
 import { authService, getErrorMessage } from "../../Auth/services/authService";
@@ -22,26 +22,6 @@ const measurementCards = [
         ],
     },
     {
-        key: "temperature",
-        title: "Temperature",
-        sensor: "IR thermometer",
-        icon: Thermometer,
-        isComplete: (metrics) => hasReading(metrics?.temperature),
-        readings: (metrics) => [
-            { label: "Temperature", value: hasReading(metrics?.temperature) ? Number(metrics.temperature).toFixed(2) : "--", unit: "C" },
-        ],
-    },
-    {
-        key: "height",
-        title: "Height",
-        sensor: "Ultrasonic height",
-        icon: Ruler,
-        isComplete: (metrics) => hasReading(metrics?.height),
-        readings: (metrics) => [
-            { label: "Height", value: hasReading(metrics?.height) ? Number(metrics.height).toFixed(2) : "--", unit: "cm" },
-        ],
-    },
-    {
         key: "weight",
         title: "Weight",
         sensor: "Load cell platform",
@@ -49,6 +29,26 @@ const measurementCards = [
         isComplete: (metrics) => hasReading(metrics?.weight),
         readings: (metrics) => [
             { label: "Weight", value: hasReading(metrics?.weight) ? Number(metrics.weight).toFixed(2) : "--", unit: "kg" },
+        ],
+    },
+    {
+        key: "temperature",
+        title: "Temperature",
+        sensor: "Body temperature sensor",
+        icon: Thermometer,
+        isComplete: (metrics) => hasReading(metrics?.temperature),
+        readings: (metrics) => [
+            { label: "Temperature", value: hasReading(metrics?.temperature) ? Number(metrics.temperature).toFixed(2) : "--", unit: "°C" },
+        ],
+    },
+    {
+        key: "height",
+        title: "Height",
+        sensor: "Height measuring sensor",
+        icon: Ruler,
+        isComplete: (metrics) => hasReading(metrics?.height),
+        readings: (metrics) => [
+            { label: "Height", value: hasReading(metrics?.height) ? Number(metrics.height).toFixed(2) : "--", unit: "cm" },
         ],
     },
 ];
@@ -76,6 +76,13 @@ const assistantHelpItems = [
         answer: "To change appearance, press the Appearance button at the top. You can choose light mode, dark mode, or follow the system theme.",
     },
     {
+        key: "password",
+        title: "How to change password",
+        icon: LockKeyhole,
+        hint: "profile",
+        answer: "To change your password, tap your account menu at the top right, then press Profile. In the profile panel, use the password section to enter your current password, new password, and confirmation.",
+    },
+    {
         key: "print",
         title: "How to print results",
         icon: Printer,
@@ -87,7 +94,7 @@ const assistantHelpItems = [
         title: "How to check again",
         icon: RefreshCcw,
         hint: "measure",
-        answer: "If you want to make sure your result is accurate, press Check Again or Continue measurements, then choose the measurement you want to repeat.",
+        answer: "If you want to make sure your result is accurate, press Check Again or Repeat health check, then choose the reading you want to repeat.",
     },
     {
         key: "logout",
@@ -203,20 +210,20 @@ export default function Dashboard({ navigate }) {
     const progressPercent = Math.round((completedCount / progressItems.length) * 100);
     const missingItems = progressItems.filter((item) => ! item.complete).map((item) => item.title);
     const progressMessage = completedCount === 0
-        ? "Start the flow to capture today's readings."
+        ? "Start the health check to record today's available readings."
         : completedCount === progressItems.length
-            ? "All required readings are captured for this kiosk session."
+            ? "All available kiosk readings are recorded for this session."
             : `${completedCount} of ${progressItems.length} readings captured. Missing ${missingItems.join(", ")}.`;
 
     useEffect(() => {
         if (!loading && assistantEnabled) {
             if (allMeasurementsComplete) {
-                speak(`${firstName}, all required health readings are complete. Please press Review Results to view or print your health result. You may press Start Measurement only if you want to check again.`);
+                speak(`${firstName}, all available health readings are complete. Please press Review Results to view or print your health result. You may press Start Health Check only if you want to check again.`);
                 setShowStartHint(false);
                 return undefined;
             }
 
-            speak(`Welcome, ${firstName}. To check your health, press Start Measurement and choose the measurement you want to take.`);
+            speak(`Welcome, ${firstName}. To check your health, press Start Health Check and choose the reading you want to take.`);
             setShowStartHint(true);
 
             const timer = window.setTimeout(() => setShowStartHint(false), 8000);
@@ -270,10 +277,10 @@ export default function Dashboard({ navigate }) {
                                 Health Check Kiosk
                             </p>
                             <h2 className="mt-3 text-4xl font-black leading-tight md:text-5xl">
-                                Welcome, {firstName}. Ready for your guided health check.
+                                Welcome, {firstName}. Start with barcode scanning, then complete your health check.
                             </h2>
                             <p className="mt-4 max-w-xl text-base leading-7" style={{ color: "var(--color-muted)" }}>
-                                Follow each sensor step. The kiosk will guide heart rate, oxygen, temperature, height, weight, and BMI review in one smooth flow.
+                                The kiosk guides the available readings for Heart Rate and SpO2, Temperature, Height, and Weight. Follow the screen instructions for each device.
                             </p>
                         </div>
 
@@ -282,13 +289,13 @@ export default function Dashboard({ navigate }) {
                                 type="button"
                                 onClick={() => {
                                     setShowStartHint(false);
-                                    speak(allMeasurementsComplete ? "You can repeat a measurement to confirm your result. Choose the health check you want to take again." : "startMeasurement");
+                                    speak(allMeasurementsComplete ? "You can repeat a reading to confirm your result. Choose the health check you want to take again." : "startMeasurement");
                                     navigate("/measurements");
                                 }}
                                 className={`flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-black text-white transition hk-primary-hover ${showStartHint || activeHelpHint === "measure" ? "hk-start-measure-hint" : ""}`}
                                 style={{ backgroundColor: "var(--color-primary)" }}
                             >
-                                {allMeasurementsComplete ? "Check Again" : "Start Measurement"}
+                                {allMeasurementsComplete ? "Check Again" : "Start Health Check"}
                                 <ArrowRight size={18} />
                             </button>
                             {allMeasurementsComplete ? (
@@ -310,7 +317,7 @@ export default function Dashboard({ navigate }) {
                                 style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
                             >
                                 <CheckCircle2 size={18} style={{ color: "var(--color-success)" }} />
-                                Sensors standing by
+                                Available devices ready
                             </div>
                         </div>
                     </div>
@@ -324,30 +331,44 @@ export default function Dashboard({ navigate }) {
                                 <div>
                                     <p className="text-sm font-black">Voice help</p>
                                     <p className="mt-1 text-xs leading-5" style={{ color: "var(--color-muted)" }}>
-                                        Tap a question to hear a fixed assistant answer.
+                                        {assistantEnabled ? "Tap a question to hear a fixed assistant answer." : "Turn on Assistant Mode first to hear answers."}
                                     </p>
                                 </div>
                             </div>
-                            <div className="mt-5 grid gap-3">
-                                {assistantHelpItems.map((item) => {
-                                    const Icon = item.icon;
+                            <div className="voice-help-stack-wrap mt-5">
+                                <div
+                                    className="voice-help-stack"
+                                    aria-label="Voice help questions"
+                                >
+                                    {assistantHelpItems.map((item, index) => {
+                                        const Icon = item.icon;
 
-                                    return (
-                                        <button
-                                            key={item.key}
-                                            type="button"
-                                            onClick={() => {
-                                                speak(item.answer);
-                                                showHelpTargetHint(item.hint);
-                                            }}
-                                            className="flex items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm font-black transition hk-soft-hover"
-                                            style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-text)" }}
-                                        >
-                                            <Icon size={17} style={{ color: "var(--color-primary)" }} />
-                                            <span className="min-w-0 flex-1">{item.title}</span>
-                                        </button>
-                                    );
-                                })}
+                                        return (
+                                            <button
+                                                key={item.key}
+                                                type="button"
+                                                onClick={() => {
+                                                    if (! assistantEnabled) {
+                                                        showHelpTargetHint("assistant");
+                                                        return;
+                                                    }
+
+                                                    speak(item.answer);
+                                                    showHelpTargetHint(item.hint);
+                                                }}
+                                                className={`voice-help-item ${! assistantEnabled ? "cursor-not-allowed opacity-70" : ""}`}
+                                                style={{
+                                                    "--stack-index": index,
+                                                    borderColor: activeHelpHint === "assistant" && !assistantEnabled ? "var(--color-primary)" : "var(--color-border)",
+                                                }}
+                                                aria-disabled={!assistantEnabled}
+                                            >
+                                                <Icon size={17} style={{ color: "var(--color-primary)" }} />
+                                                <span className="min-w-0 flex-1">{item.title}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </article>
                     </div>
@@ -365,7 +386,7 @@ export default function Dashboard({ navigate }) {
                             <div>
                                 <p className="text-sm font-black">Measurement progress</p>
                                 <p className="mt-1 text-sm" style={{ color: "var(--color-muted)" }}>
-                                    {completedCount} / {progressItems.length} completed
+                                    {completedCount} / {progressItems.length} available readings completed
                                 </p>
                             </div>
                             <span className="text-2xl font-black" style={{ color: "var(--color-primary)" }}>{progressPercent}%</span>
@@ -404,7 +425,7 @@ export default function Dashboard({ navigate }) {
                     whileInView={shouldReduceMotion ? { opacity: 1 } : "visible"}
                     viewport={{ once: false, amount: 0.12, margin: "0px 0px -100px 0px" }}
                     variants={revealVariants}
-                    className="mt-8 border-t pt-6"
+                    className="mt-12 border-t pt-8"
                     style={{ borderColor: "var(--color-border)" }}
                 >
                     <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
@@ -414,7 +435,7 @@ export default function Dashboard({ navigate }) {
                             </p>
                             <h3 className="mt-1 text-2xl font-black">Latest session readings</h3>
                             <p className="mt-1 text-sm" style={{ color: "var(--color-muted)" }}>
-                                Saved measurements from the current kiosk visit. Use Start Measurement to capture or update values.
+                                Saved readings from the current kiosk visit. Use Start Health Check to record or update a value.
                             </p>
                         </div>
                         <span

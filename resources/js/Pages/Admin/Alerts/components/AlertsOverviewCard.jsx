@@ -1,6 +1,4 @@
 import { motion } from "framer-motion";
-import AlertSeverityBadge from "./AlertSeverityBadge";
-
 export default function AlertsOverviewCard({ metric, index = 0 }) {
     const Icon = metric.icon;
 
@@ -16,13 +14,10 @@ export default function AlertsOverviewCard({ metric, index = 0 }) {
                 <div className="flex h-10 w-10 items-center justify-center rounded-[10px]" style={{ backgroundColor: "var(--color-surface)" }}>
                     <Icon size={20} />
                 </div>
-                <AlertSeverityBadge severity={metric.severity} />
             </div>
             <p className="mt-4 text-sm font-bold" style={{ color: "var(--color-muted)" }}>{metric.label}</p>
-            <div className="mt-2 flex items-end justify-between gap-3">
-                <p className="text-3xl font-black">{metric.value}</p>
-                <p className="text-xs font-black" style={{ color: "var(--color-success)" }}>{metric.trend}</p>
-            </div>
+            <p className="mt-2 text-3xl font-black">{metric.value}</p>
+            <p className="mt-1 text-xs font-bold" style={{ color: "var(--color-muted)" }}>{metric.caption}</p>
         </motion.article>
     );
 }

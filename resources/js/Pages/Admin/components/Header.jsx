@@ -96,7 +96,7 @@ export default function Header({ onLogout, eyebrow = "Admin Dashboard", title = 
     return (
         <>
             <header
-                className="sticky top-6 z-20 rounded-2xl border p-4 shadow-xl backdrop-blur-xl sm:p-5"
+                className="sticky top-0 z-20 rounded-2xl border p-4 shadow-xl backdrop-blur-xl sm:p-5"
                 style={{
                     backgroundColor: "color-mix(in srgb, var(--color-card) 92%, transparent)",
                     borderColor: "var(--color-border)",
@@ -256,7 +256,7 @@ export default function Header({ onLogout, eyebrow = "Admin Dashboard", title = 
                 <button
                     type="button"
                     aria-label="Close menus"
-                    className="fixed inset-0 z-20 cursor-default bg-transparent"
+                    className="fixed inset-0 z-10 cursor-default bg-transparent"
                     onClick={closeMenus}
                 />
             ) : null}

@@ -1,10 +1,53 @@
+import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import { authService, getErrorMessage } from "../../Auth/services/authService";
+import { useToast } from "../../Global/Toast";
 import DashboardCharts from "./components/DashboardCharts";
+import DashboardSkeleton from "./components/DashboardSkeleton";
 import StatsGrid from "./components/StatsGrid";
 import WelcomeBanner from "./components/WelcomeBanner";
 
-export default function Dashboard() {
+export default function Dashboard({ navigate }) {
+    const { showToast } = useToast();
+    const [loading, setLoading] = useState(true);
+    const [dashboardData, setDashboardData] = useState(null);
     const shouldReduceMotion = useReducedMotion();
+
+    useEffect(() => {
+        let alive = true;
+
+        authService
+            .adminDashboard()
+            .then((response) => {
+                if (alive) setDashboardData(response.data);
+            })
+            .catch((error) => {
+                if (alive) {
+                    setDashboardData(null);
+
+                    showToast({
+                        type: "error",
+                        title: "Dashboard unavailable",
+                        message: getErrorMessage(error, "Unable to load the admin dashboard right now."),
+                    });
+
+                    if (error?.response?.status === 401 || error?.response?.status === 403) {
+                        navigate("/login");
+                    }
+                }
+            })
+            .finally(() => {
+                if (alive) setLoading(false);
+            });
+
+        return () => {
+            alive = false;
+        };
+    }, [navigate, showToast]);
+
+    if (loading) {
+        return <DashboardSkeleton />;
+    }
 
     return (
         <motion.div
@@ -15,8 +58,8 @@ export default function Dashboard() {
             className="mt-6 space-y-6"
         >
             <WelcomeBanner />
-            <StatsGrid />
-            <DashboardCharts />
+            <StatsGrid stats={dashboardData?.stats || []} />
+            <DashboardCharts data={dashboardData} />
         </motion.div>
     );
 }

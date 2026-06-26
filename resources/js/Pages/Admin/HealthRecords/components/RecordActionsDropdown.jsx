@@ -1,66 +1,75 @@
-import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { Eye, FileDown, MoreHorizontal, Printer, Radio } from "lucide-react";
-import { printHealthReceipt } from "../../../Global/receiptPrinter";
-import { toReceiptPayload } from "./PrintReceiptButton";
+import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Eye } from "lucide-react";
 
-export default function RecordActionsDropdown({ record, onViewDetails, onViewSession }) {
-    const [open, setOpen] = useState(false);
+export default function RecordActionsDropdown({ record, onViewDetails }) {
+    const [tooltip, setTooltip] = useState(null);
 
-    const actions = [
-        { label: "View details", icon: Eye, onClick: () => onViewDetails(record) },
-        { label: "View session", icon: Radio, onClick: () => onViewSession(record) },
-        { label: "Print receipt", icon: Printer, onClick: () => printHealthReceipt(toReceiptPayload(record)) },
-        { label: "Export record", icon: FileDown, onClick: () => setOpen(false) },
-    ];
+    const showTooltip = (event, label) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+
+        setTooltip({
+            label,
+            top: rect.top - 10,
+            left: rect.left + rect.width / 2,
+        });
+    };
+
+    const hideTooltip = () => setTooltip(null);
 
     return (
-        <div className="relative">
-            <button
-                type="button"
-                onClick={() => setOpen((current) => ! current)}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border transition hk-soft-hover"
-                style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
-                aria-label="Record actions"
-            >
-                <MoreHorizontal size={16} />
-            </button>
-            <AnimatePresence>
-                {open ? (
-                    <>
-                        <button type="button" className="fixed inset-0 z-30 cursor-default" aria-label="Close menu" onClick={() => setOpen(false)} />
-                        <motion.div
-                            initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                            className="absolute right-0 top-11 z-40 w-48 overflow-hidden rounded-xl border p-1 shadow-2xl backdrop-blur-xl"
-                            style={{
-                                backgroundColor: "color-mix(in srgb, var(--color-card) 96%, transparent)",
-                                borderColor: "var(--color-border)",
-                            }}
-                        >
-                            {actions.map((action) => {
-                                const Icon = action.icon;
+        <>
+            <div className="flex items-center gap-2">
+                <ActionIconButton
+                    label="View records"
+                    icon={Eye}
+                    onClick={() => onViewDetails(record)}
+                    onShowTooltip={showTooltip}
+                    onHideTooltip={hideTooltip}
+                />
+            </div>
+            {typeof document === "undefined" || !tooltip ? null : createPortal(
+                <div
+                    className="pointer-events-none fixed z-[300] -translate-x-1/2 -translate-y-full rounded-lg border px-3 py-2 text-[0.68rem] font-black shadow-xl backdrop-blur-xl"
+                    style={{
+                        top: tooltip.top,
+                        left: tooltip.left,
+                        backgroundColor: "color-mix(in srgb, var(--color-card) 96%, transparent)",
+                        borderColor: "var(--color-border)",
+                        color: "var(--color-text)",
+                    }}
+                >
+                    {tooltip.label}
+                </div>,
+                document.body,
+            )}
+        </>
+    );
+}
 
-                                return (
-                                    <button
-                                        key={action.label}
-                                        type="button"
-                                        onClick={() => {
-                                            action.onClick();
-                                            setOpen(false);
-                                        }}
-                                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-black transition hk-soft-hover"
-                                    >
-                                        <Icon size={14} />
-                                        {action.label}
-                                    </button>
-                                );
-                            })}
-                        </motion.div>
-                    </>
-                ) : null}
-            </AnimatePresence>
-        </div>
+function ActionIconButton({ label, icon: Icon, onClick, onShowTooltip, onHideTooltip }) {
+    const buttonRef = useRef(null);
+
+    return (
+        <button
+            ref={buttonRef}
+            type="button"
+            onClick={onClick}
+            onMouseEnter={(event) => onShowTooltip(event, label)}
+            onMouseLeave={onHideTooltip}
+            onFocus={(event) => onShowTooltip(event, label)}
+            onBlur={onHideTooltip}
+            className="inline-flex h-9 items-center gap-2 rounded-md border px-3 text-xs font-black transition hk-soft-hover focus:outline-none focus-visible:ring-2"
+            style={{
+                backgroundColor: "var(--color-surface)",
+                borderColor: "var(--color-border)",
+                color: "var(--color-text)",
+                "--tw-ring-color": "var(--color-primary)",
+            }}
+            aria-label={label}
+        >
+            <Icon size={16} />
+            <span className="whitespace-nowrap">{label}</span>
+        </button>
     );
 }

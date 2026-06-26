@@ -9,11 +9,20 @@ use App\Services\Health\KioskSessionService;
 
 class DashboardController extends Controller
 {
+    private const MEASUREMENT_KEYS = ['heart_rate', 'spo2', 'temperature', 'height', 'weight', 'bmi'];
+
     public function __invoke(Request $request, KioskSessionService $sessions): JsonResponse
     {
         $user = $request->user();
         $session = $sessions->activeFor($user);
         $record = $session?->healthRecord;
+
+        $missingMeasurements = $record
+            ? collect(self::MEASUREMENT_KEYS)
+                ->filter(fn (string $key) => $record->{$key} === null || $record->{$key} === '')
+                ->values()
+                ->all()
+            : self::MEASUREMENT_KEYS;
 
         return response()->json([
             'user' => [
@@ -41,7 +50,7 @@ class DashboardController extends Controller
                 'bmi' => $record?->bmi,
             ],
             'health_status' => $record?->health_status ?? 'Incomplete',
-            'missing_measurements' => $record?->missing_measurements ?? ['heart_rate', 'temperature', 'height', 'weight'],
+            'missing_measurements' => $missingMeasurements,
         ]);
     }
 }

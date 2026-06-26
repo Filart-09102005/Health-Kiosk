@@ -4,28 +4,118 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\HealthRecord;
+use App\Models\KioskSession;
 use App\Models\User;
+use Carbon\CarbonInterface;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function __invoke(Request $request): JsonResponse
     {
-        $counts = Cache::remember('admin.dashboard.counts', now()->addMinutes(5), function () {
-            return [
-                'total_users' => User::count(),
-                'students' => User::where('role', 'student')->count(),
-                'teachers' => User::where('role', 'teacher')->count(),
-                'health_records' => 0,
-            ];
-        });
+        $today = now()->startOfDay();
+        $weekStart = now()->startOfWeek(CarbonInterface::MONDAY)->startOfDay();
+        $weekEnd = now()->endOfWeek(CarbonInterface::SUNDAY)->startOfDay();
+
+        $counts = [
+            'total_users' => User::count(),
+            'students' => User::where('role', 'student')->count(),
+            'teachers' => User::where('role', 'teacher')->count(),
+            'health_records' => HealthRecord::whereHas('user', fn ($query) => $query->where('role', '!=', 'admin'))->count(),
+            'sessions_today' => KioskSession::whereHas('user', fn ($query) => $query->where('role', '!=', 'admin'))->whereDate('started_at', $today)->count(),
+            'completed_sessions' => KioskSession::whereHas('user', fn ($query) => $query->where('role', '!=', 'admin'))->where('status', 'completed')->count(),
+            'incomplete_sessions' => KioskSession::whereHas('user', fn ($query) => $query->where('role', '!=', 'admin'))->where('status', '!=', 'completed')->count(),
+            'active_alerts' => DB::table('alerts')->whereNull('read_at')->count(),
+        ];
+
+        $dailyHealthChecks = KioskSession::query()
+            ->selectRaw('DATE(COALESCE(ended_at, started_at)) as record_date, COUNT(*) as checks')
+            ->whereHas('user', fn ($query) => $query->where('role', '!=', 'admin'))
+            ->where('status', 'completed')
+            ->whereBetween(DB::raw('COALESCE(ended_at, started_at)'), [$weekStart, $weekEnd->copy()->endOfDay()])
+            ->groupBy('record_date')
+            ->pluck('checks', 'record_date');
+
+        $dailyHealthChecks = collect(CarbonPeriod::create($weekStart, $weekEnd))
+            ->map(fn ($date) => [
+                'day' => $date->format('D'),
+                'checks' => (int) ($dailyHealthChecks[$date->toDateString()] ?? 0),
+            ])
+            ->values();
+
+        $recentSessions = KioskSession::query()
+            ->with('user:id,firstname,lastname,student_id,barcode')
+            ->whereHas('user', fn ($query) => $query->where('role', '!=', 'admin'))
+            ->latest('started_at')
+            ->get()
+            ->map(fn (KioskSession $session) => [
+                'id' => $session->id,
+                'schoolId' => $session->user?->student_id ?: $session->user?->barcode ?: 'N/A',
+                'user' => $session->user?->full_name ?: 'Unknown user',
+                'duration' => $this->formatSessionDuration($session),
+                'started' => $session->started_at?->diffForHumans() ?: 'Not started',
+                'status' => ucfirst(str_replace('_', ' ', $session->status ?: 'pending')),
+            ]);
 
         ActivityLog::record('admin_dashboard_viewed', $request->user(), $request, 'Admin viewed dashboard.');
 
         return response()->json([
             'counts' => $counts,
+            'stats' => [
+                [
+                    'key' => 'students',
+                    'label' => 'Students',
+                    'value' => $counts['students'],
+                    'change' => 0,
+                    'trend' => 'neutral',
+                    'icon' => 'students',
+                    'description' => 'Registered student accounts',
+                ],
+                [
+                    'key' => 'teachers',
+                    'label' => 'Teachers',
+                    'value' => $counts['teachers'],
+                    'change' => 0,
+                    'trend' => 'neutral',
+                    'icon' => 'teachers',
+                    'description' => 'Registered teacher accounts',
+                ],
+                [
+                    'key' => 'health-records',
+                    'label' => 'Health Records',
+                    'value' => $counts['health_records'],
+                    'change' => 0,
+                    'trend' => 'neutral',
+                    'icon' => 'checks',
+                    'description' => 'Kiosk health records saved',
+                ],
+                [
+                    'key' => 'active-alerts',
+                    'label' => 'Unread Alerts',
+                    'value' => $counts['active_alerts'],
+                    'change' => 0,
+                    'trend' => 'neutral',
+                    'icon' => 'alerts',
+                    'description' => 'Alerts waiting for review',
+                ],
+            ],
+            'daily_health_checks' => $dailyHealthChecks,
+            'recent_sessions' => $recentSessions,
         ]);
+    }
+
+    private function formatSessionDuration(KioskSession $session): string
+    {
+        if (! $session->started_at || ! $session->ended_at) {
+            return 'In progress';
+        }
+
+        $minutes = max(1, $session->started_at->diffInMinutes($session->ended_at));
+
+        return "{$minutes} min";
     }
 }

@@ -1,11 +1,10 @@
 import { Printer } from "lucide-react";
-import { recentHealthRecords } from "../data/demoData";
 import { cardClassName, cardStyle } from "../utils/surface";
 import SectionHeader from "./SectionHeader";
 import StatusBadge from "./StatusBadge";
 import TableControls from "./TableControls";
 
-export default function RecentHealthRecordsTable({ records = recentHealthRecords }) {
+export default function RecentHealthRecordsTable({ records = [] }) {
     if (! records.length) {
         return null;
     }

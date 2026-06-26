@@ -4,7 +4,6 @@
 // Each BMI category gets its own semantic color.
 
 import { useMemo, useEffect, useRef } from "react";
-import { bmiDistribution } from "../data/demoData";
 import AnalyticsChartCard from "./AnalyticsChartCard";
 
 const BMI_COLORS = {
@@ -36,8 +35,8 @@ function StatStrip({ data }) {
     const atRisk = data.filter((d) => ["Overweight", "Obese"].includes(d.range)).reduce((a, b) => a + b.count, 0);
     const stats = [
         { lbl: "Total",   val: total },
-        { lbl: "Normal",  val: `${Math.round((normal / total) * 100)}%` },
-        { lbl: "At risk", val: `${Math.round((atRisk / total) * 100)}%` },
+        { lbl: "Normal",  val: `${total ? Math.round((normal / total) * 100) : 0}%` },
+        { lbl: "At risk", val: `${total ? Math.round((atRisk / total) * 100) : 0}%` },
     ];
     return (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: "8px", marginBottom: "1rem" }}>
@@ -52,7 +51,7 @@ function StatStrip({ data }) {
 }
 
 export default function BMIChart({ data }) {
-    const chartData = useMemo(() => data?.length ? data : bmiDistribution, [data]);
+    const chartData = useMemo(() => data || [], [data]);
     const max = useMemo(() => Math.max(1, ...chartData.map((d) => d.count)), [chartData]);
 
     return (

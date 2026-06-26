@@ -1,5 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
+import { createPortal } from "react-dom";
+import useModalLayer from "../../../../Global/useModalLayer";
 import AlertSummaryCard from "./AlertSummaryCard";
 import AlertTimeline from "./AlertTimeline";
 import MeasurementBreakdownCard from "./MeasurementBreakdownCard";
@@ -9,17 +11,19 @@ import SessionInformationCard from "./SessionInformationCard";
 import UserHealthSummaryCard from "./UserHealthSummaryCard";
 
 export default function AlertDetailsDrawer({ alert, open, onClose }) {
-    return (
+    useModalLayer(open);
+
+    const drawer = (
         <AnimatePresence>
             {open && alert ? (
                 <>
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[9000] bg-black/65 backdrop-blur-md" onClick={onClose} />
                     <motion.aside
                         initial={{ x: "100%" }}
                         animate={{ x: 0 }}
                         exit={{ x: "100%" }}
                         transition={{ type: "spring", stiffness: 260, damping: 30 }}
-                        className="fixed right-0 top-0 z-50 h-full w-full max-w-2xl overflow-y-auto border-l p-5 shadow-2xl"
+                        className="fixed right-0 top-0 z-[9010] h-full w-full max-w-2xl overflow-y-auto border-l p-5 shadow-2xl"
                         style={{ backgroundColor: "var(--color-bg)", borderColor: "var(--color-border)" }}
                     >
                         <div className="flex items-start justify-between gap-4">
@@ -51,4 +55,6 @@ export default function AlertDetailsDrawer({ alert, open, onClose }) {
             ) : null}
         </AnimatePresence>
     );
+
+    return createPortal(drawer, document.body);
 }

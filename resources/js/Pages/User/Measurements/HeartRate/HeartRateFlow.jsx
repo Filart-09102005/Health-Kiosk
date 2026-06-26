@@ -11,10 +11,21 @@ export default function HeartRateFlow(props) {
                 sensor: "Finger pulse oximeter",
                 unit: "bpm/%",
                 icon: HeartPulse,
-                description: "Capture pulse and blood oxygen level using the kiosk oximeter.",
-                instructions: "Stand in front of the kiosk and prepare one finger for the finger pulse oximeter.",
-                positioning: "Place your finger inside the SpO2 sensor. Keep your hand steady while the values stabilize.",
-                format: (value, secondary) => `${Math.round(value)} bpm / ${Math.round(secondary || 0)}%`,
+                description: "Measure your pulse and blood oxygen level using the finger sensor.",
+                instructions: "Prepare your clean index finger. The kiosk will ask you to place it on the Heart Rate and SpO2 sensor.",
+                positioning: "Place your index finger on the sensor. Keep your hand still until the screen shows the final value.",
+                format: (value, secondary) => {
+                    const heartRate = Number(value);
+                    const spo2 = Number(secondary);
+                    const heartRateText = Number.isFinite(heartRate) && heartRate > 0
+                        ? `${Math.round(heartRate)} bpm`
+                        : "-- bpm";
+                    const spo2Text = Number.isFinite(spo2) && spo2 > 0
+                        ? `${Math.round(spo2)}%`
+                        : "--%";
+
+                    return `${heartRateText} / ${spo2Text}`;
+                },
             }}
         />
     );

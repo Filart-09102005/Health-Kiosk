@@ -3,14 +3,13 @@
 
 import { useMemo } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { spo2Trend } from "../data/demoData";
 import { chartTooltipStyle, getChartTheme } from "../utils/chartTheme";
 import AnalyticsChartCard from "./AnalyticsChartCard";
 
 const COLOR = "#378ADD";
 
 function StatStrip({ data }) {
-    const values = data.map((d) => d.value);
+    const values = data.length ? data.map((d) => d.value) : [0];
     const avg = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
     const min = Math.min(...values).toFixed(1);
     const max = Math.max(...values).toFixed(1);
@@ -53,16 +52,16 @@ function ChartLegend() {
     );
 }
 
-export default function SpO2Chart() {
+export default function SpO2Chart({ data = [] }) {
     const theme = useMemo(() => getChartTheme(), []);
 
     return (
         <AnalyticsChartCard title="SpO2 trend" description="Blood oxygen saturation averages by day." heightClass="h-auto">
-            <StatStrip data={spo2Trend} />
+            <StatStrip data={data} />
             <div style={{ height: "0.5px", backgroundColor: "var(--color-border)", marginBottom: "1rem" }} />
             <div style={{ height: "150px" }}>
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={spo2Trend} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
+                    <AreaChart data={data} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
                         <defs>
                             <linearGradient id="spo2Fill" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="0%"   stopColor={COLOR} stopOpacity={0.2} />

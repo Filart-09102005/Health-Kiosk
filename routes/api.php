@@ -1,13 +1,17 @@
 <?php
 
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\AlertController;
 use App\Http\Controllers\Admin\AnalyticsController as AdminAnalyticsController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\HealthRecordController as AdminHealthRecordController;
 use App\Http\Controllers\Admin\KioskSessionController as AdminKioskSessionController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmailVerificationController;
+use App\Http\Controllers\KioskLiveVitalsController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ThermalReceiptController;
 use App\Http\Controllers\User\DashboardController as UserDashboardController;
@@ -41,8 +45,12 @@ Route::middleware(['auth:sanctum', 'verified', 'role:admin'])
         Route::get('/analytics', AdminAnalyticsController::class);
         Route::get('/users', [UserController::class, 'index']);
         Route::get('/activity-logs', [ActivityLogController::class, 'index']);
+        Route::get('/alerts', [AlertController::class, 'index']);
         Route::get('/health-records', [AdminHealthRecordController::class, 'index']);
         Route::get('/sessions', [AdminKioskSessionController::class, 'index']);
+        Route::get('/reports', [ReportController::class, 'index']);
+        Route::get('/settings', [SettingController::class, 'show']);
+        Route::put('/settings', [SettingController::class, 'update']);
     });
 
 Route::middleware(['auth:sanctum', 'verified', 'role:student,teacher'])
@@ -52,9 +60,17 @@ Route::middleware(['auth:sanctum', 'verified', 'role:student,teacher'])
         Route::get('/session', [SessionController::class, 'current']);
         Route::post('/session/end', [SessionController::class, 'end']);
         Route::get('/measurements/summary', [MeasurementController::class, 'summary']);
+        Route::get('/health-records', [MeasurementController::class, 'records']);
         Route::post('/measurements', [MeasurementController::class, 'store'])->middleware('throttle:60,1');
     });
 
 Route::middleware(['auth:sanctum', 'verified'])
     ->post('/receipt/print', [ThermalReceiptController::class, 'print'])
     ->middleware('throttle:30,1');
+
+Route::middleware('throttle:600,1')->group(function () {
+    Route::get('/kiosk/live-vitals', [KioskLiveVitalsController::class, 'show']);
+    Route::post('/kiosk/live-vitals', [KioskLiveVitalsController::class, 'store']);
+    Route::get('/kiosk/command', [KioskLiveVitalsController::class, 'command']);
+    Route::post('/kiosk/command', [KioskLiveVitalsController::class, 'setCommand']);
+});

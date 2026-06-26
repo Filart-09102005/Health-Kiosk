@@ -1,13 +1,15 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ChevronRight, ClipboardList } from "lucide-react";
 import { cardClassName, cardStyle } from "../utils/surface";
 
 export default function RecordsHeader() {
+    const shouldReduceMotion = useReducedMotion();
+
     return (
         <motion.section
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 0.08, duration: 0.3, ease: "easeOut" }}
             className={`${cardClassName} p-5 sm:p-6`}
             style={cardStyle}
         >

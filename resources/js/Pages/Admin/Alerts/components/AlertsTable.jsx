@@ -7,7 +7,7 @@ const columns = ["Alert ID", "School ID", "Full Name", "Role", "Alert Type", "Me
 
 export default function AlertsTable({ alerts = [], onView }) {
     const [currentPage, setCurrentPage] = useState(1);
-    const PAGE_SIZE = 10;
+    const PAGE_SIZE = 15;
     const totalRecords = alerts.length;
     const totalPages = Math.ceil(totalRecords / PAGE_SIZE);
     

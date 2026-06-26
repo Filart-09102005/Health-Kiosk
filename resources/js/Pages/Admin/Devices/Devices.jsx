@@ -28,8 +28,10 @@ import {
     Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import AdminShell from "../components/AdminShell";
 import AdminModulePage from "../components/AdminModulePage";
+import useModalLayer from "../../../Global/useModalLayer";
 
 const statusOrder = ["Online", "Offline", "Warning", "No Telemetry", "Calibrating", "Maintenance Mode"];
 
@@ -335,20 +337,18 @@ export default function Devices({ navigate }) {
                     { label: "Warning Devices", value: String(warningCount), caption: "Needs calibration or checking", icon: AlertTriangle },
                 ]}
             >
-                <SystemHealthOverview
-                    activeTelemetryCount={activeTelemetryCount}
-                    configuredCount={configuredCount}
-                    healthScore={healthScore}
-                    lastRefresh={lastRefresh}
-                    onRefresh={() => setLastRefresh(new Date())}
-                />
-                <StatusLegend />
-                <DeviceGrid devices={devices} onOpen={openDevice} />
-                <section className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
-                    <LiveTelemetry devices={devices} />
+                <div className="space-y-5">
+                    <SystemHealthOverview
+                        activeTelemetryCount={activeTelemetryCount}
+                        configuredCount={configuredCount}
+                        healthScore={healthScore}
+                        lastRefresh={lastRefresh}
+                        onRefresh={() => setLastRefresh(new Date())}
+                    />
+                    <StatusLegend />
+                    <DeviceGrid devices={devices} onOpen={openDevice} />
                     <ActivityFeed logs={activityLogs} />
-                </section>
-                <HardwareStatusTable devices={devices} onOpen={openDevice} />
+                </div>
             </AdminModulePage>
 
             {selectedDevice ? (
@@ -634,6 +634,8 @@ function HardwareStatusTable({ devices, onOpen }) {
 }
 
 function DeviceDetailsDrawer({ device, diagnostics, onAction, onClose }) {
+    useModalLayer(Boolean(device));
+
     const Icon = device.icon;
     const actions = [
         { label: "Run Diagnostics", icon: Stethoscope },
@@ -644,14 +646,14 @@ function DeviceDetailsDrawer({ device, diagnostics, onAction, onClose }) {
         { label: "Calibrate Device", icon: Settings2 },
     ];
 
-    return (
-        <div className="fixed inset-0 z-50 flex justify-end">
-            <button type="button" aria-label="Close diagnostics drawer" onClick={onClose} className="absolute inset-0 bg-black/35" />
+    const drawer = (
+        <div className="fixed inset-0 z-[9000] flex justify-end bg-black/65 backdrop-blur-md">
+            <button type="button" aria-label="Close diagnostics drawer" onClick={onClose} className="absolute inset-0" />
             <motion.aside
                 initial={{ x: 420, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: 420, opacity: 0 }}
-                className="relative flex h-full w-full max-w-3xl flex-col overflow-y-auto border-l p-5 shadow-2xl"
+                className="relative z-[9010] flex h-full w-full max-w-3xl flex-col overflow-y-auto border-l p-5 shadow-2xl"
                 style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
             >
                 <div className="flex items-start justify-between gap-4 border-b pb-5" style={{ borderColor: "var(--color-border)" }}>
@@ -765,6 +767,8 @@ function DeviceDetailsDrawer({ device, diagnostics, onAction, onClose }) {
             </motion.aside>
         </div>
     );
+
+    return createPortal(drawer, document.body);
 }
 
 function InfoBox({ label, value }) {

@@ -3,12 +3,19 @@ import Loader from "./Global/Loader";
 import { ToastProvider } from "./Global/Toast";
 import { useThemeMode } from "./Global/ThemeToggle";
 import AdminLayout from "./Pages/Admin/components/AdminLayout.jsx";
-import DashboardSkeleton, { ADMIN_DASHBOARD_SKELETON_MIN_MS, SkeletonBlock } from "./Pages/Admin/Dashboard/components/DashboardSkeleton.jsx";
+import DashboardSkeleton, { SkeletonBlock } from "./Pages/Admin/Dashboard/components/DashboardSkeleton.jsx";
+import AnalyticsSkeleton from "./Pages/Admin/Analytics/components/AnalyticsSkeleton.jsx";
 import HealthRecordsSkeleton from "./Pages/Admin/HealthRecords/components/HealthRecordsSkeleton.jsx";
+import AlertsSkeleton from "./Pages/Admin/Alerts/components/AlertsSkeleton.jsx";
+import ReportsSkeleton from "./Pages/Admin/Reports/components/ReportsSkeleton.jsx";
+import UserAccountsSkeleton from "./Pages/Admin/Users/components/UserAccountsSkeleton.jsx";
+import ActivityLogsSkeleton from "./Pages/Admin/ActivityLogs/components/ActivityLogsSkeleton.jsx";
+import SettingsSkeleton from "./Pages/Admin/Settings/components/SettingsSkeleton.jsx";
+import ProfileSkeleton from "./Pages/Admin/Profile/components/ProfileSkeleton.jsx";
 import MeasurementsSkeleton from "./Pages/User/Measurements/components/MeasurementsSkeleton.jsx";
 import UserDashboardSkeleton from "./Pages/User/Dashboard/components/DashboardSkeleton.jsx";
 import { AssistantProvider } from "./Pages/User/AI-Assistant/context/AssistantProvider.jsx";
-import AssistantIdleGate from "./Pages/User/AI-Assistant/components/AssistantIdleGate.jsx";
+import ObjectDetectionGate from "./Pages/User/Object-Detection/ObjectDetectionGate.jsx";
 
 const Register = lazy(() => import("./Pages/Auth/Register.jsx"));
 const Login = lazy(() => import("./Pages/Auth/Login.jsx"));
@@ -24,6 +31,7 @@ const AdminStudents = lazy(() => import("./Pages/Admin/Users/Students/Students.j
 const AdminTeachers = lazy(() => import("./Pages/Admin/Users/Teachers/Teachers.jsx"));
 const AdminSessions = lazy(() => import("./Pages/Admin/Sessions/Sessions.jsx"));
 const AdminDevices = lazy(() => import("./Pages/Admin/Devices/Devices.jsx"));
+const AdminLiveVitals = lazy(() => import("./Pages/Admin/LiveVitals/LiveVitals.jsx"));
 const AdminActivityLogs = lazy(() => import("./Pages/Admin/ActivityLogs/ActivityLogs.jsx"));
 const AdminSettings = lazy(() => import("./Pages/Admin/Settings/Settings.jsx"));
 const AdminProfile = lazy(() => import("./Pages/Admin/Profile/Profile.jsx"));
@@ -43,6 +51,7 @@ const routes = {
 };
 
 const MAINTENANCE_KEY = "healthKioskMaintenanceUntil";
+const ADMIN_PAGE_SKELETON_MIN_MS = 600;
 const kioskRestrictedRoutes = new Set(["/register", "/user/dashboard", "/measurements", "/results"]);
 
 const adminRoutes = {
@@ -55,6 +64,7 @@ const adminRoutes = {
     "/admin/teachers": { component: AdminTeachers, eyebrow: "User Management", title: "Teachers" },
     "/admin/sessions": { component: AdminSessions, eyebrow: "Kiosk Sessions", title: "Session Tracking" },
     "/admin/devices": { component: AdminDevices, eyebrow: "Devices and Sensors", title: "Kiosk Hardware" },
+    "/admin/live-vitals": { component: AdminLiveVitals, eyebrow: "Live IoT Monitor", title: "Real-time Health Monitoring" },
     "/admin/activity-logs": { component: AdminActivityLogs, eyebrow: "Activity Logs", title: "Audit Trail" },
     "/admin/settings": { component: AdminSettings, eyebrow: "System Settings", title: "Admin Settings" },
     "/admin/profile": { component: AdminProfile, eyebrow: "Account", title: "Admin Profile" },
@@ -72,7 +82,7 @@ export default function App() {
 
 function Router() {
     const getCurrentPath = () => {
-        return window.location.pathname === "/" ? "/register" : window.location.pathname;
+        return window.location.pathname === "/" ? "/login" : window.location.pathname;
     };
 
     const [pathname, setPathname] = useState(getCurrentPath);
@@ -88,7 +98,7 @@ function Router() {
 
     useEffect(() => {
         if (window.location.pathname === "/") {
-            window.history.replaceState({}, "", "/register");
+            window.history.replaceState({}, "", "/login");
         }
 
         const handlePopState = () => {
@@ -123,8 +133,7 @@ function Router() {
         }
 
         setAdminPageReady(false);
-        const delay = pathname === "/admin/dashboard" ? ADMIN_DASHBOARD_SKELETON_MIN_MS : 1200;
-        const timer = window.setTimeout(() => setAdminPageReady(true), delay);
+        const timer = window.setTimeout(() => setAdminPageReady(true), ADMIN_PAGE_SKELETON_MIN_MS);
 
         return () => window.clearTimeout(timer);
     }, [pathname]);
@@ -159,9 +168,9 @@ function Router() {
         <AssistantProvider>
             <Suspense fallback={getRouteFallback(pathname)}>
                 {pathname === "/login" ? (
-                    <AssistantIdleGate>
+                    <ObjectDetectionGate navigate={navigate}>
                         <Page navigate={navigate} />
-                    </AssistantIdleGate>
+                    </ObjectDetectionGate>
                 ) : (
                     <Page navigate={navigate} />
                 )}
@@ -217,6 +226,14 @@ function getRouteFallback(pathname) {
 function getAdminContentSkeleton(pathname) {
     if (pathname === "/admin/dashboard") return <DashboardSkeleton />;
     if (pathname === "/admin/health-records") return <HealthRecordsSkeleton />;
+    if (pathname === "/admin/analytics") return <AnalyticsSkeleton />;
+    if (pathname === "/admin/alerts") return <AlertsSkeleton />;
+    if (pathname === "/admin/reports") return <ReportsSkeleton />;
+    if (pathname === "/admin/students") return <UserAccountsSkeleton type="students" />;
+    if (pathname === "/admin/teachers") return <UserAccountsSkeleton type="teachers" />;
+    if (pathname === "/admin/activity-logs") return <ActivityLogsSkeleton />;
+    if (pathname === "/admin/settings") return <SettingsSkeleton />;
+    if (pathname === "/admin/profile") return <ProfileSkeleton />;
 
     return <GenericAdminContentSkeleton />;
 }

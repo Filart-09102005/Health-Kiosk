@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import useModalLayer from "../../../../Global/useModalLayer";
 import BMIStatusCard from "./BMIStatusCard";
 import MeasurementSummaryCard from "./MeasurementSummaryCard";
 import PrintReceiptButton from "./PrintReceiptButton";
@@ -11,6 +12,7 @@ import SessionInformationCard from "./SessionInformationCard";
 
 export default function RecordDetailsDrawer({ open, record, loading, onClose }) {
     const [activeRecord, setActiveRecord] = useState(record);
+    useModalLayer(open);
 
     useEffect(() => {
         setActiveRecord(record);
@@ -22,46 +24,6 @@ export default function RecordDetailsDrawer({ open, record, loading, onClose }) 
         return [record, ...(record.sessionHistory || [])];
     }, [record]);
 
-    useEffect(() => {
-        if (!open) return undefined;
-
-        const bodyOverflow = document.body.style.overflow;
-        const htmlOverflow = document.documentElement.style.overflow;
-        const bodyOverscroll = document.body.style.overscrollBehavior;
-        const bodyPosition = document.body.style.position;
-        const bodyTop = document.body.style.top;
-        const bodyWidth = document.body.style.width;
-        const appRoot = document.getElementById("app");
-        const appOverflow = appRoot?.style.overflow;
-        const scrollY = window.scrollY;
-
-        document.body.style.overflow = "hidden";
-        document.documentElement.style.overflow = "hidden";
-        document.body.style.overscrollBehavior = "none";
-        document.body.style.position = "fixed";
-        document.body.style.top = `-${scrollY}px`;
-        document.body.style.width = "100%";
-
-        if (appRoot) {
-            appRoot.style.overflow = "hidden";
-        }
-
-        return () => {
-            document.body.style.overflow = bodyOverflow;
-            document.documentElement.style.overflow = htmlOverflow;
-            document.body.style.overscrollBehavior = bodyOverscroll;
-            document.body.style.position = bodyPosition;
-            document.body.style.top = bodyTop;
-            document.body.style.width = bodyWidth;
-
-            if (appRoot) {
-                appRoot.style.overflow = appOverflow || "";
-            }
-
-            window.scrollTo(0, scrollY);
-        };
-    }, [open]);
-
     const drawer = (
         <AnimatePresence>
             {open ? (
@@ -72,7 +34,7 @@ export default function RecordDetailsDrawer({ open, record, loading, onClose }) 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed left-0 top-0 z-[900] h-screen w-screen bg-black/60 backdrop-blur-[3px]"
+                        className="fixed left-0 top-0 z-[9000] h-screen w-screen bg-black/65 backdrop-blur-md"
                         onClick={onClose}
                     />
                     <motion.aside
@@ -80,7 +42,7 @@ export default function RecordDetailsDrawer({ open, record, loading, onClose }) 
                         animate={{ x: 0 }}
                         exit={{ x: "100%" }}
                         transition={{ type: "spring", stiffness: 320, damping: 32 }}
-                        className="fixed inset-y-0 right-0 z-[910] flex h-screen w-full max-w-xl flex-col overflow-hidden border-l shadow-2xl backdrop-blur-xl"
+                        className="fixed inset-y-0 right-0 z-[9010] flex h-screen w-full max-w-xl flex-col overflow-hidden border-l shadow-2xl backdrop-blur-xl"
                         style={{
                             backgroundColor: "color-mix(in srgb, var(--color-card) 96%, transparent)",
                             borderColor: "var(--color-border)",

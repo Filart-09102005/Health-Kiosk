@@ -1,11 +1,8 @@
-import { useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { dashboardStats } from "../data/demoData";
 import StatCard from "./StatCard";
 
-export default function StatsGrid() {
+export default function StatsGrid({ stats = [] }) {
     const shouldReduceMotion = useReducedMotion();
-    const metrics = useMemo(() => dashboardStats, []);
 
     return (
         <motion.section
@@ -22,7 +19,7 @@ export default function StatsGrid() {
                 },
             }}
         >
-            {metrics.map((stat) => (
+            {stats.map((stat) => (
                 <StatCard key={stat.key} stat={stat} />
             ))}
         </motion.section>

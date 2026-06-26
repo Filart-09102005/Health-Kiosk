@@ -1,10 +1,9 @@
-import { recentAlerts } from "../data/demoData";
 import { cardClassName, cardStyle } from "../utils/surface";
 import SectionHeader from "./SectionHeader";
 import StatusBadge from "./StatusBadge";
 import TableControls from "./TableControls";
 
-export default function RecentAlertsTable({ records = recentAlerts }) {
+export default function RecentAlertsTable({ records = [] }) {
     return (
         <article className={`${cardClassName} p-5`} style={cardStyle}>
             <SectionHeader title="Recent alerts" description="Clinical and device alerts requiring clinic attention." />

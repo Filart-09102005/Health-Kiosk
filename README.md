@@ -1,60 +1,181 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Health Kiosk System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Health Kiosk System is a Laravel and React based kiosk application for school health screening. It supports student and teacher registration, email and barcode login, guided health measurements, AI voice assistance for users, admin monitoring, analytics, reports, activity logs, and thermal receipt printing.
 
-## About Laravel
+## Project Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Backend: Laravel
+- Frontend: React with Vite
+- Styling: Tailwind CSS and custom CSS variables
+- Authentication: Laravel Sanctum with email verification
+- Local printing: Thermal receipt print endpoint and browser print support
+- Voice guidance: Browser Web Speech API for offline-friendly assistant mode
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Main Modules
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- User registration and login
+- Barcode scanner login
+- User dashboard
+- Guided health measurement flow
+- Health results and receipt printing
+- User health records
+- Admin dashboard
+- Admin health records
+- Measurement analytics
+- Health alerts
+- Reports
+- Devices and sensors monitoring
+- Kiosk sessions
+- Activity logs
+- Admin settings and profile
 
-## Learning Laravel
+## Data Collected and Processed
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Detailed database structure and relationships are documented in [docs/ERD.md](docs/ERD.md).
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 1. User Data
 
-## Laravel Sponsors
+The system stores basic account and school identity data for students, teachers, and administrators.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+| Data | Project Field |
+| --- | --- |
+| First name | `firstname` |
+| Last name | `lastname` |
+| Age | `age` |
+| Gender | `gender` |
+| Email address | `email` |
+| School ID | `student_id` |
+| Password | `password` |
+| Role | `role` |
+| Department | `department` |
+| Barcode UID | `barcode` |
 
-### Premium Partners
+Additional academic fields may also be stored when applicable:
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+- `grade_level`
+- `strand`
+- `year_level`
+- `program`
+- `is_active`
 
-## Contributing
+### 2. Health Measurement Data
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+The kiosk records health readings from the measurement flow and synchronizes them into a health record.
 
-## Code of Conduct
+| Data | Project Field |
+| --- | --- |
+| Heart rate | `heart_rate` |
+| SpO2 | `spo2` |
+| Body temperature | `temperature` |
+| Height | `height` |
+| Weight | `weight` |
+| BMI | `bmi` |
+| Health status | `health_status` |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Measurement attempts are stored per kiosk session using `session_measurements`. The Heart Rate and SpO2 reading uses the pulse oximeter sensor.
 
-## Security Vulnerabilities
+### 3. Login and Verification Data
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+The system supports email/password login and barcode scanner login.
 
-## License
+| Data | Project Field |
+| --- | --- |
+| Email address | `email` |
+| Password | `password` |
+| Barcode UID | `barcode` |
+| Email verification status | `email_verified_at` |
+| Remember token | `remember_token` |
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-# Health_Kiosk
+Barcode login is rate-limited and is available only for verified student and teacher accounts. Admin accounts use email and password login.
+
+### 4. Health Record Data
+
+Health records summarize a user's completed or incomplete kiosk session.
+
+| Data | Project Field |
+| --- | --- |
+| User ID | `user_id` |
+| Kiosk session ID | `kiosk_session_id` |
+| Measurement results | `heart_rate`, `spo2`, `temperature`, `height`, `weight`, `bmi` |
+| Date and time of measurement | `created_at`, `updated_at` |
+| Status of record | `health_status` |
+| Missing measurements | `missing_measurements` |
+
+Health records are connected to the user and the active kiosk session for accountability and printing.
+
+### 5. Admin Monitoring Data
+
+The admin side displays operational and clinical data for monitoring the kiosk.
+
+- User records
+- Health records
+- Health alerts
+- Kiosk sessions
+- Measurement analytics
+- Generated reports
+- Devices and sensors status
+- Activity logs
+
+Admin tables use pagination with a limit of 15 rows per page.
+
+### 6. System-Generated Data
+
+The system generates operational records and summaries during kiosk use.
+
+| Data | Purpose |
+| --- | --- |
+| Health summary | User-facing result summary and advice |
+| BMI result | Computed from height and weight |
+| Thermal receipt data | Printable health result receipt |
+| Activity logs | Admin and system audit trail |
+| Report files | Generated clinic reports and exports |
+| Session records | Login, measurement, completion, logout, and timeout tracking |
+
+## Kiosk Hardware and Sensors
+
+The system is designed around the actual Health Kiosk hardware:
+
+- Mega Board: Arduino Mega 2560 main controller board
+- Barcode Scanner: student and teacher barcode scanner
+- Temperature Sensor: infrared body temperature module
+- Heart Rate and SpO2 Sensor: MAX30102 pulse oximeter module
+- Height Sensor: ultrasonic distance measurement module
+- Weight Sensor: load cell and HX711 scale module
+- User Presence Detection: camera-based user detection service
+- Mini PC / Server: Laravel application and database host
+
+## AI Assistant Mode
+
+AI Assistant Mode is a lightweight voice-guided kiosk assistant for first-time users. It is not a chatbot and does not use cloud AI APIs.
+
+- Uses browser SpeechSynthesis when available
+- Works on localhost
+- Offline-friendly whenever the browser voice engine is available
+- Provides event-based voice instructions for login, measurement steps, results, printing, records, profile, appearance, and logout
+- Applies only to the user kiosk side, not the admin side
+
+## Setup
+
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+npm run dev
+php artisan serve
+```
+
+## Build
+
+```bash
+npm run build
+```
+
+## Repository
+
+GitHub repository:
+
+```text
+https://github.com/Filart-09102005/Health_Kiosk.git
+```

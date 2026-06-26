@@ -66,7 +66,7 @@ export default function ForgotPassword({ navigate }) {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full rounded-xl px-5 py-4 text-base font-black text-white shadow-[0_20px_55px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5 disabled:opacity-70"
+                    className="w-full rounded-xl px-5 py-4 text-base font-black text-white shadow-[0_20px_55px_rgba(15,118,110,0.28)] transition hover:-translate-y-0.5 disabled:opacity-70"
                     style={{ backgroundColor: "var(--color-primary)" }}
                 >
                     Send reset link
@@ -74,7 +74,7 @@ export default function ForgotPassword({ navigate }) {
             </form>
 
             <div className="mt-8 text-center">
-                <button type="button" onClick={() => navigate("/login")} className="font-black text-blue-500">
+                <button type="button" onClick={() => navigate("/login")} className="font-black" style={{ color: "var(--color-primary)" }}>
                     Back to sign in
                 </button>
             </div>

@@ -55,9 +55,9 @@ export function exportToExcel(records) {
             <![endif]-->
             <style>
                 table { border-collapse: collapse; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-                th { background-color: #1e3a8a; color: #ffffff; font-weight: bold; border: 1px solid #cbd5e1; text-align: left; padding: 10px; font-size: 11px; text-transform: uppercase; }
+                th { background-color: #2563eb; color: #ffffff; font-weight: bold; border: 1px solid #cbd5e1; text-align: left; padding: 10px; font-size: 11px; text-transform: uppercase; }
                 td { border: 1px solid #cbd5e1; text-align: left; padding: 8px 10px; font-size: 12px; }
-                .title { font-size: 18px; font-weight: bold; color: #1e3a8a; }
+                .title { font-size: 18px; font-weight: bold; color: #2563eb; }
                 .subtitle { font-size: 12px; color: #475569; margin-bottom: 20px; }
             </style>
         </head>
@@ -167,7 +167,7 @@ function generatePrintTemplate(records, isPdf = false) {
                 .header-title {
                     font-size: 22px;
                     font-weight: 800;
-                    color: #1e3a8a;
+                    color: #2563eb;
                     letter-spacing: -0.5px;
                     margin: 0;
                 }
@@ -193,7 +193,7 @@ function generatePrintTemplate(records, isPdf = false) {
                     margin-top: 10px;
                 }
                 th {
-                    background-color: #1e3a8a !important;
+                    background-color: #2563eb !important;
                     color: #ffffff !important;
                     font-weight: 700;
                     text-transform: uppercase;
@@ -280,7 +280,7 @@ function generatePrintTemplate(records, isPdf = false) {
                 </div>
                 <div class="meta-badge">
                     <div>Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
-                    <div style="margin-top: 2px; color: #1e3a8a;">Total Records Listed: ${records.length}</div>
+                    <div style="margin-top: 2px; color: #2563eb;">Total Records Listed: ${records.length}</div>
                 </div>
             </div>
 

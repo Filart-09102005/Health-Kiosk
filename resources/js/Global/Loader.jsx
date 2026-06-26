@@ -1,25 +1,37 @@
-import { Activity } from "lucide-react";
+import { LoaderCircle, ShieldCheck } from "lucide-react";
 
-export default function Loader({ label = "Loading", fullscreen = false }) {
+export default function Loader({ label = "Loading", message = "Preparing your workspace", fullscreen = false }) {
     const content = (
         <div
-            className="flex flex-col items-center justify-center gap-4 rounded-3xl border px-8 py-7 text-center shadow-2xl"
+            className="flex w-[min(90vw,23rem)] flex-col items-center justify-center gap-5 rounded-3xl border px-8 py-8 text-center shadow-2xl"
             style={{
-                backgroundColor: "var(--color-card)",
-                borderColor: "var(--color-border)",
+                backgroundColor: "color-mix(in srgb, var(--color-card) 92%, transparent)",
+                borderColor: "color-mix(in srgb, var(--color-primary) 18%, var(--color-border))",
                 color: "var(--color-text)",
+                boxShadow: "0 28px 80px color-mix(in srgb, var(--color-primary) 18%, transparent)",
             }}
         >
-            <div
-                className="flex h-14 w-14 items-center justify-center rounded-2xl hk-skeleton-shimmer"
-                style={{ color: "var(--color-primary)" }}
-            >
-                <Activity size={24} />
+            <div className="relative flex h-16 w-16 items-center justify-center">
+                <LoaderCircle
+                    className="absolute animate-spin"
+                    size={64}
+                    strokeWidth={1.8}
+                    style={{ color: "color-mix(in srgb, var(--color-primary) 62%, transparent)" }}
+                />
+                <div
+                    className="flex h-11 w-11 items-center justify-center rounded-2xl"
+                    style={{
+                        backgroundColor: "color-mix(in srgb, var(--color-primary) 12%, var(--color-card))",
+                        color: "var(--color-primary)",
+                    }}
+                >
+                    <ShieldCheck size={22} />
+                </div>
             </div>
             <div>
-                <div className="text-sm font-bold">{label}</div>
-                <div className="mt-1 text-xs" style={{ color: "var(--color-muted)" }}>
-                    Please wait a moment
+                <div className="text-base font-black tracking-tight">{label}</div>
+                <div className="mt-2 text-sm font-semibold leading-6" style={{ color: "var(--color-muted)" }}>
+                    {message}
                 </div>
             </div>
         </div>
@@ -31,8 +43,8 @@ export default function Loader({ label = "Loading", fullscreen = false }) {
 
     return (
         <div
-            className="fixed inset-0 z-40 flex items-center justify-center p-6 backdrop-blur-sm"
-            style={{ backgroundColor: "color-mix(in srgb, var(--color-bg), transparent 18%)" }}
+            className="fixed inset-0 z-40 flex items-center justify-center p-6 backdrop-blur-md"
+            style={{ backgroundColor: "color-mix(in srgb, var(--color-bg), transparent 12%)" }}
         >
             {content}
         </div>

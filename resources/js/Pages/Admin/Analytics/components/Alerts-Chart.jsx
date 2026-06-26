@@ -7,7 +7,6 @@
 //   - Custom tooltip via title attribute (no Recharts dependency needed)
 
 import { useMemo, useEffect, useRef } from "react";
-import { commonAlerts } from "../data/demoData";
 import AnalyticsChartCard from "./AnalyticsChartCard";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -131,7 +130,7 @@ function StatStrip({ chartData }) {
 // ─── Main component ────────────────────────────────────────────────────────────
 
 export default function AlertsChart({ data }) {
-    const chartData = useMemo(() => data?.length ? data : commonAlerts, [data]);
+    const chartData = useMemo(() => data || [], [data]);
     const max = useMemo(() => Math.max(1, ...chartData.map((d) => d.count)), [chartData]);
 
     return (

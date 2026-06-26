@@ -1,45 +1,33 @@
-import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Barcode, CalendarClock, Printer } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Barcode, CalendarClock, Loader2, Printer } from "lucide-react";
 import DrawerShell from "../../Global/DrawerShell";
 import { printHealthReceipt } from "../../Global/receiptPrinter";
 import { useAssistant } from "../AI-Assistant/context/AssistantProvider";
+import { measurementService } from "../Measurements/services/measurementService";
 
-const sampleRecords = [
-    {
-        id: 1,
-        name: "Health Kiosk User",
-        barcode: "C-230204",
-        date: "Today, 8:20 AM",
-        date_label: "Today",
-        full_date: "May 19, 2026",
-        time: "8:20 AM",
-        heart_rate: 78,
-        spo2: 98,
-        temperature: 36.6,
-        height: 165,
-        weight: 58,
-        bmi: 21.3,
-        status: "Normal",
-        advice: "Vitals are within the expected range. Maintain healthy hydration.",
-    },
-    {
-        id: 2,
-        name: "Health Kiosk User",
-        barcode: "C-230204",
-        date: "Yesterday, 9:12 AM",
-        date_label: "Yesterday",
-        full_date: "May 18, 2026",
-        time: "9:12 AM",
-        heart_rate: 88,
-        spo2: 97,
-        temperature: 37.2,
-        height: 165,
-        weight: 58,
-        bmi: 21.3,
-        status: "Watch",
-        advice: "Temperature is slightly elevated. Rest and recheck if symptoms continue.",
-    },
-];
+const phDateTime = new Intl.DateTimeFormat("en-PH", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Manila",
+});
+
+const phDate = new Intl.DateTimeFormat("en-PH", {
+    month: "long",
+    day: "2-digit",
+    year: "numeric",
+    timeZone: "Asia/Manila",
+});
+
+const phTime = new Intl.DateTimeFormat("en-PH", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Manila",
+});
 
 const statusColor = (status) => {
     if (status === "Normal") return "var(--color-success)";
@@ -50,25 +38,49 @@ const statusColor = (status) => {
 };
 
 const detailRows = (record) => [
-    ["Date", record.full_date || record.date_label || "--"],
-    ["Time", record.time || "--"],
-    ["BMI", record.bmi || "--"],
-    ["Temp", record.temperature ? `${record.temperature} C` : "--"],
     ["Heart Rate", record.heart_rate ? `${record.heart_rate} bpm` : "--"],
     ["SpO2", record.spo2 ? `${record.spo2}%` : "--"],
-    ["Height", record.height ? `${record.height} cm` : "--"],
     ["Weight", record.weight ? `${record.weight} kg` : "--"],
+    ["BMI", record.bmi || "Unavailable until height sensor is connected"],
+    ["Date", record.full_date || record.date_label || "--"],
+    ["Time", record.time || "--"],
 ];
 
 export default function HealthRecordsDrawer({ open, onClose, user = {} }) {
     const { enabled: assistantEnabled, speak } = useAssistant();
     const [selectedRecord, setSelectedRecord] = useState(null);
+    const [records, setRecords] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
-    const records = useMemo(() => sampleRecords.map((record) => ({
-        ...record,
-        name: `${user?.firstname || "Health"} ${user?.lastname || "Kiosk"}`.trim(),
-        barcode: user?.barcode || record.barcode,
-    })), [user?.barcode, user?.firstname, user?.lastname]);
+    useEffect(() => {
+        if (!open) return undefined;
+
+        const controller = new AbortController();
+        let alive = true;
+        setLoading(true);
+        setError("");
+
+        measurementService
+            .records(controller.signal)
+            .then((response) => {
+                if (!alive) return;
+                setRecords((response.data?.data || []).map((record) => formatApiRecord(record, user)));
+            })
+            .catch((requestError) => {
+                if (requestError.name === "CanceledError") return;
+                if (!alive) return;
+                setError("Unable to load your health records right now.");
+            })
+            .finally(() => {
+                if (alive) setLoading(false);
+            });
+
+        return () => {
+            alive = false;
+            controller.abort();
+        };
+    }, [open, user]);
 
     const close = () => {
         setSelectedRecord(null);
@@ -91,7 +103,7 @@ export default function HealthRecordsDrawer({ open, onClose, user = {} }) {
             open={open}
             onClose={close}
             title={selectedRecord ? "Record Details" : "Health Records"}
-            description={selectedRecord ? "Full kiosk reading summary for this visit." : "Recent kiosk readings and thermal receipt actions."}
+            description={selectedRecord ? "Available kiosk readings for this visit." : "Recent kiosk readings and receipt actions."}
             closeOnOverlay={false}
             closeLabel="Exit"
         >
@@ -105,7 +117,26 @@ export default function HealthRecordsDrawer({ open, onClose, user = {} }) {
                 />
             ) : (
                 <div className="space-y-4">
-                    {records.map((record) => (
+                    {loading ? (
+                        <div className="flex items-center justify-center gap-2 rounded-3xl border p-6 text-sm font-black" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-muted)" }}>
+                            <Loader2 className="animate-spin" size={18} />
+                            Loading health records
+                        </div>
+                    ) : null}
+
+                    {!loading && error ? (
+                        <div className="rounded-3xl border p-5 text-sm font-bold" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-error)" }}>
+                            {error}
+                        </div>
+                    ) : null}
+
+                    {!loading && !error && records.length === 0 ? (
+                        <div className="rounded-3xl border p-5 text-sm font-bold" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-muted)" }}>
+                            No saved health records yet. Complete an available kiosk health check to create your first record.
+                        </div>
+                    ) : null}
+
+                    {!loading && !error ? records.map((record) => (
                         <RecordCard
                             key={record.id}
                             record={record}
@@ -114,11 +145,45 @@ export default function HealthRecordsDrawer({ open, onClose, user = {} }) {
                                 setSelectedRecord(record);
                             }}
                         />
-                    ))}
+                    )) : null}
                 </div>
             )}
         </DrawerShell>
     );
+}
+
+function formatApiRecord(record, fallbackUser = {}) {
+    const createdAt = record.created_at ? new Date(record.created_at) : null;
+    const validDate = createdAt && !Number.isNaN(createdAt.getTime());
+    const apiUser = record.user || {};
+
+    return {
+        id: record.id,
+        name: apiUser.name || `${fallbackUser?.firstname || "Health"} ${fallbackUser?.lastname || "Kiosk"}`.trim(),
+        barcode: apiUser.barcode || fallbackUser?.barcode || "N/A",
+        school_id: apiUser.barcode || fallbackUser?.barcode || "N/A",
+        role: apiUser.role || fallbackUser?.role,
+        session_number: record.session?.session_number,
+        date: validDate ? phDateTime.format(createdAt) : "No date",
+        date_label: validDate ? phDate.format(createdAt) : "No date",
+        full_date: validDate ? phDate.format(createdAt) : "No date",
+        time: validDate ? phTime.format(createdAt) : "--",
+        heart_rate: record.heart_rate,
+        spo2: record.spo2,
+        temperature: record.temperature,
+        height: record.height,
+        weight: record.weight,
+        bmi: record.bmi,
+        status: formatStatus(record.health_status),
+    };
+}
+
+function formatStatus(status) {
+    if (status === "normal") return "Normal";
+    if (status === "alert" || status === "high_risk") return "Alert";
+    if (status === "watch" || status === "needs_review") return "Watch";
+
+    return status || "Incomplete";
 }
 
 function RecordCard({ record, onView }) {
@@ -195,13 +260,6 @@ function RecordDetails({ record, onBack }) {
                     {detailRows(record).map(([label, value]) => (
                         <MetricTile key={label} label={label} value={value} />
                     ))}
-                </div>
-
-                <div className="mt-5 rounded-2xl p-4" style={{ backgroundColor: "var(--color-surface)" }}>
-                    <p className="text-xs font-black uppercase" style={{ color: "var(--color-muted)" }}>
-                        Advice
-                    </p>
-                    <p className="mt-2 text-sm leading-6">{record.advice}</p>
                 </div>
 
                 <PrintRecordButton record={record} label="Print receipt" fullWidth />

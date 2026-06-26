@@ -50,4 +50,15 @@ class MeasurementController extends Controller
             'record' => $session->healthRecord ? new HealthRecordResource($session->healthRecord) : null,
         ]);
     }
+
+    public function records(Request $request)
+    {
+        $records = $request->user()
+            ->healthRecords()
+            ->with(['user', 'kioskSession'])
+            ->latest()
+            ->paginate(min($request->integer('per_page', 20), 50));
+
+        return HealthRecordResource::collection($records);
+    }
 }

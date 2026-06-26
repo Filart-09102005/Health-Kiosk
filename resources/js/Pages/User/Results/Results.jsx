@@ -31,7 +31,7 @@ export default function Results({ navigate }) {
             return undefined;
         }
 
-        speak("Your health measurements are now available. Please press Print receipt to print your health result.");
+        speak("Your available kiosk readings are now shown. Please press Print receipt if you need a copy.");
         setShowPrintHint(true);
 
         const timer = window.setTimeout(() => setShowPrintHint(false), 8000);
@@ -56,12 +56,9 @@ export default function Results({ navigate }) {
         date: new Date().toLocaleString(),
         heart_rate: record.heart_rate,
         spo2: record.spo2,
-        temperature: record.temperature,
-        height: record.height,
         weight: record.weight,
         bmi: record.bmi,
         status: record.health_status || "Incomplete",
-        advice: record.advice,
     };
 
     const handlePrintReceipt = async () => {
@@ -78,7 +75,7 @@ export default function Results({ navigate }) {
     };
 
     const handleContinueMeasurements = () => {
-        speak("You can take another measurement to confirm your result. Choose the health check you want to repeat.");
+        speak("You can repeat an available health check to confirm your result.");
         navigate("/measurements");
     };
 
@@ -90,8 +87,6 @@ export default function Results({ navigate }) {
     const metrics = [
         ["Heart Rate", record.heart_rate ? `${record.heart_rate} bpm` : "Missing"],
         ["SpO2", record.spo2 ? `${record.spo2}%` : "Missing"],
-        ["Temperature", record.temperature ? `${record.temperature} C` : "Missing"],
-        ["Height", record.height ? `${record.height} cm` : "Missing"],
         ["Weight", record.weight ? `${record.weight} kg` : "Missing"],
     ];
 
@@ -108,7 +103,7 @@ export default function Results({ navigate }) {
                         </p>
                         <h2 className="mt-2 text-4xl font-black">{record.health_status || "Incomplete"} health summary</h2>
                         <p className="mx-auto mt-3 max-w-2xl text-sm leading-6" style={{ color: "var(--color-muted)" }}>
-                            Complete or incomplete sessions can still be reviewed and printed for clinic accountability.
+                            This summary shows the readings currently available on the kiosk: Heart Rate, SpO2, and Weight.
                         </p>
                     </div>
 
@@ -118,7 +113,7 @@ export default function Results({ navigate }) {
                             <p className="mt-4 text-sm font-black" style={{ color: "var(--color-muted)" }}>BMI</p>
                             <div className="mt-2 text-6xl font-black">{record.bmi || "--"}</div>
                             <p className="mt-2 text-sm font-bold" style={{ color: "var(--color-muted)" }}>
-                                {record.bmi_category || (record.missing_measurements?.includes("height") ? "Please complete height measurement" : "Please complete weight measurement")}
+                                {record.bmi_category || "BMI will be available when the height sensor is connected."}
                             </p>
                         </article>
 
@@ -135,13 +130,6 @@ export default function Results({ navigate }) {
                         </article>
                     </div>
 
-                    <section className="mt-5 rounded-[2rem] border p-6" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
-                        <h3 className="font-black">Health advice</h3>
-                        <p className="mt-2 text-sm leading-7" style={{ color: "var(--color-muted)" }}>
-                            {record.advice || "Complete measurements to generate advice."}
-                        </p>
-                    </section>
-
                     <div className="mt-6 flex flex-wrap justify-center gap-3">
                         <button type="button" onClick={handlePrintReceipt} disabled={printing} className={`flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-black text-white transition hk-primary-hover disabled:cursor-not-allowed disabled:opacity-70 ${showPrintHint ? "hk-flow-action-hint" : ""}`} style={{ backgroundColor: "var(--color-primary)" }}>
                             <Printer size={18} />
@@ -149,7 +137,7 @@ export default function Results({ navigate }) {
                         </button>
                         <button type="button" onClick={handleContinueMeasurements} className="flex items-center gap-2 rounded-2xl border px-5 py-4 text-sm font-black transition hk-soft-hover" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
                             <RotateCcw size={17} />
-                            Continue measurements
+                            Repeat health check
                         </button>
                         <button type="button" onClick={handleBackToDashboard} className="flex items-center gap-2 rounded-2xl border px-5 py-4 text-sm font-black transition hk-soft-hover" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
                             <ArrowLeft size={17} />

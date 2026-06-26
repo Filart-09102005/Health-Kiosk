@@ -1,16 +1,15 @@
 import { useMemo } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { dailyHealthChecks } from "../data/demoData";
 import { chartTooltipStyle, getChartTheme } from "../utils/chartTheme";
 import ChartCard from "./ChartCard";
 
-export default function DailyHealthChecksChart() {
+export default function DailyHealthChecksChart({ data = [] }) {
     const theme = useMemo(() => getChartTheme(), []);
 
     return (
         <ChartCard title="Daily Health Checks Trend" description="Kiosk screenings completed per day this week.">
             <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dailyHealthChecks} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                <LineChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                     <defs>
                         <linearGradient id="checksGradient" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stopColor={theme.primary} stopOpacity={0.35} />

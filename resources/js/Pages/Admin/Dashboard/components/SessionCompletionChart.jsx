@@ -3,15 +3,12 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { chartTooltipStyle, getChartTheme } from "../utils/chartTheme";
 import ChartCard from "./ChartCard";
 
-export default function SessionCompletionChart() {
+export default function SessionCompletionChart({ data: completionData = [] }) {
     const theme = useMemo(() => getChartTheme(), []);
-    const data = useMemo(
-        () => [
-            { name: "Completed", value: 93, color: theme.success },
-            { name: "Incomplete", value: 7, color: theme.error },
-        ],
-        [theme],
-    );
+    const data = useMemo(() => completionData.map((item, index) => ({
+        ...item,
+        color: item.color || [theme.success, theme.error][index] || theme.muted,
+    })), [completionData, theme]);
     const total = data.reduce((sum, item) => sum + item.value, 0);
 
     return (
@@ -46,7 +43,7 @@ export default function SessionCompletionChart() {
                             <div className="min-w-0">
                                 <p className="text-xs font-black leading-none">{item.name}</p>
                                 <p className="mt-1 text-[0.68rem] font-bold" style={{ color: "var(--color-muted)" }}>
-                                    {Math.round((item.value / total) * 100)}%
+                                    {total > 0 ? Math.round((item.value / total) * 100) : 0}%
                                 </p>
                             </div>
                         </div>

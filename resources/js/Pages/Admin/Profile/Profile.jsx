@@ -1,20 +1,57 @@
-import { Eye, EyeOff, LockKeyhole, Mail, Save, ShieldCheck, UserCog } from "lucide-react";
-import { useState } from "react";
+import { Eye, EyeOff, LockKeyhole, Mail, Save, ShieldCheck } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { authService, getErrorMessage } from "../../Auth/services/authService";
+import { useToast } from "../../Global/Toast";
 import AdminShell from "../components/AdminShell";
 
 const initialProfile = {
-    firstname: "Health",
-    lastname: "Kiosk",
-    email: "smcbihealthkiosk@gmail.com",
-    phone: "+63 900 000 0000",
+    firstname: "",
+    lastname: "",
+    email: "",
     role: "Admin",
-    department: "Clinic",
-    position: "System Administrator",
 };
 
 export default function Profile({ navigate }) {
+    const { showToast } = useToast();
+    const shouldReduceMotion = useReducedMotion();
     const [profile, setProfile] = useState(initialProfile);
     const [password, setPassword] = useState({ current: "", next: "", confirm: "" });
+
+    useEffect(() => {
+        let alive = true;
+
+        authService.currentUser()
+            .then((response) => {
+                const user = response.data?.user || response.data;
+
+                if (!alive || !user) return;
+
+                setProfile({
+                    firstname: user.firstname || "",
+                    lastname: user.lastname || "",
+                    email: user.email || "",
+                    role: user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Admin",
+                });
+            })
+            .catch((error) => {
+                if (!alive) return;
+
+                showToast({
+                    type: "error",
+                    title: "Profile unavailable",
+                    message: getErrorMessage(error, "Unable to load your profile right now."),
+                });
+
+                if (error?.response?.status === 401 || error?.response?.status === 403) {
+                    navigate("/login");
+                }
+            });
+
+        return () => {
+            alive = false;
+        };
+    }, [navigate, showToast]);
 
     const updateProfile = (key, value) => {
         setProfile((current) => ({ ...current, [key]: value }));
@@ -26,8 +63,21 @@ export default function Profile({ navigate }) {
 
     return (
         <AdminShell navigate={navigate} eyebrow="Account" title="Admin Profile">
-            <div className="mt-6 space-y-6">
-                <section className="rounded-[18px] border p-6 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+            <motion.div
+                initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={shouldReduceMotion ? { duration: 0.01 } : { duration: 0.24, ease: "easeOut" }}
+                className="mt-6 space-y-6"
+            >
+                <motion.section
+                    initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 0.08, duration: 0.42, ease: "easeOut" }}
+                    transformTemplate={(_, generated) => `${generated} translateZ(0)`}
+                    className="transform-gpu rounded-[18px] border p-6 shadow-xl"
+                    style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", willChange: "transform, opacity" }}
+                >
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                             <p className="text-xs font-black uppercase tracking-[0.2em]" style={{ color: "var(--color-primary)" }}>
@@ -35,7 +85,7 @@ export default function Profile({ navigate }) {
                             </p>
                             <h2 className="mt-2 text-3xl font-black">Profile Settings</h2>
                             <p className="mt-2 max-w-2xl text-sm font-semibold leading-6" style={{ color: "var(--color-muted)" }}>
-                                Manage administrator information, clinic assignment, and password security.
+                                Manage administrator information and password security.
                             </p>
                         </div>
                         <button
@@ -47,15 +97,26 @@ export default function Profile({ navigate }) {
                             Save Profile
                         </button>
                     </div>
-                </section>
+                </motion.section>
 
-                <section className="grid gap-5 xl:grid-cols-[0.85fr_1.35fr]">
+                <motion.section
+                    initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 0.52, duration: 0.48, ease: "easeOut" }}
+                    className="grid gap-5 xl:grid-cols-[0.85fr_1.35fr]"
+                >
                     <ProfileSummary profile={profile} />
                     <EditableProfile profile={profile} onChange={updateProfile} />
-                </section>
+                </motion.section>
 
-                <PasswordPanel password={password} onChange={updatePassword} />
-            </div>
+                <motion.div
+                    initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 0.92, duration: 0.34, ease: "easeOut" }}
+                >
+                    <PasswordPanel password={password} onChange={updatePassword} />
+                </motion.div>
+            </motion.div>
         </AdminShell>
     );
 }
@@ -69,13 +130,12 @@ function ProfileSummary({ profile }) {
                 </div>
                 <div>
                     <h3 className="text-2xl font-black">{profile.firstname} {profile.lastname}</h3>
-                    <p className="mt-1 text-sm font-bold" style={{ color: "var(--color-muted)" }}>{profile.position}</p>
+                    <p className="mt-1 text-sm font-bold" style={{ color: "var(--color-muted)" }}>{profile.role}</p>
                 </div>
             </div>
 
             <div className="mt-6 space-y-3">
                 <SummaryRow icon={ShieldCheck} label="Role" value={profile.role} />
-                <SummaryRow icon={UserCog} label="Department" value={profile.department} />
                 <SummaryRow icon={Mail} label="Email" value={profile.email} />
             </div>
 
@@ -100,13 +160,8 @@ function EditableProfile({ profile, onChange }) {
             <div className="mt-6 grid gap-4 md:grid-cols-2">
                 <TextField label="Firstname" value={profile.firstname} onChange={(value) => onChange("firstname", value)} />
                 <TextField label="Lastname" value={profile.lastname} onChange={(value) => onChange("lastname", value)} />
-                <TextField label="Email" type="email" value={profile.email} onChange={(value) => onChange("email", value)} />
-                <TextField label="Phone" value={profile.phone} onChange={(value) => onChange("phone", value)} />
-                <TextField label="Role" value={profile.role} onChange={(value) => onChange("role", value)} />
-                <TextField label="Department" value={profile.department} onChange={(value) => onChange("department", value)} />
-                <div className="md:col-span-2">
-                    <TextField label="Position" value={profile.position} onChange={(value) => onChange("position", value)} />
-                </div>
+                <TextField label="Email" type="email" value={profile.email} onChange={(value) => onChange("email", value)} readOnly />
+                <TextField label="Role" value={profile.role} onChange={(value) => onChange("role", value)} readOnly />
             </div>
         </article>
     );
@@ -147,7 +202,7 @@ function PasswordPanel({ password, onChange }) {
     );
 }
 
-function TextField({ label, value, onChange, type = "text" }) {
+function TextField({ label, value, onChange, type = "text", readOnly = false }) {
     const [visible, setVisible] = useState(false);
     const isPassword = type === "password";
     const inputType = isPassword && visible ? "text" : type;
@@ -159,8 +214,11 @@ function TextField({ label, value, onChange, type = "text" }) {
                 <input
                     type={inputType}
                     value={value}
-                    onChange={(event) => onChange(event.target.value)}
-                    className={`h-12 w-full rounded-xl border px-4 text-sm font-black outline-none ${isPassword ? "pr-12" : ""}`}
+                    readOnly={readOnly}
+                    onChange={(event) => {
+                        if (! readOnly) onChange(event.target.value);
+                    }}
+                    className={`h-12 w-full rounded-xl border px-4 text-sm font-black outline-none ${isPassword ? "pr-12" : ""} ${readOnly ? "cursor-not-allowed opacity-70" : ""}`}
                     style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-text)" }}
                 />
                 {isPassword ? (

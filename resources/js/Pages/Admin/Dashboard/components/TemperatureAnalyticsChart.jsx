@@ -1,16 +1,15 @@
 import { useMemo } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { temperatureAnalytics } from "../data/demoData";
 import { chartTooltipStyle, getChartTheme } from "../utils/chartTheme";
 import ChartCard from "./ChartCard";
 
-export default function TemperatureAnalyticsChart() {
+export default function TemperatureAnalyticsChart({ data = [] }) {
     const theme = useMemo(() => getChartTheme(), []);
 
     return (
         <ChartCard title="Temperature Analytics" description="Average body temperature trend across clinic hours.">
             <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={temperatureAnalytics} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                <AreaChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                     <defs>
                         <linearGradient id="tempGradient" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stopColor={theme.primary} stopOpacity={0.35} />

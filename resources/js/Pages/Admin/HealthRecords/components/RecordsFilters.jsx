@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { cardClassName, cardStyle } from "../utils/surface";
 import DateRangePicker from "./DateRangePicker";
 import FilterDropdown from "./FilterDropdown";
@@ -41,13 +41,14 @@ export default function RecordsFilters({
     isSearching,
     onRefresh,
     activeFilterCount,
-    filteredRecords = [],
 }) {
+    const shouldReduceMotion = useReducedMotion();
+
     return (
         <motion.section
-            initial={{ opacity: 0, y: 10 }}
+            initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.28, delay: 0.05 }}
+            transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 1.08, duration: 0.34, ease: "easeOut" }}
             className={`space-y-4 ${cardClassName} p-5`}
             style={cardStyle}
         >
@@ -58,7 +59,6 @@ export default function RecordsFilters({
                     isSearching={isSearching}
                     onRefresh={onRefresh}
                     activeFilterCount={activeFilterCount}
-                    filteredRecords={filteredRecords}
                 />
                 <QuickFilters active={quickFilter} onChange={onQuickFilterChange} />
             </div>

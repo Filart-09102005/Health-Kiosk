@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { recordsAnalytics } from "../data/demoData";
 import { cardClassName, cardStyle } from "../utils/surface";
 
 function readColor(name, fallback) {
@@ -22,12 +21,13 @@ function buildSegments(data, total) {
     });
 }
 
-export default function HealthStatusDistribution() {
+export default function HealthStatusDistribution({ data: healthStatus = [] }) {
     const data = useMemo(() => {
+        const statusMap = new Map(healthStatus.map((item) => [item.name, item.value]));
         const rows = [
-            { name: "Normal", value: recordsAnalytics.healthStatus[0].value, color: readColor("--color-success", "#1D9E75") },
-            { name: "Watch", value: recordsAnalytics.healthStatus[1].value, color: readColor("--color-primary", "#378ADD") },
-            { name: "Alert", value: recordsAnalytics.healthStatus[2].value, color: readColor("--color-error", "#E24B4A") },
+            { name: "Normal", value: statusMap.get("Normal") || 0, color: readColor("--color-success", "#1D9E75") },
+            { name: "Watch", value: statusMap.get("Watch") || 0, color: readColor("--color-primary", "#378ADD") },
+            { name: "Alert", value: statusMap.get("Alert") || 0, color: readColor("--color-error", "#E24B4A") },
         ];
         const total = rows.reduce((sum, item) => sum + item.value, 0);
         const maxValue = Math.max(...rows.map((item) => item.value));
@@ -38,7 +38,7 @@ export default function HealthStatusDistribution() {
             maxValue,
             segments: buildSegments(rows, total),
         };
-    }, []);
+    }, [healthStatus]);
 
     return (
         <article className={`${cardClassName} p-4`} style={cardStyle}>

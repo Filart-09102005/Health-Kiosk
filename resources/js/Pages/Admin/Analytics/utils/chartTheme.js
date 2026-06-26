@@ -1,4 +1,4 @@
-export function readThemeColor(variable, fallback = "#3b82f6") {
+export function readThemeColor(variable, fallback = "#2563eb") {
     if (typeof document === "undefined") return fallback;
 
     const value = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();

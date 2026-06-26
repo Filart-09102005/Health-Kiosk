@@ -1,7 +1,7 @@
 import { Mic2, Volume2 } from "lucide-react";
 import { useAssistant } from "../context/AssistantProvider";
 
-export default function AssistantToggle({ className = "" }) {
+export default function AssistantToggle({ className = "", hinted = false }) {
     const { enabled, speechSupported, toggleAssistant } = useAssistant();
 
     return (
@@ -9,7 +9,7 @@ export default function AssistantToggle({ className = "" }) {
             <button
                 type="button"
                 onClick={toggleAssistant}
-                className="group inline-flex min-h-11 items-center gap-3 rounded-2xl border px-3 py-2 text-sm font-black transition hk-soft-hover"
+                className={`group inline-flex min-h-11 items-center gap-3 rounded-2xl border px-3 py-2 text-sm font-black transition hk-soft-hover ${hinted ? "hk-start-measure-hint" : ""}`}
                 style={{
                     backgroundColor: "var(--color-surface)",
                     borderColor: enabled ? "color-mix(in srgb, var(--color-success) 44%, var(--color-border))" : "var(--color-border)",

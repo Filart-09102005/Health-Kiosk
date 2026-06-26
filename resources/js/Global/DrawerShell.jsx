@@ -1,24 +1,16 @@
-import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
+import { createPortal } from "react-dom";
+import useModalLayer from "./useModalLayer";
 
 export default function DrawerShell({ open, onClose, title, description, children, footer, closeOnOverlay = true, closeLabel = "Close" }) {
-    useEffect(() => {
-        if (! open) return undefined;
+    useModalLayer(open);
 
-        const previousOverflow = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
-
-        return () => {
-            document.body.style.overflow = previousOverflow;
-        };
-    }, [open]);
-
-    return (
+    const drawer = (
         <AnimatePresence>
             {open ? (
                 <motion.div
-                    className="fixed inset-0 z-50 flex justify-end"
+                    className="fixed inset-0 z-[9000] flex justify-end bg-black/65 backdrop-blur-md"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -28,14 +20,10 @@ export default function DrawerShell({ open, onClose, title, description, childre
                         aria-label="Close drawer"
                         onClick={closeOnOverlay ? onClose : undefined}
                         className="absolute inset-0 cursor-default"
-                        style={{
-                            backgroundColor: "color-mix(in srgb, var(--color-bg) 54%, transparent)",
-                            backdropFilter: "blur(10px)",
-                        }}
                     />
 
                     <motion.aside
-                        className="relative flex h-full w-full flex-col border-l shadow-2xl md:w-[50vw]"
+                        className="relative z-[9010] flex h-full w-full flex-col border-l shadow-2xl md:w-[50vw]"
                         style={{
                             backgroundColor: "var(--color-card)",
                             borderColor: "var(--color-border)",
@@ -80,4 +68,6 @@ export default function DrawerShell({ open, onClose, title, description, childre
             ) : null}
         </AnimatePresence>
     );
+
+    return createPortal(drawer, document.body);
 }

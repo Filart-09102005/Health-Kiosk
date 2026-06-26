@@ -1,10 +1,9 @@
-import { recentSessions } from "../data/demoData";
 import { cardClassName, cardStyle } from "../utils/surface";
 import SectionHeader from "./SectionHeader";
 import StatusBadge from "./StatusBadge";
 import TableControls from "./TableControls";
 
-export default function RecentSessionsTable({ records = recentSessions }) {
+export default function RecentSessionsTable({ records = [] }) {
     return (
         <article className={`${cardClassName} p-5`} style={cardStyle}>
             <SectionHeader title="Recent sessions" description="Kiosk session throughput and completion status." />

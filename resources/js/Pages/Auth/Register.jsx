@@ -480,7 +480,7 @@ export default function Register({ navigate }) {
                                         goNext();
                                     }
                                 }}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl px-5 py-4 font-black text-white shadow-[0_20px_55px_rgba(37,99,235,0.2)] transition hover:-translate-y-0.5"
+                                className="flex w-full items-center justify-center gap-2 rounded-xl px-5 py-4 font-black text-white shadow-[0_20px_55px_rgba(15,118,110,0.22)] transition hover:-translate-y-0.5"
                                 style={{ backgroundColor: "var(--color-primary)" }}
                             >
                                 <Save size={18} />
@@ -523,7 +523,7 @@ export default function Register({ navigate }) {
                 <span className="h-px" style={{ backgroundColor: "var(--auth-border)" }} />
             </div>
             <div className="mt-5 text-center">
-                <button type="button" onClick={() => navigate("/login")} className="font-black text-blue-500">
+                <button type="button" onClick={() => navigate("/login")} className="font-black" style={{ color: "var(--color-primary)" }}>
                 Sign in instead
                 </button>
             </div>
@@ -603,7 +603,7 @@ function SchoolEmailField({ value, onChange, error }) {
                     className="min-w-[12rem] flex-1 bg-transparent text-sm font-semibold outline-none"
                     autoComplete="username"
                 />
-                <span className="shrink-0 rounded-lg px-3 py-1.5 text-[0.7rem] font-black text-blue-500" style={{ backgroundColor: "var(--auth-panel)" }}>
+                <span className="shrink-0 rounded-lg px-3 py-1.5 text-[0.7rem] font-black" style={{ backgroundColor: "var(--auth-panel)", color: "var(--color-primary)" }}>
                     {schoolEmailDomain}
                 </span>
             </div>

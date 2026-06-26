@@ -63,11 +63,12 @@ export default function LoginForm({
                         type="checkbox"
                         checked={form.remember}
                         onChange={(event) => onChange("remember", event.target.checked)}
-                        className="h-4 w-4 accent-blue-600"
+                        className="h-4 w-4"
+                        style={{ accentColor: "var(--color-primary)" }}
                     />
                     Remember me
                 </label>
-                <button type="button" onClick={onForgotPassword} className="text-sm font-black text-blue-500">
+                <button type="button" onClick={onForgotPassword} className="text-sm font-black" style={{ color: "var(--color-primary)" }}>
                     Forgot password?
                 </button>
             </div>
@@ -75,7 +76,7 @@ export default function LoginForm({
             <button
                 type="submit"
                 disabled={loading}
-                className="mt-3 w-full rounded-xl px-5 py-4 text-base font-black text-white shadow-[0_20px_55px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+                className="mt-3 w-full rounded-xl px-5 py-4 text-base font-black text-white shadow-[0_20px_55px_rgba(15,118,110,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
                 style={{ backgroundColor: "var(--color-primary)" }}
             >
                 {loading ? "Signing in..." : "Sign in"}

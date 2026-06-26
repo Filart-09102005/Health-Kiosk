@@ -67,7 +67,7 @@ export default function AssistantIdleGate({ children }) {
     }
 
     return (
-        <div className="relative min-h-screen overflow-hidden bg-[#eef7ff]">
+        <div className="relative min-h-screen overflow-hidden" style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 8%, #ffffff)" }}>
             <HiddenCamera videoRef={detection.videoRef} />
             <Idle navigate={openManually} />
 
@@ -78,11 +78,11 @@ export default function AssistantIdleGate({ children }) {
                 className="absolute inset-0 z-20 cursor-pointer bg-transparent"
             />
 
-            <section className="pointer-events-none absolute bottom-8 left-1/2 z-30 w-[min(92vw,34rem)] -translate-x-1/2 rounded-3xl border border-white/80 bg-white/95 p-5 text-center text-slate-950 shadow-2xl shadow-blue-200/50 backdrop-blur">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+            <section className="pointer-events-none absolute bottom-8 left-1/2 z-30 w-[min(92vw,34rem)] -translate-x-1/2 rounded-3xl border border-white/80 bg-white/95 p-5 text-center text-slate-950 shadow-2xl backdrop-blur" style={{ boxShadow: "0 24px 60px color-mix(in srgb, var(--color-primary) 18%, transparent)" }}>
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl" style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 10%, #ffffff)", color: "var(--color-primary)" }}>
                     {detection.detectionSupported && !detection.permissionDenied ? <UserRoundSearch size={31} /> : <WifiOff size={31} />}
                 </div>
-                <p className="mt-4 text-2xl font-black tracking-tight text-blue-700">
+                <p className="mt-4 text-2xl font-black tracking-tight" style={{ color: "var(--color-primary)" }}>
                     Waiting for User
                 </p>
                 <p className="mt-2 text-sm font-bold leading-6 text-slate-500">
@@ -120,13 +120,13 @@ function DetectionBadge({ detection }) {
                 : "Face detection unavailable";
 
     return (
-        <div className="pointer-events-none fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-2xl border border-blue-100/80 bg-white/95 px-4 py-3 text-slate-900 shadow-2xl shadow-blue-200/40 backdrop-blur">
+        <div className="pointer-events-none fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-2xl border bg-white/95 px-4 py-3 text-slate-900 shadow-2xl backdrop-blur" style={{ borderColor: "color-mix(in srgb, var(--color-primary) 18%, transparent)", boxShadow: "0 24px 60px color-mix(in srgb, var(--color-primary) 18%, transparent)" }}>
             <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 10%, #ffffff)", color: "var(--color-primary)" }}>
                     <Icon size={20} />
                 </div>
                 <div>
-                    <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-600">Assistant idle detection</p>
+                    <p className="text-xs font-black uppercase tracking-[0.16em]" style={{ color: "var(--color-primary)" }}>Assistant idle detection</p>
                     <p className="text-sm font-black">{label}</p>
                 </div>
             </div>

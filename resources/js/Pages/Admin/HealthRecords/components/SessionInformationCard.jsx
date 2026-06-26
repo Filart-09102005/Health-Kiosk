@@ -23,7 +23,7 @@ export default function SessionInformationCard({ record }) {
                 </div>
             </div>
             <div className="mt-4">
-                <MeasurementBadges completed={record.measurementsCompleted} total={record.measurementsTotal} />
+                <MeasurementBadges completed={record.measurementsCompleted} total={record.measurementsTotal} missing={record.missingMeasurements} />
             </div>
         </article>
     );

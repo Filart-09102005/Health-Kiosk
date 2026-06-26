@@ -3,14 +3,13 @@
 
 import { useMemo } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { heartRateTrend } from "../data/demoData";
 import { chartTooltipStyle, getChartTheme } from "../utils/chartTheme";
 import AnalyticsChartCard from "./AnalyticsChartCard";
 
 const COLOR = "#1D9E75";
 
 function StatStrip({ data }) {
-    const values = data.map((d) => d.value);
+    const values = data.length ? data.map((d) => d.value) : [0];
     const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
     const min = Math.min(...values);
     const max = Math.max(...values);
@@ -53,16 +52,16 @@ function ChartLegend() {
     );
 }
 
-export default function HeartRateChart() {
+export default function HeartRateChart({ data = [] }) {
     const theme = useMemo(() => getChartTheme(), []);
 
     return (
         <AnalyticsChartCard title="Heart rate trend" description="Average BPM captured by MAX30102 sensors." heightClass="h-auto">
-            <StatStrip data={heartRateTrend} />
+            <StatStrip data={data} />
             <div style={{ height: "0.5px", backgroundColor: "var(--color-border)", marginBottom: "1rem" }} />
             <div style={{ height: "150px" }}>
                 <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={heartRateTrend} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
+                    <LineChart data={data} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
                         <CartesianGrid stroke={theme.border} strokeDasharray="4 4" vertical={false} />
                         <XAxis dataKey="label" tick={{ fill: theme.muted, fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fill: theme.muted, fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />

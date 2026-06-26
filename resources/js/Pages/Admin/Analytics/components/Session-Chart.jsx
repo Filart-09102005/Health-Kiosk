@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { sessionAnalytics } from "../data/demoData";
 import { chartTooltipStyle, getChartTheme } from "../utils/chartTheme";
 import AnalyticsChartCard from "./AnalyticsChartCard";
 
@@ -113,8 +112,7 @@ export default function SessionChart({ data }) {
     const theme = useMemo(() => getChartTheme(), []);
 
     const chartData = useMemo(() => {
-        const source = data?.length ? data : sessionAnalytics;
-        return source
+        return (data || [])
             .filter((item) => ALLOWED.includes(item.name))
             .map((item) => ({
                 ...item,

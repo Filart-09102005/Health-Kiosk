@@ -14,7 +14,7 @@ export default function TemperatureFlow(props) {
                 description: "Measure body temperature using the kiosk infrared sensor.",
                 instructions: "Stand in front of the kiosk and keep your face visible to the temperature sensor.",
                 positioning: "Hold still at the marked distance until the reading stabilizes.",
-                format: (value) => `${Number(value).toFixed(1)} C`,
+                format: (value) => `${Number(value).toFixed(1)} °C`,
             }}
         />
     );

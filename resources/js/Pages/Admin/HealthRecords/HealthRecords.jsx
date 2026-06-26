@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { healthRecords } from "./data/demoData";
+import { motion, useReducedMotion } from "framer-motion";
+import { authService, getErrorMessage } from "../../Auth/services/authService";
+import { useToast } from "../../Global/Toast";
 import EmptyState from "./components/EmptyState";
 import HealthRecordsSkeleton from "./components/HealthRecordsSkeleton";
 import RecordDetailsDrawer from "./components/RecordDetailsDrawer";
@@ -11,19 +12,22 @@ import RecordsStatsGrid from "./components/RecordsStatsGrid";
 import RecordsTable from "./components/RecordsTable";
 import { countActiveFilters, filterHealthRecords } from "./utils/filterRecords";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 15;
 
 const defaultFilters = {
-    dateFrom: "2026-05-12",
-    dateTo: "2026-05-19",
+    dateFrom: "",
+    dateTo: "",
     healthStatus: "all",
     role: "all",
     sessionStatus: "all",
     measurement: "all",
 };
 
-export default function HealthRecords() {
+export default function HealthRecords({ navigate }) {
+    const { showToast } = useToast();
+    const shouldReduceMotion = useReducedMotion();
     const [loading, setLoading] = useState(true);
+    const [recordsData, setRecordsData] = useState({ records: [], stats: [], analytics: null });
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [isSearching, setIsSearching] = useState(false);
@@ -34,11 +38,37 @@ export default function HealthRecords() {
     const [selectedRecord, setSelectedRecord] = useState(null);
     const [drawerLoading, setDrawerLoading] = useState(false);
 
-    useEffect(() => {
-        const timer = window.setTimeout(() => setLoading(false), 550);
+    const fetchRecords = useCallback(() => {
+        setLoading(true);
 
-        return () => window.clearTimeout(timer);
-    }, []);
+        return authService
+            .adminHealthRecords()
+            .then((response) => {
+                setRecordsData({
+                    records: response.data?.records || [],
+                    stats: response.data?.stats || [],
+                    analytics: response.data?.analytics || null,
+                });
+            })
+            .catch((error) => {
+                setRecordsData({ records: [], stats: [], analytics: null });
+
+                showToast({
+                    type: "error",
+                    title: "Health records unavailable",
+                    message: getErrorMessage(error, "Unable to load health records right now."),
+                });
+
+                if (error?.response?.status === 401 || error?.response?.status === 403) {
+                    navigate("/login");
+                }
+            })
+            .finally(() => setLoading(false));
+    }, [navigate, showToast]);
+
+    useEffect(() => {
+        fetchRecords();
+    }, [fetchRecords]);
 
     useEffect(() => {
         setIsSearching(true);
@@ -57,8 +87,8 @@ export default function HealthRecords() {
     }, [quickFilter, filters]);
 
     const filteredRecords = useMemo(
-        () => filterHealthRecords(healthRecords, { search: debouncedSearch, quickFilter, filters }),
-        [debouncedSearch, quickFilter, filters],
+        () => filterHealthRecords(recordsData.records, { search: debouncedSearch, quickFilter, filters }),
+        [recordsData.records, debouncedSearch, quickFilter, filters],
     );
 
     const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PAGE_SIZE));
@@ -85,9 +115,8 @@ export default function HealthRecords() {
     }, []);
 
     const handleRefresh = useCallback(() => {
-        setLoading(true);
-        window.setTimeout(() => setLoading(false), 500);
-    }, []);
+        fetchRecords();
+    }, [fetchRecords]);
 
     const handleViewDetails = useCallback((record) => {
         setDrawerOpen(true);
@@ -98,17 +127,6 @@ export default function HealthRecords() {
             setSelectedRecord(record);
             setDrawerLoading(false);
         }, 320);
-    }, []);
-
-    const handleViewSession = useCallback((record) => {
-        setDrawerOpen(true);
-        setDrawerLoading(true);
-        setSelectedRecord(null);
-
-        window.setTimeout(() => {
-            setSelectedRecord(record);
-            setDrawerLoading(false);
-        }, 220);
     }, []);
 
     const closeDrawer = useCallback(() => {
@@ -122,10 +140,16 @@ export default function HealthRecords() {
     }
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.28 }} className="mt-6 space-y-6">
+        <motion.div
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={shouldReduceMotion ? { duration: 0.01 } : { duration: 0.24, ease: "easeOut" }}
+            className="mt-6 space-y-6"
+        >
             <RecordsHeader />
-            <RecordsStatsGrid />
-            <RecordsAnalyticsPanel />
+            <RecordsStatsGrid stats={recordsData.stats} />
+            <RecordsAnalyticsPanel analytics={recordsData.analytics} />
             <RecordsFilters
                 filters={filters}
                 onFilterChange={handleFilterChange}
@@ -148,8 +172,8 @@ export default function HealthRecords() {
                     totalPages={totalPages}
                     onPageChange={setPage}
                     onViewDetails={handleViewDetails}
-                    onViewSession={handleViewSession}
-                    totalLabel={`Showing ${paginatedRecords.length} of ${filteredRecords.length} filtered records`}
+                    exportRecords={filteredRecords}
+                    totalLabel={`Showing ${paginatedRecords.length} of ${filteredRecords.length} filtered users`}
                 />
             )}
 

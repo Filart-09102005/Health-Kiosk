@@ -13,7 +13,8 @@ class KioskSessionController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = KioskSession::query()
-            ->with(['user:id,firstname,lastname,barcode,role,department', 'healthRecord'])
+            ->with(['user:id,firstname,lastname,student_id,barcode,role,department', 'healthRecord', 'activities'])
+            ->whereHas('user', fn ($userQuery) => $userQuery->where('role', '!=', 'admin'))
             ->latest();
 
         if ($search = $request->string('search')->trim()->value()) {
@@ -29,6 +30,6 @@ class KioskSessionController extends Controller
             $query->where('status', $status);
         }
 
-        return KioskSessionResource::collection($query->paginate($request->integer('per_page', 10)));
+        return KioskSessionResource::collection($query->paginate(min($request->integer('per_page', 15), 100)));
     }
 }

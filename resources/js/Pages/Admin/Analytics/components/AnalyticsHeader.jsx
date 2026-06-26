@@ -1,10 +1,9 @@
-import { motion } from "framer-motion";
 import { BarChart3, ChevronRight } from "lucide-react";
 import { cardClassName, cardStyle } from "../utils/surface";
 
 export default function AnalyticsHeader() {
     return (
-        <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`${cardClassName} p-5 sm:p-6`} style={cardStyle}>
+        <section className={`${cardClassName} p-5 sm:p-6`} style={cardStyle}>
             <nav className="flex flex-wrap items-center gap-1 text-xs font-bold" style={{ color: "var(--color-muted)" }}>
                 <span>Admin</span><ChevronRight size={12} /><span style={{ color: "var(--color-primary)" }}>Measurement Analytics</span>
             </nav>
@@ -19,6 +18,6 @@ export default function AnalyticsHeader() {
                     </div>
                 </div>
             </div>
-        </motion.section>
+        </section>
     );
 }

@@ -36,10 +36,10 @@ export default function AdminLayout({
     };
 
     return (
-        <main className="hk-page min-h-screen lg:flex" style={{ backgroundColor: "var(--color-bg)", color: "var(--color-text)" }}>
+        <main className="hk-page min-h-screen lg:flex lg:h-screen lg:overflow-hidden" style={{ backgroundColor: "var(--color-bg)", color: "var(--color-text)" }}>
             <Sidebar navigate={navigate} pathname={pathname} />
 
-            <section className="min-w-0 flex-1 px-4 py-6 lg:pl-0 lg:pr-6">
+            <section className="relative z-[1] min-w-0 flex-1 px-4 py-6 lg:h-screen lg:overflow-y-auto lg:pl-0 lg:pr-6">
                 <div className="mx-auto max-w-[90rem]">
                     {loadingHeader ? <AdminHeaderSkeleton /> : <Header onLogout={logout} eyebrow={eyebrow} title={title} />}
                     {children}
@@ -56,7 +56,7 @@ function HeaderSkeletonBlock({ className = "" }) {
 function AdminHeaderSkeleton() {
     return (
         <header
-            className="sticky top-6 z-20 rounded-2xl border p-4 shadow-xl backdrop-blur-xl sm:p-5"
+            className="sticky top-0 z-20 rounded-2xl border p-4 shadow-xl backdrop-blur-xl sm:p-5"
             style={{
                 backgroundColor: "color-mix(in srgb, var(--color-card) 92%, transparent)",
                 borderColor: "var(--color-border)",

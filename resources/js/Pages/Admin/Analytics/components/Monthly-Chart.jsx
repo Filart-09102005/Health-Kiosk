@@ -14,7 +14,6 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
-import { sessionTrendAnalytics } from "../data/demoData";
 import { chartTooltipStyle, getChartTheme } from "../utils/chartTheme";
 import AnalyticsChartCard from "./AnalyticsChartCard";
 
@@ -187,17 +186,17 @@ function CustomTooltip({ active, payload, label }) {
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export default function MonthlyChart() {
+export default function MonthlyChart({ data }) {
     const theme = useMemo(() => getChartTheme(), []);
     const [period, setPeriod] = useState("monthly");
 
-    const chartData = sessionTrendAnalytics[period] || sessionTrendAnalytics.monthly;
+    const chartData = data?.[period] || [];
     const periodLabel = periodOptions.find((o) => o.value === period)?.label ?? "Monthly";
 
     return (
         <AnalyticsChartCard
             title={`${periodLabel} analytics`}
-            description="Completed sessions, incomplete sessions, and alert cases in one stacked trend."
+            description="Stacked session and alert trends."
             className="xl:col-span-2"
             heightClass="h-auto"
             action={

@@ -4,7 +4,6 @@ import {
     BarChart3,
     ChevronDown,
     ChevronsLeft,
-    ChevronsRight,
     ClipboardList,
     FileText,
     Gauge,
@@ -34,6 +33,7 @@ const userItems = [
 const systemItems = [
     { label: "Kiosk Sessions", icon: Activity, path: "/admin/sessions" },
     { label: "Devices & Sensors", icon: RadioTower, path: "/admin/devices" },
+    // { label: "Live Vitals", icon: HeartPulse, path: "/admin/live-vitals" },
     { label: "Activity Logs", icon: Gauge, path: "/admin/activity-logs" },
     { label: "Settings", icon: Settings, path: "/admin/settings" },
 ];
@@ -160,11 +160,23 @@ export default function Sidebar({ navigate, pathname }) {
 
     return (
         <aside
-            className={`sticky top-6 hidden h-[calc(100vh-3rem)] shrink-0 px-6 pb-6 lg:block ${collapsed ? "w-[8.5rem]" : "w-[21.5rem]"}`}
+            className={`hk-admin-sidebar sticky top-6 z-[100] hidden h-[calc(100vh-1.5rem)] shrink-0 px-6 pb-6 transition-[width] duration-[260ms] ease-in-out lg:block ${collapsed ? "w-[8.5rem]" : "w-[21.5rem]"}`}
             style={{ color: "var(--color-text)" }}
         >
+            <button
+                type="button"
+                onClick={() => setCollapsed((current) => ! current)}
+                className="absolute right-2 top-[5.75rem] z-30 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border shadow-md hk-soft-hover"
+                style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+                <span className="flex transition-transform duration-200 ease-out" style={{ transform: collapsed ? "rotate(180deg)" : "rotate(0deg)" }}>
+                    <ChevronsLeft size={13} />
+                </span>
+            </button>
+
             <div
-                className="flex h-full flex-col rounded-2xl border shadow-xl backdrop-blur-xl"
+                className="hk-sidebar-shell flex h-full flex-col overflow-hidden rounded-2xl border shadow-xl backdrop-blur-xl"
                 style={{
                     backgroundColor: "color-mix(in srgb, var(--color-card) 92%, transparent)",
                     borderColor: "var(--color-border)",
@@ -174,16 +186,6 @@ export default function Sidebar({ navigate, pathname }) {
                     className="relative flex h-[5.75rem] shrink-0 items-center border-b px-4"
                     style={{ borderColor: "var(--color-border)" }}
                 >
-                    <button
-                        type="button"
-                        onClick={() => setCollapsed((current) => ! current)}
-                        className="absolute -right-3 bottom-0 z-20 flex h-7 w-7 translate-y-1/2 items-center justify-center rounded-full border shadow-md hk-soft-hover"
-                        style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
-                        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                    >
-                        {collapsed ? <ChevronsRight size={13} /> : <ChevronsLeft size={13} />}
-                    </button>
-
                     <div className={collapsed ? "flex w-full items-center justify-center" : "flex w-full items-center gap-3"}>
                         <div
                             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
@@ -350,7 +352,7 @@ export default function Sidebar({ navigate, pathname }) {
 
             {tooltip ? (
                 <div
-                    className="pointer-events-none fixed z-50 rounded-xl border px-3 py-2 text-xs font-black shadow-lg"
+                    className="hk-sidebar-tooltip pointer-events-none fixed z-[200] rounded-xl border px-3 py-2 text-xs font-black shadow-lg"
                     style={{
                         left: "6.4rem",
                         top: tooltip.top,
@@ -368,7 +370,7 @@ export default function Sidebar({ navigate, pathname }) {
                 <div
                     onMouseEnter={keepUserFlyoutOpen}
                     onMouseLeave={scheduleUserFlyoutClose}
-                    className="fixed z-50 w-56 rounded-[14px] border p-2 shadow-lg"
+                    className="hk-sidebar-flyout fixed z-[200] w-56 rounded-[14px] border p-2 shadow-lg"
                     style={{
                         left: "6.4rem",
                         top: userFlyout.top,

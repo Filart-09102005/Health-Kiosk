@@ -1,4 +1,4 @@
-import { FileSpreadsheet, FileText } from "lucide-react";
+import { FileSpreadsheet, FileText, Printer } from "lucide-react";
 import ReportStatusBadge from "./ReportStatusBadge";
 
 export default function ReportTableRow({ report }) {
@@ -26,9 +26,6 @@ export default function ReportTableRow({ report }) {
             <td className="border-b px-3 py-3 font-black" style={{ borderColor: "var(--color-border)" }}>
                 {report.totalRecords}
             </td>
-            <td className="border-b px-3 py-3 font-black" style={{ borderColor: "var(--color-border)" }}>
-                {report.format}
-            </td>
             <td className="border-b px-3 py-3 font-bold" style={{ borderColor: "var(--color-border)" }}>
                 <Truncate value={report.generatedAt} />
             </td>
@@ -36,9 +33,10 @@ export default function ReportTableRow({ report }) {
                 <ReportStatusBadge status={report.status} />
             </td>
             <td className="border-b px-3 py-3" style={{ borderColor: "var(--color-border)" }}>
-                <div className="flex items-center gap-1.5">
-                    <ActionButton title="Export Excel" label="Excel" icon={FileSpreadsheet} />
-                    <ActionButton title="Export PDF" label="PDF" icon={FileText} />
+                <div className="flex flex-col items-stretch gap-1.5">
+                    <ActionButton title="Export report as Excel spreadsheet" label="Excel .xlsx" icon={FileSpreadsheet} />
+                    <ActionButton title="Export report as PDF document" label="PDF .pdf" icon={FileText} />
+                    <ActionButton title="Print report" label="Print" icon={Printer} />
                 </div>
             </td>
         </tr>
@@ -53,7 +51,7 @@ function ActionButton({ title, label, icon: Icon }) {
     return (
         <button
             type="button"
-            className="flex h-8 items-center gap-1.5 rounded-[9px] border px-2.5 text-[0.68rem] font-black transition hk-admin-nav-hover"
+            className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-[9px] border px-2.5 text-[0.68rem] font-black transition hk-admin-nav-hover"
             style={{ borderColor: "var(--color-border)" }}
             title={title}
         >

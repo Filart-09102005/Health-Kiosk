@@ -7,8 +7,17 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class HealthRecordResource extends JsonResource
 {
+    private const MEASUREMENT_KEYS = ['heart_rate', 'spo2', 'temperature', 'height', 'weight', 'bmi'];
+
     public function toArray(Request $request): array
     {
+        $missingMeasurements = collect(self::MEASUREMENT_KEYS)
+            ->filter(fn (string $key) => $this->{$key} === null || $this->{$key} === '')
+            ->values()
+            ->all();
+
+        $completedMeasurements = count(self::MEASUREMENT_KEYS) - count($missingMeasurements);
+
         return [
             'id' => $this->id,
             'session_id' => $this->kiosk_session_id,
@@ -20,7 +29,12 @@ class HealthRecordResource extends JsonResource
             'bmi' => $this->bmi,
             'bmi_category' => $this->bmi_category,
             'health_status' => $this->health_status,
-            'missing_measurements' => $this->missing_measurements ?? [],
+            'missing_measurements' => $missingMeasurements,
+            'measurement_summary' => [
+                'completed' => $completedMeasurements,
+                'total' => count(self::MEASUREMENT_KEYS),
+                'missing' => $missingMeasurements,
+            ],
             'advice' => $this->advice,
             'created_at' => $this->created_at,
             'user' => $this->whenLoaded('user', fn () => [

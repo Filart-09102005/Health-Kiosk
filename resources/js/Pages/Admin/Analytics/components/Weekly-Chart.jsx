@@ -15,7 +15,6 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
-import { vitalTrendAnalytics } from "../data/demoData";
 import { chartTooltipStyle, getChartTheme } from "../utils/chartTheme";
 import AnalyticsChartCard from "./AnalyticsChartCard";
 
@@ -175,11 +174,11 @@ function CustomTooltip({ active, payload, label }) {
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export default function WeeklyChart() {
+export default function WeeklyChart({ data }) {
     const theme = useMemo(() => getChartTheme(), []);
     const [period, setPeriod] = useState("weekly");
 
-    const chartData = vitalTrendAnalytics[period] || vitalTrendAnalytics.weekly;
+    const chartData = data?.[period] || [];
     const periodLabel = periodOptions.find((o) => o.value === period)?.label ?? "Weekly";
 
     return (

@@ -20,6 +20,10 @@ class HealthEvaluationService
             $bmiCategory = $this->bmiCategory($bmi);
         }
 
+        if ($bmi === null) {
+            $missing[] = 'bmi';
+        }
+
         $status = $this->status($latest, $bmi, $missing);
 
         return [

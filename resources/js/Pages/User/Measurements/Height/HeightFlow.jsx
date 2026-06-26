@@ -8,13 +8,13 @@ export default function HeightFlow(props) {
             config={{
                 type: "height",
                 title: "Height",
-                sensor: "Ultrasonic height sensor",
+                sensor: "Ultrasonic distance sensor",
                 unit: "cm",
                 icon: Ruler,
-                description: "Measure standing height using the overhead kiosk sensor.",
-                instructions: "Remove headwear if possible and stand straight under the height sensor.",
-                positioning: "Keep feet flat, shoulders relaxed, and eyes forward until the sensor stabilizes.",
-                format: (value) => `${Number(value).toFixed(1)} cm`,
+                description: "Measure your standing height using the kiosk ultrasonic sensor.",
+                instructions: "Stand straight against the kiosk height marker with your back upright and feet flat on the platform.",
+                positioning: "Keep your head level and stay completely still while the sensor takes the reading.",
+                format: (value) => `${Math.round(value)} cm`,
             }}
         />
     );

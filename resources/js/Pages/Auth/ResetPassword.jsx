@@ -103,7 +103,7 @@ export default function ResetPassword({ navigate }) {
                 <button
                     type="submit"
                     disabled={loading || !form.token || !form.email}
-                    className="w-full rounded-xl px-5 py-4 text-base font-black text-white shadow-[0_20px_55px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5 disabled:opacity-70"
+                    className="w-full rounded-xl px-5 py-4 text-base font-black text-white shadow-[0_20px_55px_rgba(15,118,110,0.28)] transition hover:-translate-y-0.5 disabled:opacity-70"
                     style={{ backgroundColor: "var(--color-primary)" }}
                 >
                     Reset password

@@ -3,16 +3,12 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { chartTooltipStyle, getChartTheme } from "../utils/chartTheme";
 import ChartCard from "./ChartCard";
 
-export default function HealthStatusChart() {
+export default function HealthStatusChart({ data: healthStatusData = [] }) {
     const theme = useMemo(() => getChartTheme(), []);
-    const data = useMemo(
-        () => [
-            { name: "Normal", value: 68, color: theme.success },
-            { name: "Needs Review", value: 22, color: theme.primary },
-            { name: "High Risk", value: 10, color: theme.error },
-        ],
-        [theme],
-    );
+    const data = useMemo(() => healthStatusData.map((item, index) => ({
+        ...item,
+        color: item.color || [theme.success, theme.primary, theme.error][index] || theme.muted,
+    })), [healthStatusData, theme]);
     const total = data.reduce((sum, item) => sum + item.value, 0);
 
     return (
@@ -47,7 +43,7 @@ export default function HealthStatusChart() {
                             <div className="min-w-0">
                                 <p className="text-xs font-black leading-none">{item.name}</p>
                                 <p className="mt-1 text-[0.68rem] font-bold" style={{ color: "var(--color-muted)" }}>
-                                    {Math.round((item.value / total) * 100)}%
+                                    {total > 0 ? Math.round((item.value / total) * 100) : 0}%
                                 </p>
                             </div>
                         </div>

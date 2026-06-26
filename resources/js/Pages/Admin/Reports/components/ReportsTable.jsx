@@ -1,6 +1,9 @@
+import { useMemo, useState } from "react";
 import Pagination from "./Pagination";
 import ReportTableRow from "./ReportTableRow";
 import SectionHeader from "./SectionHeader";
+
+const PAGE_SIZE = 15;
 
 const columns = [
     { label: "Report ID", className: "w-[8rem]" },
@@ -10,20 +13,28 @@ const columns = [
     { label: "Role", className: "w-[7rem]" },
     { label: "Type", className: "w-[9rem]" },
     { label: "Records", className: "w-[6rem]" },
-    { label: "Format", className: "w-[6rem]" },
     { label: "Generated At", className: "w-[12rem]" },
     { label: "Status", className: "w-[7rem]" },
-    { label: "Actions", className: "w-[8.5rem]" },
+    { label: "Actions", className: "w-[9rem]" },
 ];
 
 export default function ReportsTable({ reports = [], onPreview }) {
+    const [page, setPage] = useState(1);
+    const totalPages = Math.max(1, Math.ceil(reports.length / PAGE_SIZE));
+    const currentPage = Math.min(page, totalPages);
+    const visibleReports = useMemo(() => {
+        const start = (currentPage - 1) * PAGE_SIZE;
+
+        return reports.slice(start, start + PAGE_SIZE);
+    }, [currentPage, reports]);
+
     return (
         <section className="rounded-[14px] border p-5 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <SectionHeader title="Generated reports" description="Clinic report history, export status, and preview controls." />
             </div>
-            <div className="max-h-[34rem] overflow-auto rounded-[12px] border" style={{ borderColor: "var(--color-border)" }}>
-                <table className="w-full min-w-[1120px] table-fixed text-left text-xs">
+            <div className="hk-reports-table-scroll max-h-[34rem] overflow-auto rounded-[12px] border" style={{ borderColor: "var(--color-border)" }}>
+                <table className="w-full min-w-[1160px] table-fixed text-left text-xs">
                     <thead className="sticky top-0 z-10" style={{ backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>
                         <tr>
                             {columns.map((column) => (
@@ -34,12 +45,18 @@ export default function ReportsTable({ reports = [], onPreview }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {reports.map((report) => <ReportTableRow key={report.id} report={report} onPreview={onPreview} />)}
+                        {visibleReports.map((report) => <ReportTableRow key={report.id} report={report} onPreview={onPreview} />)}
                     </tbody>
                 </table>
             </div>
             <div className="mt-4">
-                <Pagination />
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalRecords={reports.length}
+                    pageSize={PAGE_SIZE}
+                    onPageChange={setPage}
+                />
             </div>
         </section>
     );

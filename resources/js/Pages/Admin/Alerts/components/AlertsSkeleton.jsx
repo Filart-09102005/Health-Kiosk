@@ -3,10 +3,10 @@ import TableSkeleton from "./TableSkeleton";
 
 export default function AlertsSkeleton() {
     return (
-        <div className="space-y-5">
+        <div className="mt-5 space-y-5">
             <ShimmerSkeleton className="h-28 w-full" />
-            <div className="grid gap-4 md:grid-cols-4">
-                {Array.from({ length: 8 }).map((_, index) => (
+            <div className="grid gap-4 md:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, index) => (
                     <ShimmerSkeleton key={index} className="h-32 w-full" />
                 ))}
             </div>

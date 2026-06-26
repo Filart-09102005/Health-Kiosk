@@ -1,8 +1,8 @@
-import { recordsAnalytics } from "../data/demoData";
 import { cardClassName, cardStyle } from "../utils/surface";
 
-export default function MeasurementCompletionCard() {
-    const percent = recordsAnalytics.measurementCompletion;
+export default function MeasurementCompletionCard({ analytics }) {
+    const percent = analytics?.measurementCompletion || 0;
+    const incompleteMeasurements = analytics?.incompleteMeasurements || [];
 
     return (
         <article className={`${cardClassName} p-4`} style={cardStyle}>
@@ -16,7 +16,7 @@ export default function MeasurementCompletionCard() {
                 <span className="block h-full rounded-full" style={{ width: `${percent}%`, backgroundColor: "var(--color-primary)" }} />
             </div>
             <ul className="mt-4 space-y-2">
-                {recordsAnalytics.incompleteMeasurements.map((item) => (
+                {incompleteMeasurements.map((item) => (
                     <li key={item.label} className="flex items-center justify-between text-xs font-bold">
                         <span style={{ color: "var(--color-muted)" }}>{item.label}</span>
                         <span className="font-black">{item.count} incomplete</span>

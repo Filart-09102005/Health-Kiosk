@@ -30,7 +30,6 @@ class ThermalReceiptController extends Controller
             'weight' => ['nullable'],
             'bmi' => ['nullable'],
             'status' => ['nullable', 'string', 'max:80'],
-            'advice' => ['nullable', 'string', 'max:500'],
         ]);
 
         $payload = $this->buildReceipt($data);
@@ -58,14 +57,21 @@ class ThermalReceiptController extends Controller
             ['School ID', $record['school_id'] ?? $record['schoolId'] ?? $record['barcode'] ?? '--'],
             ['Heart Rate', $this->withUnit($record['heart_rate'] ?? null, 'bpm')],
             ['SpO2', $this->withUnit($record['spo2'] ?? null, '%')],
-            ['Body Temp', $this->withUnit($record['temperature'] ?? null, 'C')],
-            ['Height', $this->withUnit($record['height'] ?? null, 'cm')],
             ['Weight', $this->withUnit($record['weight'] ?? null, 'kg')],
-            ['BMI', $record['bmi'] ?? '--'],
             ['Status', $record['status'] ?? '--'],
         ];
 
-        $advice = $record['advice'] ?? 'Please consult the clinic staff if you feel unwell.';
+        if (! empty($record['temperature'])) {
+            $rows[] = ['Body Temp', $this->withUnit($record['temperature'], 'C')];
+        }
+
+        if (! empty($record['height'])) {
+            $rows[] = ['Height', $this->withUnit($record['height'], 'cm')];
+        }
+
+        if (! empty($record['bmi'])) {
+            $rows[] = ['BMI', $record['bmi']];
+        }
 
         $receipt = [
             "\x1B\x40",
@@ -83,13 +89,6 @@ class ThermalReceiptController extends Controller
 
         foreach ($rows as [$label, $value]) {
             $receipt[] = $this->row($label, (string) $value)."\n";
-        }
-
-        $receipt[] = $this->line('-')."\n";
-        $receipt[] = "\x1B\x45\x01"."ADVICE / REMINDER\n"."\x1B\x45\x00";
-
-        foreach ($this->wrap($advice) as $line) {
-            $receipt[] = $line."\n";
         }
 
         $receipt[] = $this->line('-')."\n";

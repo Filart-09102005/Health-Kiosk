@@ -3,14 +3,13 @@
 
 import { useMemo } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { temperatureTrend } from "../data/demoData";
 import { chartTooltipStyle, getChartTheme } from "../utils/chartTheme";
 import AnalyticsChartCard from "./AnalyticsChartCard";
 
 const COLOR = "#E24B4A";
 
 function StatStrip({ data }) {
-    const values = data.map((d) => d.value);
+    const values = data.length ? data.map((d) => d.value) : [0];
     const avg = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
     const min = Math.min(...values).toFixed(1);
     const max = Math.max(...values).toFixed(1);
@@ -53,16 +52,16 @@ function ChartLegend() {
     );
 }
 
-export default function TemperatureChart() {
+export default function TemperatureChart({ data = [] }) {
     const theme = useMemo(() => getChartTheme(), []);
 
     return (
         <AnalyticsChartCard title="Temperature trend" description="Daily average body temperature across clinic hours." heightClass="h-auto">
-            <StatStrip data={temperatureTrend} />
+            <StatStrip data={data} />
             <div style={{ height: "0.5px", backgroundColor: "var(--color-border)", marginBottom: "1rem" }} />
             <div style={{ height: "150px" }}>
                 <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={temperatureTrend} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
+                    <LineChart data={data} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
                         <CartesianGrid stroke={theme.border} strokeDasharray="4 4" vertical={false} />
                         <XAxis dataKey="label" tick={{ fill: theme.muted, fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
                         <YAxis domain={[36, 38]} tick={{ fill: theme.muted, fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />

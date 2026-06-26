@@ -19,6 +19,7 @@ class KioskSessionResource extends JsonResource
             'user' => $this->whenLoaded('user', fn () => [
                 'id' => $this->user->id,
                 'name' => $this->user->full_name,
+                'student_id' => $this->user->student_id,
                 'barcode' => $this->user->barcode,
                 'role' => $this->user->role,
                 'department' => $this->user->department,

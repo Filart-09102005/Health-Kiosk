@@ -16,7 +16,7 @@ class UserController extends Controller
         Gate::authorize('viewAny', User::class);
 
         $filters = $request->validated();
-        $perPage = min((int) ($filters['per_page'] ?? 10), 50);
+        $perPage = min((int) ($filters['per_page'] ?? 15), 50);
 
         $users = User::query()
             ->select([

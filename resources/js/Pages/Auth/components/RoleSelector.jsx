@@ -121,7 +121,7 @@ export default function RoleSelector({ value, onChange }) {
                             backgroundColor: isSelected ? "color-mix(in srgb, var(--color-primary), transparent 94%)" : "var(--auth-panel)",
                             borderColor: isSelected ? "var(--color-primary)" : "var(--auth-border)",
                             color: "var(--auth-text)",
-                            boxShadow: isSelected ? "0 12px 40px rgba(37,99,235,0.12)" : "none"
+                            boxShadow: isSelected ? "0 12px 40px rgba(15,118,110,0.14)" : "none"
                         }}
                     >
                         {isSelected && (

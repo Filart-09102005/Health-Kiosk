@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { ShieldAlert } from "lucide-react";
 
-export default function AlertsHeader({ alertsEnabled = true, sensitivityProfile }) {
+export default function AlertsHeader() {
     return (
         <motion.section
             initial={{ opacity: 0, y: 12 }}
@@ -21,16 +21,6 @@ export default function AlertsHeader({ alertsEnabled = true, sensitivityProfile 
                             Monitoring abnormal readings, critical kiosk alerts, response timing, and clinic review workflows using the active sensitivity setting.
                         </p>
                     </div>
-                </div>
-                <div className="rounded-[12px] border p-4 text-sm font-bold" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
-                    <p>
-                        Alert engine status: <span style={{ color: alertsEnabled ? "var(--color-success)" : "var(--color-error)" }}>{alertsEnabled ? "Monitoring" : "Paused"}</span>
-                    </p>
-                    {sensitivityProfile ? (
-                        <p className="mt-2 text-xs leading-5" style={{ color: "var(--color-muted)" }}>
-                            {sensitivityProfile.label} sensitivity - {alertsEnabled ? `${sensitivityProfile.queueRate}% detection, ${sensitivityProfile.delayLabel.toLowerCase()}` : "alerts disabled"}
-                        </p>
-                    ) : null}
                 </div>
             </div>
         </motion.section>

@@ -4,13 +4,12 @@
 
 import { useState } from "react";
 import { useThemeMode } from "../../../../Global/ThemeToggle";
-import { heatmapData } from "../data/demoData";
 import AnalyticsChartCard from "./AnalyticsChartCard";
 
 const HOUR_LABELS = ["7AM", "9AM", "11AM", "1PM", "3PM", "5PM", "7PM"];
 
 // ─── Blue ramp (7 stops, light → dark) ───────────────────────────────────────
-// Light mode uses stops going deep blue; dark mode uses a teal-shifted ramp
+// Light mode avoids heavy deep blue; dark mode uses a softer blue ramp
 // so cells stay vivid against a dark surface.
 const LIGHT_RAMP = [
     [230, 241, 251],  // 0 – near-empty
@@ -198,16 +197,16 @@ export default function ActivityHeatmapChart({ data, isDark }) {
     const { resolvedTheme } = useThemeMode();
     const activeIsDark = isDark !== undefined ? isDark : resolvedTheme === "dark";
 
-    const chartData = data?.length ? data : heatmapData;
+    const chartData = data || [];
     const allVals = chartData.flatMap((r) => r.hours);
     const max = Math.max(1, ...allVals);
     const total = allVals.reduce((a, b) => a + b, 0);
     const activeVals = allVals.filter((v) => v > 0);
     const avg = activeVals.length ? Math.round(total / activeVals.length) : 0;
-    const peakRow = chartData.reduce((best, row) => {
+    const peakRow = chartData.length ? chartData.reduce((best, row) => {
         const rowMax = Math.max(...row.hours);
         return rowMax > Math.max(...best.hours) ? row : best;
-    }, chartData[0]);
+    }, chartData[0]) : { day: "-", hours: [0] };
     const peakHourIdx = peakRow.hours.indexOf(Math.max(...peakRow.hours));
     const peakLabel = HOUR_LABELS[peakHourIdx];
 
@@ -225,7 +224,6 @@ export default function ActivityHeatmapChart({ data, isDark }) {
                     {[
                         { val: total.toLocaleString(), lbl: "Total this week" },
                         { val: max, lbl: `Peak (${peakRow.day}, ${peakLabel})` },
-                        { val: avg, lbl: "Avg per active slot" },
                     ].map(({ val, lbl }) => (
                         <div key={lbl} style={styles.stat(activeIsDark)}>
                             <div style={styles.statVal}>{val}</div>

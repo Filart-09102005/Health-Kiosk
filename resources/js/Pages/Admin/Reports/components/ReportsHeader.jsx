@@ -1,11 +1,8 @@
 import { FileText } from "lucide-react";
-import { motion } from "framer-motion";
 
 export default function ReportsHeader() {
     return (
-        <motion.section
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
+        <section
             className="rounded-[14px] border p-6 shadow-xl"
             style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
         >
@@ -21,6 +18,6 @@ export default function ReportsHeader() {
                     </p>
                 </div>
             </div>
-        </motion.section>
+        </section>
     );
 }

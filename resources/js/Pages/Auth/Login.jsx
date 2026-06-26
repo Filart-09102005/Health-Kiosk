@@ -91,7 +91,7 @@ export default function Login({ navigate }) {
             panelDescription="Securely authenticate with your school barcode or sign in with your school email address."
             variant="login"
         >
-            {loading ? <Loader label="Signing in" fullscreen /> : null}
+            {loading ? <Loader label="Signing you in" message="Verifying your account and opening your secure kiosk session." fullscreen /> : null}
 
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-3 auth-panel">
                 <div>
@@ -157,7 +157,7 @@ export default function Login({ navigate }) {
             </div>
             <p className="mt-5 text-center text-sm font-semibold auth-strong-text">
                 Don't have an account?{" "}
-                <button type="button" onClick={() => navigate("/register")} className="font-black text-blue-500">
+                <button type="button" onClick={() => navigate("/register")} className="font-black" style={{ color: "var(--color-primary)" }}>
                     Create one
                 </button>
             </p>

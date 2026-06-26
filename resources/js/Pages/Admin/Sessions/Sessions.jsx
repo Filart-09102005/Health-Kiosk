@@ -1,10 +1,22 @@
 import { Activity, CheckCircle2, Eye, TimerReset, TriangleAlert, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import AdminShell from "../components/AdminShell";
 import AdminModulePage from "../components/AdminModulePage";
-import { getHealthRecordSessions } from "../HealthRecords/data/demoData";
+import { authService, getErrorMessage } from "../../Auth/services/authService";
+import { useToast } from "../../Global/Toast";
+import useModalLayer from "../../../Global/useModalLayer";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 15;
+const MEASUREMENT_KEYS = ["heart_rate", "spo2", "temperature", "height", "weight", "bmi"];
+const MEASUREMENT_LABELS = {
+    heart_rate: "Heart rate",
+    spo2: "SpO2",
+    temperature: "Temperature",
+    height: "Height",
+    weight: "Weight",
+    bmi: "BMI",
+};
 const phDateTime = new Intl.DateTimeFormat("en-PH", {
     month: "short",
     day: "2-digit",
@@ -15,31 +27,49 @@ const phDateTime = new Intl.DateTimeFormat("en-PH", {
     timeZone: "Asia/Manila",
 });
 
-const sessionRecords = getHealthRecordSessions()
-    .map((session, index) => ({
-        ...session,
-        id: session.sessionId || index + 1,
-        displaySessionId: `SES-${index + 1}`,
-        startedAt: getSessionStartedAt(session),
-        endedAt: getSessionEndedAt(session),
-        duration: getSessionDuration(session),
-    }))
-    .sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt));
-
-const completedCount = sessionRecords.filter((session) => session.status === "Completed").length;
-const incompleteCount = sessionRecords.filter((session) => session.status !== "Completed").length;
-const averageDuration = getAverageSessionDuration(sessionRecords);
-
 export default function Sessions({ navigate }) {
+    const { showToast } = useToast();
+    const [sessionRecords, setSessionRecords] = useState([]);
     const [page, setPage] = useState(1);
     const [selectedSession, setSelectedSession] = useState(null);
+
+    useEffect(() => {
+        let alive = true;
+
+        authService.adminSessions({ per_page: 100 })
+            .then((response) => {
+                if (!alive) return;
+
+                setSessionRecords((response.data?.data || []).map(formatApiSession));
+            })
+            .catch((error) => {
+                if (!alive) return;
+
+                showToast({
+                    type: "error",
+                    title: "Sessions unavailable",
+                    message: getErrorMessage(error, "Unable to load kiosk sessions right now."),
+                });
+
+                if (error?.response?.status === 401 || error?.response?.status === 403) {
+                    navigate("/login");
+                }
+            });
+
+        return () => {
+            alive = false;
+        };
+    }, [navigate, showToast]);
 
     const totalPages = Math.max(1, Math.ceil(sessionRecords.length / PAGE_SIZE));
     const visibleSessions = useMemo(() => {
         const start = (page - 1) * PAGE_SIZE;
 
         return sessionRecords.slice(start, start + PAGE_SIZE);
-    }, [page]);
+    }, [page, sessionRecords]);
+    const completedCount = sessionRecords.filter((session) => session.status === "Completed").length;
+    const incompleteCount = sessionRecords.filter((session) => session.status !== "Completed").length;
+    const averageDuration = getAverageSessionDuration(sessionRecords);
 
     return (
         <AdminShell navigate={navigate} eyebrow="Kiosk Sessions" title="Session Tracking">
@@ -54,6 +84,7 @@ export default function Sessions({ navigate }) {
                     { label: "Incomplete Sessions", value: String(incompleteCount), caption: "Not yet completed or exited early", icon: TriangleAlert },
                     { label: "Average Session Duration", value: averageDuration, caption: "Average login to logout time", icon: TimerReset },
                 ]}
+                showHeaderActions={false}
             >
                 <SessionsTable
                     sessions={visibleSessions}
@@ -87,56 +118,54 @@ function SessionsTable({ sessions, page, totalPages, totalRecords, onPageChange,
                 </p>
             </div>
 
-            <div className="overflow-hidden rounded-xl border" style={{ borderColor: "var(--color-border)" }}>
-                <div className="overflow-x-auto">
-                    <table className="w-full min-w-[1040px] text-left text-sm">
-                        <thead style={{ backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>
-                            <tr>
-                                {["Session", "User", "School ID", "Role", "Method", "Status", "Started", "Ended", "Modules", "Action"].map((heading) => (
-                                    <th key={heading} className="border-b px-3 py-3 text-[0.68rem] font-black uppercase tracking-wide" style={{ borderColor: "var(--color-border)" }}>
-                                        {heading}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {sessions.map((session) => (
-                                <tr key={session.id} className="transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,transparent)]">
-                                    <td className="border-b px-3 py-3.5 font-black" style={{ borderColor: "var(--color-border)" }}>{session.displaySessionId}</td>
-                                    <td className="border-b px-3 py-3.5" style={{ borderColor: "var(--color-border)" }}>
-                                        <p className="font-black">{session.fullName}</p>
-                                        <p className="text-xs font-bold" style={{ color: "var(--color-muted)" }}>{session.department}</p>
-                                    </td>
-                                    <td className="border-b px-3 py-3.5 font-bold" style={{ borderColor: "var(--color-border)" }}>{session.schoolId}</td>
-                                    <td className="border-b px-3 py-3.5 font-bold" style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}>{session.role}</td>
-                                    <td className="border-b px-3 py-3.5 font-bold" style={{ borderColor: "var(--color-border)" }}>{session.method}</td>
-                                    <td className="border-b px-3 py-3.5" style={{ borderColor: "var(--color-border)" }}>
-                                        <SessionStatus status={session.status} />
-                                    </td>
-                                    <td className="border-b px-3 py-3.5 text-xs font-bold" style={{ borderColor: "var(--color-border)" }}>{session.startedAt}</td>
-                                    <td className="border-b px-3 py-3.5 text-xs font-bold" style={{ borderColor: "var(--color-border)" }}>
-                                        {session.endedAt}
-                                        <p className="mt-1 text-[0.65rem] font-black" style={{ color: "var(--color-muted)" }}>{session.duration}</p>
-                                    </td>
-                                    <td className="border-b px-3 py-3.5 font-black" style={{ borderColor: "var(--color-border)" }}>
-                                        {session.measurementsCompleted}/{session.measurementsTotal}
-                                    </td>
-                                    <td className="border-b px-3 py-3.5" style={{ borderColor: "var(--color-border)" }}>
-                                        <button
-                                            type="button"
-                                            onClick={() => onViewSession(session)}
-                                            className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black transition hk-admin-nav-hover"
-                                            style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}
-                                        >
-                                            <Eye size={14} />
-                                            View
-                                        </button>
-                                    </td>
-                                </tr>
+            <div className="hk-reports-table-scroll max-h-[34rem] overflow-auto rounded-xl border" style={{ borderColor: "var(--color-border)" }}>
+                <table className="w-full min-w-[1040px] table-fixed text-left text-xs">
+                    <thead className="sticky top-0 z-10" style={{ backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>
+                        <tr>
+                            {["Session", "User", "School ID", "Role", "Method", "Status", "Started", "Ended", "Measurements", "Action"].map((heading) => (
+                                <th key={heading} className="border-b px-3 py-3 text-[0.68rem] font-black uppercase tracking-wide" style={{ borderColor: "var(--color-border)" }}>
+                                    {heading}
+                                </th>
                             ))}
-                        </tbody>
-                    </table>
-                </div>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sessions.map((session) => (
+                            <tr key={session.id} className="transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,transparent)]">
+                                <td className="border-b px-3 py-3.5 font-black" style={{ borderColor: "var(--color-border)" }}>{session.displaySessionId}</td>
+                                <td className="border-b px-3 py-3.5" style={{ borderColor: "var(--color-border)" }}>
+                                    <p className="font-black">{session.fullName}</p>
+                                    <p className="text-xs font-bold" style={{ color: "var(--color-muted)" }}>{session.department}</p>
+                                </td>
+                                <td className="border-b px-3 py-3.5 font-bold" style={{ borderColor: "var(--color-border)" }}>{session.schoolId}</td>
+                                <td className="border-b px-3 py-3.5 font-bold" style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}>{session.role}</td>
+                                <td className="border-b px-3 py-3.5 font-bold" style={{ borderColor: "var(--color-border)" }}>{session.method}</td>
+                                <td className="border-b px-3 py-3.5" style={{ borderColor: "var(--color-border)" }}>
+                                    <SessionStatus status={session.status} />
+                                </td>
+                                <td className="border-b px-3 py-3.5 text-xs font-bold" style={{ borderColor: "var(--color-border)" }}>{session.startedAt}</td>
+                                <td className="border-b px-3 py-3.5 text-xs font-bold" style={{ borderColor: "var(--color-border)" }}>
+                                    {session.endedAt}
+                                    <p className="mt-1 text-[0.65rem] font-black" style={{ color: "var(--color-muted)" }}>{session.duration}</p>
+                                </td>
+                                <td className="border-b px-3 py-3.5 font-black" style={{ borderColor: "var(--color-border)" }}>
+                                    {session.measurementsCompleted}/{session.measurementsTotal}
+                                </td>
+                                <td className="border-b px-3 py-3.5" style={{ borderColor: "var(--color-border)" }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => onViewSession(session)}
+                                        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[9px] border px-2.5 text-[0.68rem] font-black transition hk-admin-nav-hover"
+                                        style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}
+                                    >
+                                        <Eye size={14} />
+                                        View
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
 
             <div className="mt-4 flex items-center justify-end gap-2">
@@ -167,37 +196,13 @@ function SessionsTable({ sessions, page, totalPages, totalRecords, onPageChange,
 }
 
 function SessionDetailsModal({ session, onClose }) {
-    useEffect(() => {
-        if (!session) return undefined;
-
-        const scrollY = window.scrollY;
-        const bodyOverflow = document.body.style.overflow;
-        const htmlOverflow = document.documentElement.style.overflow;
-        const bodyPosition = document.body.style.position;
-        const bodyTop = document.body.style.top;
-        const bodyWidth = document.body.style.width;
-
-        document.body.style.overflow = "hidden";
-        document.documentElement.style.overflow = "hidden";
-        document.body.style.position = "fixed";
-        document.body.style.top = `-${scrollY}px`;
-        document.body.style.width = "100%";
-
-        return () => {
-            document.body.style.overflow = bodyOverflow;
-            document.documentElement.style.overflow = htmlOverflow;
-            document.body.style.position = bodyPosition;
-            document.body.style.top = bodyTop;
-            document.body.style.width = bodyWidth;
-            window.scrollTo(0, scrollY);
-        };
-    }, [session]);
+    useModalLayer(Boolean(session));
 
     if (!session) return null;
 
-    return (
-        <div className="fixed inset-0 z-[950] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-            <section className="w-full max-w-2xl overflow-hidden rounded-[16px] border shadow-2xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+    const modal = (
+        <div className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/65 p-4 backdrop-blur-md">
+            <section className="relative z-[9010] w-full max-w-2xl overflow-hidden rounded-[16px] border shadow-2xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
                 <div className="flex items-start justify-between gap-4 border-b p-5" style={{ borderColor: "var(--color-border)" }}>
                     <div>
                         <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--color-primary)" }}>Kiosk session details</p>
@@ -224,9 +229,37 @@ function SessionDetailsModal({ session, onClose }) {
                         <p>Started: <span style={{ color: "var(--color-text)" }}>{session.startedAt}</span></p>
                         <p>Ended: <span style={{ color: "var(--color-text)" }}>{session.endedAt}</span></p>
                         <p>Duration: <span style={{ color: "var(--color-text)" }}>{session.duration}</span></p>
-                        <p>Modules: <span style={{ color: "var(--color-text)" }}>{session.measurementsCompleted}/{session.measurementsTotal}</span></p>
+                        <p>Measurements: <span style={{ color: "var(--color-text)" }}>{session.measurementsCompleted}/{session.measurementsTotal}</span></p>
                         <p>Health status: <span style={{ color: "var(--color-text)" }}>{session.healthStatus}</span></p>
                     </div>
+
+                    <article className="mt-5 rounded-2xl border p-4" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                        <p className="text-sm font-black">Measurement completion</p>
+                        <p className="mt-1 text-xs font-bold" style={{ color: "var(--color-muted)" }}>
+                            {session.missingMeasurements.length
+                                ? `Missing: ${session.missingMeasurements.map(formatMeasurementName).join(", ")}`
+                                : "All required measurements are complete."}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                            {MEASUREMENT_KEYS.map((key) => {
+                                const missing = session.missingMeasurements.includes(key);
+
+                                return (
+                                    <span
+                                        key={key}
+                                        className="rounded-full border px-3 py-1 text-xs font-black"
+                                        style={{
+                                            borderColor: missing ? "color-mix(in srgb, var(--color-error) 35%, var(--color-border))" : "color-mix(in srgb, var(--color-success) 35%, var(--color-border))",
+                                            color: missing ? "var(--color-error)" : "var(--color-success)",
+                                            backgroundColor: missing ? "color-mix(in srgb, var(--color-error) 9%, transparent)" : "color-mix(in srgb, var(--color-success) 9%, transparent)",
+                                        }}
+                                    >
+                                        {formatMeasurementName(key)}
+                                    </span>
+                                );
+                            })}
+                        </div>
+                    </article>
 
                     <article className="mt-5 rounded-2xl border p-4" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                         <p className="text-sm font-black">Session activity timeline</p>
@@ -251,6 +284,8 @@ function SessionDetailsModal({ session, onClose }) {
             </section>
         </div>
     );
+
+    return createPortal(modal, document.body);
 }
 
 function SessionStatus({ status }) {
@@ -267,6 +302,82 @@ function SessionStatus({ status }) {
             {status}
         </span>
     );
+}
+
+function formatApiSession(session, index) {
+    const user = session.user || {};
+    const healthRecord = session.health_record || {};
+    const measurementSummary = healthRecord.measurement_summary || {};
+    const missingMeasurements = Array.isArray(measurementSummary.missing)
+        ? measurementSummary.missing
+        : getMissingMeasurements(healthRecord);
+    const started = session.started_at ? new Date(session.started_at) : null;
+    const ended = session.ended_at ? new Date(session.ended_at) : null;
+    const status = formatStatus(session.status);
+    const recordedAt = started && !Number.isNaN(started.getTime())
+        ? started.toISOString().slice(0, 10)
+        : new Date().toISOString().slice(0, 10);
+
+    return {
+        id: session.id,
+        sessionId: session.session_number ? `SES-${session.session_number}` : `SES-${session.id}`,
+        displaySessionId: session.session_number ? `SES-${session.session_number}` : `SES-${index + 1}`,
+        schoolId: user.student_id || user.barcode || "N/A",
+        fullName: user.name || "Unknown user",
+        role: user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "User",
+        department: user.department || "N/A",
+        kiosk: "Health Kiosk",
+        method: session.login_method || "Barcode",
+        status,
+        healthStatus: formatHealthStatus(healthRecord.health_status),
+        recordedAt,
+        startedAt: started ? phDateTime.format(started) : "Not started",
+        endedAt: ended ? phDateTime.format(ended) : "No logout yet",
+        duration: getApiSessionDuration(started, ended),
+        measurementsCompleted: Number.isFinite(Number(measurementSummary.completed))
+            ? Number(measurementSummary.completed)
+            : MEASUREMENT_KEYS.length - missingMeasurements.length,
+        measurementsTotal: Number.isFinite(Number(measurementSummary.total))
+            ? Number(measurementSummary.total)
+            : MEASUREMENT_KEYS.length,
+        missingMeasurements,
+        timeline: (session.activities || []).map((activity) => ({
+            time: activity.created_at ? phDateTime.format(new Date(activity.created_at)) : "",
+            label: activity.action?.replaceAll("_", " ") || "Session activity",
+            detail: activity.description || "Session activity recorded",
+        })),
+    };
+}
+
+function getMissingMeasurements(record) {
+    return MEASUREMENT_KEYS.filter((key) => record?.[key] === null || record?.[key] === undefined || record?.[key] === "");
+}
+
+function formatMeasurementName(key) {
+    return MEASUREMENT_LABELS[key] || key.replaceAll("_", " ");
+}
+
+function getApiSessionDuration(started, ended) {
+    if (!started || !ended) return "Still active";
+
+    const minutes = Math.max(1, Math.round((ended.getTime() - started.getTime()) / 60000));
+
+    return `${minutes} min`;
+}
+
+function formatStatus(status) {
+    if (status === "completed") return "Completed";
+    if (status === "active" || status === "in_progress") return "In Progress";
+
+    return "Incomplete";
+}
+
+function formatHealthStatus(status) {
+    if (status === "normal") return "Normal";
+    if (status === "alert" || status === "high_risk") return "Alert";
+    if (status === "watch" || status === "needs_review") return "Watch";
+
+    return status || "N/A";
 }
 
 function getSessionStartedAt(session) {

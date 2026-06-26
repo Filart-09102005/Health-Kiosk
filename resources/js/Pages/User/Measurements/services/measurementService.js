@@ -25,7 +25,19 @@ export const measurementService = {
         return axios.get("/api/user/measurements/summary", { signal });
     },
 
+    records(signal) {
+        return axios.get("/api/user/health-records", { params: { per_page: 20 }, signal });
+    },
+
     save(payload) {
         return withCsrf(() => axios.post("/api/user/measurements", payload));
+    },
+
+    resetLiveVitals() {
+        return axios.post("/api/kiosk/live-vitals", { reset: true, mode: "IDLE" });
+    },
+
+    command(command) {
+        return axios.post("/api/kiosk/command", { command });
     },
 };

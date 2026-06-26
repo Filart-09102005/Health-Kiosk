@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -30,9 +30,10 @@ export default function AdminModulePage({
     rows = [],
     filters = ["Today", "This week", "All"],
     showHeaderActions = true,
-    tablePageSize,
+    tablePageSize = 15,
     children,
 }) {
+    const shouldReduceMotion = useReducedMotion();
     const [currentPage, setCurrentPage] = useState(1);
 
     const hasPagedTable = Boolean(tablePageSize && rows.length > tablePageSize);
@@ -52,12 +53,20 @@ export default function AdminModulePage({
     }, [rows, tablePageSize]);
 
     return (
-        <div className="mt-5 space-y-5">
+        <motion.div
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={shouldReduceMotion ? { duration: 0.01 } : { duration: 0.24, ease: "easeOut" }}
+            className="mt-5 space-y-5"
+        >
             <motion.section
-                initial={{ opacity: 0, y: 14 }}
+                initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-[14px] border p-5 shadow-xl"
-                style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
+                transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 0.08, duration: 0.42, ease: "easeOut" }}
+                transformTemplate={(_, generated) => `${generated} translateZ(0)`}
+                className="transform-gpu rounded-[14px] border p-5 shadow-xl"
+                style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", willChange: "transform, opacity" }}
             >
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-start gap-4">
@@ -103,18 +112,41 @@ export default function AdminModulePage({
             </motion.section>
 
             {stats.length ? (
-                <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <motion.section
+                    className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+                    initial="hidden"
+                    animate="show"
+                    layout={false}
+                    variants={{
+                        hidden: {},
+                        show: {
+                            transition: shouldReduceMotion
+                                ? { staggerChildren: 0 }
+                                : { delayChildren: 0.52, staggerChildren: 0.06 },
+                        },
+                    }}
+                >
                     {stats.map((stat, index) => {
                         const StatIcon = stat.icon;
 
                         return (
                             <motion.article
                                 key={stat.label}
-                                initial={{ opacity: 0, y: 12 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.04 }}
-                                className="rounded-[14px] border p-5 shadow-sm"
-                                style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
+                                layout={false}
+                                variants={{
+                                    hidden: shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 },
+                                    show: {
+                                        opacity: 1,
+                                        y: 0,
+                                        transition: shouldReduceMotion
+                                            ? { duration: 0.01 }
+                                            : { duration: 0.48, ease: "easeOut" },
+                                    },
+                                    exit: shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 },
+                                }}
+                                transformTemplate={(_, generated) => `${generated} translateZ(0)`}
+                                className="transform-gpu rounded-[14px] border p-5 shadow-sm"
+                                style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", willChange: "transform, opacity" }}
                             >
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
@@ -136,10 +168,18 @@ export default function AdminModulePage({
                             </motion.article>
                         );
                     })}
-                </section>
+                </motion.section>
             ) : null}
 
-            {children}
+            {children ? (
+                <motion.div
+                    initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={shouldReduceMotion ? { duration: 0.01 } : { delay: stats.length ? 0.92 : 0.24, duration: 0.34, ease: "easeOut" }}
+                >
+                    {children}
+                </motion.div>
+            ) : null}
 
             {columns.length && rows.length ? (
                 <section className="rounded-[14px] border p-5 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
@@ -236,6 +276,6 @@ export default function AdminModulePage({
                     ) : null}
                 </section>
             ) : null}
-        </div>
+        </motion.div>
     );
 }

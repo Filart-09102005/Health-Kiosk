@@ -71,6 +71,38 @@ export const authService = {
         return axios.get("/api/admin/dashboard");
     },
 
+    adminHealthRecords() {
+        return axios.get("/api/admin/health-records", { params: { dashboard_ready: true } });
+    },
+
+    adminUsers(params = {}) {
+        return axios.get("/api/admin/users", { params });
+    },
+
+    adminSessions(params = {}) {
+        return axios.get("/api/admin/sessions", { params });
+    },
+
+    adminActivityLogs(params = {}) {
+        return axios.get("/api/admin/activity-logs", { params });
+    },
+
+    adminAlerts() {
+        return axios.get("/api/admin/alerts");
+    },
+
+    adminReports(params = {}) {
+        return axios.get("/api/admin/reports", { params });
+    },
+
+    adminSettings() {
+        return axios.get("/api/admin/settings");
+    },
+
+    updateAdminSettings(settings) {
+        return withCsrf(() => axios.put("/api/admin/settings", { settings }));
+    },
+
     adminAnalytics() {
         return axios.get("/api/admin/analytics");
     },

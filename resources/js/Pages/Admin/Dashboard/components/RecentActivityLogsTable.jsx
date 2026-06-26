@@ -1,9 +1,8 @@
-import { recentActivityLogs } from "../data/demoData";
 import { cardClassName, cardStyle } from "../utils/surface";
 import SectionHeader from "./SectionHeader";
 import TableControls from "./TableControls";
 
-export default function RecentActivityLogsTable({ records = recentActivityLogs }) {
+export default function RecentActivityLogsTable({ records = [] }) {
     return (
         <article className={`${cardClassName} p-5`} style={cardStyle}>
             <SectionHeader title="Recent activity logs" description="Administrative and system actions across the clinic platform." />
