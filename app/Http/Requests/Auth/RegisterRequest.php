@@ -30,9 +30,9 @@ class RegisterRequest extends FormRequest
                 'ends_with:@smcbi.edu.ph',
                 'unique:users,email',
             ],
-            'age' => ['required', 'integer', 'between:5,120'],
+            'birthday' => ['required', 'date', 'before:today'],
             'gender' => ['required', Rule::in(['male', 'female', 'other', 'prefer_not_to_say'])],
-            'department' => ['required', Rule::in(['COLLEGE', 'FACULTY', 'BED'])],
+            'department' => ['required', Rule::in(['COLLEGE', 'NTP', 'BED'])],
             'grade_level' => [
                 'nullable',
                 Rule::requiredIf(fn () => $this->input('department') === 'BED'),

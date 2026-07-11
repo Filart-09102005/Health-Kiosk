@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\SupabaseAuthUserService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,7 +28,7 @@ class PasswordResetController extends Controller
         ], $status === Password::RESET_THROTTLED ? 429 : 200);
     }
 
-    public function reset(Request $request): JsonResponse
+    public function reset(Request $request, SupabaseAuthUserService $supabaseAuth): JsonResponse
     {
         $validated = $request->validate([
             'token' => ['required', 'string'],
@@ -37,11 +38,19 @@ class PasswordResetController extends Controller
 
         $status = Password::reset(
             $validated,
-            function ($user, string $password) {
+            function ($user, string $password) use ($supabaseAuth) {
                 $user->forceFill([
                     'password' => Hash::make($password),
                     'remember_token' => Str::random(60),
+                    'sync_status' => 0,
+                    'synced_at' => null,
                 ])->save();
+
+                try {
+                    $supabaseAuth->createOrUpdate($user, $password);
+                } catch (\Throwable $exception) {
+                    report($exception);
+                }
 
                 event(new PasswordReset($user));
             }

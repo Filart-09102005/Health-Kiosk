@@ -1,215 +1,183 @@
 import ShimmerSkeleton from "./ShimmerSkeleton";
 import { cardClassName, cardStyle } from "../utils/surface";
 
-const insightWidths = ["w-44", "w-36", "w-44", "w-40"];
-const barHeights = ["h-24", "h-32", "h-20", "h-36", "h-28", "h-40", "h-24"];
-const heatmapRows = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-function HeaderSkeleton() {
-    return (
-        <section className={`${cardClassName} p-5 sm:p-6`} style={cardStyle}>
-            <div className="flex items-center gap-1">
-                <ShimmerSkeleton className="h-3 w-12" />
-                <ShimmerSkeleton className="h-3 w-3" />
-                <ShimmerSkeleton className="h-3 w-36" />
-            </div>
-            <div className="mt-4 flex items-start gap-4">
-                <ShimmerSkeleton className="h-12 w-12" />
-                <div className="min-w-0 flex-1">
-                    <ShimmerSkeleton className="h-7 w-64 max-w-full" />
-                    <ShimmerSkeleton className="mt-3 h-4 w-[42rem] max-w-full" />
-                    <ShimmerSkeleton className="mt-2 h-4 w-[34rem] max-w-full" />
-                </div>
-            </div>
-        </section>
-    );
-}
-
-function InsightCardSkeleton({ index }) {
-    return (
-        <div className={`${cardClassName} p-4`} style={cardStyle}>
-            <ShimmerSkeleton className={`h-3 ${insightWidths[index] || "w-40"} max-w-full`} />
-            <ShimmerSkeleton className="mt-3 h-6 w-28" />
-            <ShimmerSkeleton className="mt-3 h-3 w-full" />
-            <ShimmerSkeleton className="mt-2 h-3 w-3/4" />
-            <ShimmerSkeleton className="mt-4 h-4 w-36" />
-        </div>
-    );
-}
-
-function SectionTitleSkeleton({ titleWidth = "w-44", descriptionWidth = "w-96" }) {
-    return (
-        <div className="mb-4">
-            <ShimmerSkeleton className={`h-5 ${titleWidth}`} />
-            <ShimmerSkeleton className={`mt-2 h-3 ${descriptionWidth} max-w-full`} />
-        </div>
-    );
-}
-
-function ChartCardSkeleton({ variant = "line", className = "" }) {
-    return (
-        <article className={`${cardClassName} p-5 ${className}`} style={cardStyle}>
-            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                    <ShimmerSkeleton className="h-4 w-40" />
-                    <ShimmerSkeleton className="mt-2 h-3 w-64 max-w-full" />
-                </div>
-                {variant === "period" ? <ShimmerSkeleton className="h-8 w-32 rounded-full" /> : null}
-            </div>
-            {variant === "donut" ? <DonutChartSkeleton /> : null}
-            {variant === "alerts" ? <AlertsChartSkeleton /> : null}
-            {variant === "bars" ? <BarsChartSkeleton /> : null}
-            {variant === "line" ? <LineChartSkeleton /> : null}
-            {variant === "period" ? <PeriodChartSkeleton /> : null}
-            {variant === "heatmap" ? <HeatmapChartSkeleton /> : null}
-        </article>
-    );
-}
-
-function DonutChartSkeleton() {
-    return (
-        <div className="flex h-[300px] items-center justify-center gap-8">
-            <div className="relative h-36 w-36 rounded-full hk-skeleton-shimmer">
-                <div className="absolute inset-10 rounded-full" style={{ backgroundColor: "var(--color-card)" }} />
-            </div>
-            <div className="space-y-3">
-                {Array.from({ length: 2 }).map((_, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                        <ShimmerSkeleton className="h-3 w-3 rounded-full" />
-                        <ShimmerSkeleton className="h-3 w-24" />
-                        <ShimmerSkeleton className="h-3 w-10" />
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-function AlertsChartSkeleton() {
-    return (
-        <div className="space-y-3">
-            {Array.from({ length: 5 }).map((_, index) => (
-                <div key={index} className="rounded-xl border p-3" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
-                    <div className="flex items-center justify-between gap-3">
-                        <ShimmerSkeleton className="h-3 w-44 max-w-[70%]" />
-                        <ShimmerSkeleton className="h-5 w-10 rounded-full" />
-                    </div>
-                    <ShimmerSkeleton className="mt-3 h-2 w-full rounded-full" />
-                </div>
-            ))}
-        </div>
-    );
-}
-
-function BarsChartSkeleton() {
-    return (
-        <div className="flex h-72 items-end gap-3 border-b border-l px-4 pb-4" style={{ borderColor: "var(--color-border)" }}>
-            {barHeights.map((height, index) => (
-                <div key={index} className="flex flex-1 flex-col items-center justify-end gap-2">
-                    <ShimmerSkeleton className={`w-full rounded-t-xl ${height}`} />
-                    <ShimmerSkeleton className="h-3 w-8" />
-                </div>
-            ))}
-        </div>
-    );
-}
-
-function LineChartSkeleton() {
-    return (
-        <div className="h-72 rounded-xl border p-4" style={{ borderColor: "var(--color-border)" }}>
-            <div className="grid h-full grid-rows-5 gap-4">
-                {Array.from({ length: 5 }).map((_, index) => (
-                    <ShimmerSkeleton key={index} className="h-px w-full rounded-none" />
-                ))}
-            </div>
-            <div className="-mt-40 space-y-5">
-                <ShimmerSkeleton className="ml-4 h-3 w-1/3 rotate-[-8deg]" />
-                <ShimmerSkeleton className="ml-24 h-3 w-1/2 rotate-[7deg]" />
-                <ShimmerSkeleton className="ml-12 h-3 w-2/3 rotate-[-5deg]" />
-            </div>
-        </div>
-    );
-}
-
-function PeriodChartSkeleton() {
-    return (
-        <div className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-3">
-                {Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="rounded-xl border p-3" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
-                        <ShimmerSkeleton className="h-3 w-24" />
-                        <ShimmerSkeleton className="mt-3 h-6 w-16" />
-                    </div>
-                ))}
-            </div>
-            <BarsChartSkeleton />
-        </div>
-    );
-}
-
-function HeatmapChartSkeleton() {
-    return (
-        <div>
-            <div className="mb-5 grid gap-3 sm:grid-cols-3">
-                {Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="rounded-xl border p-3" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
-                        <ShimmerSkeleton className="h-6 w-16" />
-                        <ShimmerSkeleton className="mt-2 h-3 w-28" />
-                    </div>
-                ))}
-            </div>
-            <div className="border-t pt-4" style={{ borderColor: "var(--color-border)" }}>
-                <div className="grid grid-cols-[2.5rem_repeat(7,minmax(0,1fr))] gap-1.5">
-                    <span />
-                    {Array.from({ length: 7 }).map((_, index) => (
-                        <ShimmerSkeleton key={index} className="mx-auto h-3 w-8" />
-                    ))}
-                    {heatmapRows.map((day) => (
-                        <div key={day} className="contents">
-                            <ShimmerSkeleton className="my-auto ml-auto h-3 w-7" />
-                            {Array.from({ length: 7 }).map((_, index) => (
-                                <ShimmerSkeleton key={`${day}-${index}`} className="h-9 w-full rounded-lg" />
-                            ))}
-                        </div>
-                    ))}
-                </div>
-            </div>
-            <div className="mt-4 flex items-center gap-2">
-                <ShimmerSkeleton className="h-3 w-8" />
-                <ShimmerSkeleton className="h-2 flex-1 rounded-sm" />
-                <ShimmerSkeleton className="h-3 w-8" />
-            </div>
-        </div>
-    );
-}
-
 export default function AnalyticsSkeleton() {
     return (
         <div className="mt-6 space-y-6" aria-busy="true" aria-label="Loading measurement analytics">
-            <HeaderSkeleton />
+            {/* Header */}
+            <section className={`${cardClassName} p-5 sm:p-6`} style={cardStyle}>
+                <ShimmerSkeleton className="h-3 w-32" />
+                <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                        <ShimmerSkeleton className="h-8 w-72 max-w-full" />
+                        <ShimmerSkeleton className="mt-4 h-4 w-[28rem] max-w-full" />
+                        <ShimmerSkeleton className="mt-2 h-3 w-[22rem] max-w-full" />
+                    </div>
+                    <ShimmerSkeleton className="h-8 w-56 rounded-full" />
+                </div>
+            </section>
 
+            {/* Filters */}
+            <section className={`${cardClassName} p-2 px-3`} style={cardStyle}>
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <ShimmerSkeleton className="h-10 w-64 rounded-xl" />
+                        <ShimmerSkeleton className="h-10 w-32 rounded-xl" />
+                        <ShimmerSkeleton className="h-10 w-32 rounded-xl" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <ShimmerSkeleton className="h-10 w-24 rounded-xl" />
+                        <ShimmerSkeleton className="h-10 w-24 rounded-xl" />
+                    </div>
+                </div>
+            </section>
+
+            {/* Summary Cards */}
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className={`${cardClassName} p-5`} style={cardStyle}>
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <ShimmerSkeleton className="h-8 w-16" />
+                                <ShimmerSkeleton className="mt-2 h-4 w-32" />
+                            </div>
+                            <ShimmerSkeleton className="h-10 w-10 rounded-xl" />
+                        </div>
+                        <ShimmerSkeleton className="mt-3 h-3 w-40" />
+                    </div>
+                ))}
+            </section>
+
+            {/* Decision & Asides */}
             <section>
-                <SectionTitleSkeleton titleWidth="w-40" descriptionWidth="w-[28rem]" />
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {Array.from({ length: 4 }).map((_, index) => (
-                        <InsightCardSkeleton key={index} index={index} />
+                <div className="grid items-stretch gap-4 2xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+                    <div className={`${cardClassName} p-5`} style={cardStyle}>
+                        <ShimmerSkeleton className="h-5 w-40" />
+                        <ShimmerSkeleton className="mt-2 h-3 w-64" />
+                        <div className="mt-8 flex h-72 items-center justify-center">
+                            <ShimmerSkeleton className="h-56 w-56 rounded-full" />
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-4">
+                        <div className={`${cardClassName} flex-1 p-5`} style={cardStyle}>
+                            <ShimmerSkeleton className="h-3 w-24" />
+                            <ShimmerSkeleton className="mt-3 h-5 w-40" />
+                            <ShimmerSkeleton className="mt-2 h-3 w-full" />
+                            <div className="mt-6 flex h-32 items-center gap-6">
+                                <ShimmerSkeleton className="h-28 w-28 rounded-full" />
+                                <div className="space-y-3">
+                                    <ShimmerSkeleton className="h-3 w-32" />
+                                    <ShimmerSkeleton className="h-3 w-24" />
+                                </div>
+                            </div>
+                        </div>
+                        <div className={`${cardClassName} flex-1 p-5`} style={cardStyle}>
+                            <ShimmerSkeleton className="h-3 w-24" />
+                            <ShimmerSkeleton className="mt-3 h-5 w-48" />
+                            <div className="mt-6 space-y-3">
+                                <ShimmerSkeleton className="h-12 w-full rounded-xl" />
+                                <ShimmerSkeleton className="h-12 w-full rounded-xl" />
+                                <ShimmerSkeleton className="h-12 w-full rounded-xl" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Panel Insights */}
+            <section>
+                <ShimmerSkeleton className="mb-4 h-5 w-44" />
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className={`${cardClassName} p-4`} style={cardStyle}>
+                            <ShimmerSkeleton className="h-3 w-24" />
+                            <ShimmerSkeleton className="mt-2 h-6 w-16" />
+                            <ShimmerSkeleton className="mt-3 h-3 w-full" />
+                            <ShimmerSkeleton className="mt-1 h-3 w-4/5" />
+                        </div>
                     ))}
                 </div>
             </section>
 
+            {/* Distribution Charts */}
             <section>
-                <SectionTitleSkeleton titleWidth="w-48" descriptionWidth="w-[34rem]" />
-                <div className="grid gap-4 xl:grid-cols-2">
-                    <ChartCardSkeleton variant="donut" />
-                    <ChartCardSkeleton variant="alerts" />
-                    <ChartCardSkeleton variant="line" />
-                    <ChartCardSkeleton variant="bars" />
-                    <ChartCardSkeleton variant="line" />
-                    <ChartCardSkeleton variant="line" />
-                    <ChartCardSkeleton variant="period" />
-                    <ChartCardSkeleton variant="period" />
-                    <ChartCardSkeleton variant="heatmap" className="xl:col-span-2" />
+                <div className="mb-4">
+                    <ShimmerSkeleton className="h-5 w-64" />
+                    <ShimmerSkeleton className="mt-2 h-3 w-96" />
                 </div>
+                <div className="grid gap-4 xl:grid-cols-2">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className={`${cardClassName} p-5`} style={cardStyle}>
+                            <ShimmerSkeleton className="h-5 w-40" />
+                            <ShimmerSkeleton className="mt-2 h-3 w-56" />
+                            <div className="mt-6 flex h-52 items-end gap-2 border-b border-l pb-2 pl-2">
+                                {Array.from({ length: 5 }).map((_, j) => (
+                                    <ShimmerSkeleton key={j} className="w-full rounded-t-md" style={{ height: `${Math.random() * 60 + 20}%` }} />
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* Academic Comparison */}
+            <section className={`${cardClassName} p-5`} style={cardStyle}>
+                <ShimmerSkeleton className="mb-4 h-6 w-64" />
+                <div className="mb-6 grid grid-cols-3 gap-2">
+                    <ShimmerSkeleton className="h-16 w-full rounded-xl" />
+                    <ShimmerSkeleton className="h-16 w-full rounded-xl" />
+                    <ShimmerSkeleton className="h-16 w-full rounded-xl" />
+                </div>
+                <ShimmerSkeleton className="h-72 w-full rounded-xl" />
+                <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <ShimmerSkeleton key={i} className="h-12 w-full rounded-xl" />
+                    ))}
+                </div>
+            </section>
+
+            {/* Academic Risk */}
+            <section className={`${cardClassName} p-5`} style={cardStyle}>
+                <ShimmerSkeleton className="mb-4 h-6 w-72" />
+                <div className="mb-6 grid grid-cols-2 gap-2">
+                    <ShimmerSkeleton className="h-16 w-full rounded-xl" />
+                    <ShimmerSkeleton className="h-16 w-full rounded-xl" />
+                </div>
+                <ShimmerSkeleton className="h-72 w-full rounded-xl" />
+                <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <ShimmerSkeleton key={i} className="h-12 w-full rounded-xl" />
+                    ))}
+                </div>
+            </section>
+
+            {/* Trends */}
+            <section className={`${cardClassName} p-5`} style={cardStyle}>
+                <div className="mb-4 flex items-center justify-between">
+                    <div>
+                        <ShimmerSkeleton className="h-6 w-48" />
+                        <ShimmerSkeleton className="mt-2 h-3 w-64" />
+                    </div>
+                    <ShimmerSkeleton className="h-10 w-48 rounded-xl" />
+                </div>
+                <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <ShimmerSkeleton key={i} className="h-20 w-full rounded-xl" />
+                    ))}
+                </div>
+                <ShimmerSkeleton className="h-72 w-full rounded-xl" />
+            </section>
+
+            {/* Follow up Table */}
+            <section className={`${cardClassName} p-5`} style={cardStyle}>
+                <div className="mb-4 flex items-center justify-between">
+                    <div>
+                        <ShimmerSkeleton className="h-6 w-56" />
+                        <ShimmerSkeleton className="mt-2 h-3 w-72" />
+                    </div>
+                    <ShimmerSkeleton className="h-10 w-64 rounded-xl" />
+                </div>
+                <ShimmerSkeleton className="h-96 w-full rounded-xl" />
             </section>
         </div>
     );

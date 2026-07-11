@@ -37,10 +37,14 @@ class User extends Authenticatable implements MustVerifyEmailContract
         'strand',
         'year_level',
         'program',
-        'age',
+        'birthday',
         'gender',
         'barcode',
         'is_active',
+        'supabase_id',
+        'supabase_auth_id',
+        'sync_status',
+        'synced_at',
     ];
 
     /**
@@ -63,7 +67,20 @@ class User extends Authenticatable implements MustVerifyEmailContract
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'sync_status' => 'integer',
+            'synced_at' => 'datetime',
+            'birthday' => 'date',
         ];
+    }
+
+    public function getAgeAttribute(): ?int
+    {
+        if (! $this->birthday) {
+            return null;
+        }
+
+        return $this->birthday->age;
     }
 
     public function activityLogs(): HasMany

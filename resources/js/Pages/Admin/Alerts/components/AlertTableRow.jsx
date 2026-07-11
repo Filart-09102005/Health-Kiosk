@@ -15,6 +15,9 @@ export default function AlertTableRow({ alert, onView }) {
             <td className="border-b px-3 py-4 capitalize font-bold whitespace-nowrap" style={{ borderColor: "var(--color-border)" }}>{alert.role}</td>
             <td className="border-b px-3 py-4 whitespace-nowrap" style={{ borderColor: "var(--color-border)" }}><AlertTypeBadge type={alert.alertType} /></td>
             <td className="border-b px-3 py-4 font-black whitespace-nowrap" style={{ borderColor: "var(--color-border)" }}>{alert.measurementValue}</td>
+            <td className="border-b px-3 py-4 font-black whitespace-nowrap" style={{ borderColor: "var(--color-border)", color: alert.status === "Resolved" ? "var(--color-success)" : "inherit" }}>
+                {alert.status === "Resolved" ? (alert.newMeasurement || "—") : "—"}
+            </td>
             <td className="border-b px-3 py-4 whitespace-nowrap" style={{ borderColor: "var(--color-border)" }}><AlertSeverityBadge severity={alert.severity} /></td>
             <td className="border-b px-3 py-4 whitespace-nowrap" style={{ borderColor: "var(--color-border)" }}><AlertStatusBadge status={alert.status} /></td>
             <td className="border-b px-3 py-4 font-bold whitespace-nowrap" style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}>{alert.sessionStatus}</td>

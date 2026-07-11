@@ -7,10 +7,12 @@ export default function DateRangePicker({ from, to, onFromChange, onToChange }) 
                 Date range
             </span>
             <div
-                className="grid min-h-11 grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 rounded-xl border px-3 py-2"
+                className="grid min-h-[44px] grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 rounded-[12px] border px-3 py-2"
                 style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
             >
-                <CalendarRange size={15} style={{ color: "var(--color-primary)" }} />
+                <span className="flex h-5 w-5 items-center justify-center rounded-md" style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 12%, transparent)" }}>
+                    <CalendarRange size={13} style={{ color: "var(--color-primary)" }} />
+                </span>
                 <input
                     type="date"
                     value={from}

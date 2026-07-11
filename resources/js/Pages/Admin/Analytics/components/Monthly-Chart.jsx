@@ -8,7 +8,6 @@ import { useMemo, useState } from "react";
 import {
     Area,
     AreaChart,
-    CartesianGrid,
     ResponsiveContainer,
     Tooltip,
     XAxis,
@@ -234,12 +233,6 @@ export default function MonthlyChart({ data }) {
                                 </linearGradient>
                             ))}
                         </defs>
-
-                        <CartesianGrid
-                            stroke={theme.border}
-                            strokeDasharray="4 4"
-                            vertical={false}
-                        />
                         <XAxis
                             dataKey="label"
                             tick={{ fill: theme.muted, fontSize: 11, fontWeight: 600 }}

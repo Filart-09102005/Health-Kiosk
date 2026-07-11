@@ -33,7 +33,7 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'role' => fake()->randomElement(['student', 'teacher']),
             'department' => fake()->randomElement(['Clinic', 'College of Computer Studies', 'Senior High School']),
-            'age' => fake()->numberBetween(16, 65),
+            'birthday' => fake()->dateTimeBetween('-65 years', '-16 years')->format('Y-m-d'),
             'gender' => fake()->randomElement(['male', 'female', 'other', 'prefer_not_to_say']),
             'barcode' => fake()->unique()->numerify('BC########'),
             'remember_token' => Str::random(10),

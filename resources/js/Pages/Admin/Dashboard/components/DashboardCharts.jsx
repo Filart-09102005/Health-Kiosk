@@ -3,7 +3,7 @@ import DailyHealthChecksChart from "./DailyHealthChecksChart";
 import SectionHeader from "./SectionHeader";
 import SessionUsersTable from "./SessionUsersTable";
 
-export default function DashboardCharts({ data }) {
+export default function DashboardCharts({ data, period, onPeriodChange }) {
     const shouldReduceMotion = useReducedMotion();
 
     return (
@@ -17,7 +17,7 @@ export default function DashboardCharts({ data }) {
                 description="Kiosk session activity and users included in today's completion count."
             />
             <div className="grid gap-4">
-                <DailyHealthChecksChart data={data?.daily_health_checks || []} />
+                <DailyHealthChecksChart data={data?.daily_health_checks || []} period={period} onPeriodChange={onPeriodChange} />
                 <SessionUsersTable records={data?.recent_sessions || []} />
             </div>
         </motion.section>

@@ -49,7 +49,7 @@ export default function RecordsFilters({
             initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 1.08, duration: 0.34, ease: "easeOut" }}
-            className={`space-y-4 ${cardClassName} p-5`}
+            className={`relative z-20 space-y-4 ${cardClassName} p-5`}
             style={cardStyle}
         >
             <div className="space-y-4">

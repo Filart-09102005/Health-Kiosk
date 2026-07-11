@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class HealthRecord extends Model
 {
     protected $fillable = [
+        'supabase_id',
+        'sync_status',
+        'synced_at',
         'kiosk_session_id',
         'user_id',
         'heart_rate',
@@ -32,6 +35,8 @@ class HealthRecord extends Model
             'weight' => 'decimal:2',
             'bmi' => 'decimal:2',
             'missing_measurements' => 'array',
+            'sync_status' => 'integer',
+            'synced_at' => 'datetime',
         ];
     }
 

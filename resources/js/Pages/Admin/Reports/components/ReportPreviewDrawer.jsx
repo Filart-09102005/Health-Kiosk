@@ -49,8 +49,16 @@ export default function ReportPreviewDrawer({ report, open, onClose }) {
                             <div className="rounded-[14px] border p-4" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
                                 <p className="font-black">Included filters</p>
                                 <div className="mt-3 flex flex-wrap gap-2">
-                                    {[report.dateRange, report.roleFilter, report.measurementType, report.status].map((item) => (
-                                        <span key={item} className="rounded-full border px-3 py-1 text-xs font-black" style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}>{item}</span>
+                                    {[
+                                        report.dateRange,
+                                        report.roleFilter,
+                                        report.genderFilter,
+                                        report.departmentFilter,
+                                        report.academicFilter,
+                                        report.measurementType,
+                                        report.status,
+                                    ].map((item, index) => (
+                                        <span key={`${item}-${index}`} className="rounded-full border px-3 py-1 text-xs font-black" style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}>{item}</span>
                                     ))}
                                 </div>
                             </div>
@@ -69,6 +77,7 @@ export default function ReportPreviewDrawer({ report, open, onClose }) {
                                 <p className="font-black">Print preview</p>
                                 <div className="mt-3 rounded-[12px] border p-4 text-sm font-bold leading-7" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-muted)" }}>
                                     School Health Kiosk report summary for {report.dateRange}. Includes role filter, measurement breakdown, generated-by information, and export history.
+                                    Applied cohort: {report.roleFilter}; {report.genderFilter}; {report.departmentFilter}; {report.academicFilter}.
                                 </div>
                             </div>
 

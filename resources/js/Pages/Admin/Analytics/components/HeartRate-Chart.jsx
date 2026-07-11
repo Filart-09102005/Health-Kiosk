@@ -2,7 +2,7 @@
 // UI redesign — data/imports untouched.
 
 import { useMemo } from "react";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { chartTooltipStyle, getChartTheme } from "../utils/chartTheme";
 import AnalyticsChartCard from "./AnalyticsChartCard";
 
@@ -62,7 +62,6 @@ export default function HeartRateChart({ data = [] }) {
             <div style={{ height: "150px" }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={data} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
-                        <CartesianGrid stroke={theme.border} strokeDasharray="4 4" vertical={false} />
                         <XAxis dataKey="label" tick={{ fill: theme.muted, fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fill: theme.muted, fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
                         <Tooltip content={<CustomTooltip />} />

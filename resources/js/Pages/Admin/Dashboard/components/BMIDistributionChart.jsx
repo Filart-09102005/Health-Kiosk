@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { getChartTheme } from "../utils/chartTheme";
 import ChartCard from "./ChartCard";
 
@@ -30,7 +30,6 @@ export default function BMIDistributionChart({ data = [] }) {
         <ChartCard title="BMI Distribution" description="Body mass index categories from kiosk measurements.">
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-                    <CartesianGrid stroke={theme.border} strokeDasharray="4 4" vertical={false} />
                     <XAxis dataKey="range" tick={{ fill: theme.muted, fontSize: 11, fontWeight: 700 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: theme.muted, fontSize: 11, fontWeight: 700 }} axisLine={false} tickLine={false} />
                     <Tooltip content={<BMITooltip />} cursor={false} />

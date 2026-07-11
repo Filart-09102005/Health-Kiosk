@@ -17,7 +17,42 @@
 
     --color-success: #16a34a;
     --color-error: #dc2626;
+    --color-warning: #f59e0b;
+    --color-info: #38bdf8;
     --color-gray: #94a3b8;
+
+    /* ── Health measurement metric colors ── */
+    --health-bmi:          #3b82f6;   /* blue        — BMI         */
+    --health-temperature:  #f97316;   /* orange      — Temperature */
+    --health-heart-rate:   #a855f7;   /* purple      — Heart Rate  */
+    --health-spo2:         #06b6d4;   /* cyan        — SpO2        */
+
+    /* ── Clinical category colors ── */
+    --clinical-normal:      #16a34a;  /* green       — Normal / Healthy  */
+    --clinical-underweight: #38bdf8;  /* sky blue    — Underweight       */
+    --clinical-overweight:  #f59e0b;  /* amber       — Overweight        */
+    --clinical-obese:       #ef4444;  /* red         — Obese             */
+    --clinical-low-hr:      #a78bfa;  /* violet      — Low Heart Rate    */
+    --clinical-high-hr:     #ef4444;  /* red         — High Heart Rate   */
+    --clinical-low-spo2:    #06b6d4;  /* cyan        — Low SpO2          */
+    --clinical-high-spo2:   #14b8a6;  /* teal        — High SpO2         */
+    --clinical-low-temp:    #60a5fa;  /* light blue  — Low Temperature   */
+    --clinical-elevated:    #fb923c;  /* amber-orange — Elevated Temp    */
+    --clinical-high-temp:   #f97316;  /* orange      — High Temperature  */
+
+    /* Health alert severity tokens */
+    --alert-critical:        #ef4444;
+    --alert-critical-bg:     rgba(239, 68, 68, 0.1);
+    --alert-critical-border: rgba(239, 68, 68, 0.28);
+    --alert-high:            #f97316;
+    --alert-high-bg:         rgba(249, 115, 22, 0.1);
+    --alert-high-border:     rgba(249, 115, 22, 0.28);
+    --alert-moderate:        #eab308;
+    --alert-moderate-bg:     rgba(234, 179, 8, 0.1);
+    --alert-moderate-border: rgba(234, 179, 8, 0.28);
+    --alert-low:             #3b82f6;
+    --alert-low-bg:          rgba(59, 130, 246, 0.1);
+    --alert-low-border:      rgba(59, 130, 246, 0.28);
 
     --auth-bg: #f8fbff;
     --auth-grid: rgba(15, 23, 42, 0.055);
@@ -48,7 +83,42 @@
 
     --color-success: #22c55e;
     --color-error: #ef4444;
+    --color-warning: #fbbf24;
+    --color-info: #38bdf8;
     --color-gray: #737373;
+
+    /* ── Health measurement metric colors (dark) ── */
+    --health-bmi:          #60a5fa;   /* blue brighter for dark  */
+    --health-temperature:  #fb923c;   /* orange brighter         */
+    --health-heart-rate:   #c084fc;   /* purple brighter         */
+    --health-spo2:         #22d3ee;   /* cyan brighter           */
+
+    /* ── Clinical category colors (dark) ── */
+    --clinical-normal:      #22c55e;  /* green brighter          */
+    --clinical-underweight: #38bdf8;  /* sky blue                */
+    --clinical-overweight:  #fbbf24;  /* amber brighter          */
+    --clinical-obese:       #f87171;  /* red brighter            */
+    --clinical-low-hr:      #c084fc;  /* violet brighter         */
+    --clinical-high-hr:     #f87171;  /* red brighter            */
+    --clinical-low-spo2:    #22d3ee;  /* cyan brighter           */
+    --clinical-high-spo2:   #2dd4bf;  /* teal brighter           */
+    --clinical-low-temp:    #93c5fd;  /* light blue brighter     */
+    --clinical-elevated:    #fdba74;  /* amber-orange brighter   */
+    --clinical-high-temp:   #fb923c;  /* orange brighter         */
+
+    /* Health alert severity tokens (dark) */
+    --alert-critical:        #f87171;
+    --alert-critical-bg:     rgba(248, 113, 113, 0.12);
+    --alert-critical-border: rgba(248, 113, 113, 0.3);
+    --alert-high:            #fb923c;
+    --alert-high-bg:         rgba(251, 146, 60, 0.12);
+    --alert-high-border:     rgba(251, 146, 60, 0.3);
+    --alert-moderate:        #fde047;
+    --alert-moderate-bg:     rgba(253, 224, 71, 0.12);
+    --alert-moderate-border: rgba(253, 224, 71, 0.3);
+    --alert-low:             #60a5fa;
+    --alert-low-bg:          rgba(96, 165, 250, 0.12);
+    --alert-low-border:      rgba(96, 165, 250, 0.3);
 
     --auth-bg: #020403;
     --auth-grid: rgba(255, 255, 255, 0.024);
@@ -195,29 +265,25 @@ body {
     background-image: none;
 }
 
-.hk-soft-hover {
-}
+
 
 .hk-soft-hover:hover {
     background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface)) !important;
 }
 
-.hk-danger-hover {
-}
+
 
 .hk-danger-hover:hover {
     background: color-mix(in srgb, var(--color-error) 8%, var(--color-surface)) !important;
 }
 
-.hk-danger-solid-hover {
-}
+
 
 .hk-danger-solid-hover:hover {
     background: color-mix(in srgb, var(--color-error) 86%, #000000) !important;
 }
 
-.hk-primary-hover {
-}
+
 
 .hk-primary-hover:hover {
     background: var(--color-primary-hover) !important;
@@ -257,8 +323,7 @@ body {
     display: none;
 }
 
-.hk-measurement-card-hint > * {
-}
+
 
 .hk-flow-action-hint {
     animation: hkFlowActionPulse 1.35s ease-in-out infinite;
@@ -522,8 +587,8 @@ body.modal-open .hk-sidebar-flyout {
 }
 
 .hk-scrollbar::-webkit-scrollbar {
-    height: 10px;
-    width: 10px;
+    height: 14px;
+    width: 14px;
 }
 
 .hk-scrollbar::-webkit-scrollbar-track {
@@ -533,7 +598,7 @@ body.modal-open .hk-sidebar-flyout {
 
 .hk-scrollbar::-webkit-scrollbar-thumb {
     background: color-mix(in srgb, var(--color-primary) 42%, var(--color-border));
-    border: 2px solid transparent;
+    border: 3px solid transparent;
     border-radius: 999px;
     background-clip: padding-box;
 }
@@ -598,7 +663,7 @@ body.modal-open .hk-sidebar-flyout {
 }
 
 .voice-help-stack::-webkit-scrollbar {
-    width: 11px;
+    width: 14px;
 }
 
 .voice-help-stack::-webkit-scrollbar-track {
@@ -608,7 +673,7 @@ body.modal-open .hk-sidebar-flyout {
 
 .voice-help-stack::-webkit-scrollbar-thumb {
     background: color-mix(in srgb, var(--color-primary) 76%, var(--color-border));
-    border: 2px solid color-mix(in srgb, var(--color-surface) 88%, var(--color-card));
+    border: 3px solid color-mix(in srgb, var(--color-surface) 88%, var(--color-card));
     border-radius: 999px;
 }
 
@@ -888,4 +953,29 @@ body.modal-open .hk-sidebar-flyout {
         opacity: 1;
         transform: translateY(0) scale(1);
     }
+}
+
+/* ── Health Alert Modal — custom scrollbar ── */
+.hk-alert-body-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border)) transparent;
+}
+
+.hk-alert-body-scroll::-webkit-scrollbar {
+    width: 14px;
+}
+
+.hk-alert-body-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.hk-alert-body-scroll::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-primary) 40%, var(--color-border));
+    border: 3px solid transparent;
+    background-clip: padding-box;
+    border-radius: 999px;
+}
+
+.hk-alert-body-scroll::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--color-primary) 65%, var(--color-border));
 }

@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\KioskSessionController as AdminKioskSessionContro
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\UserSyncController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\KioskLiveVitalsController;
@@ -46,11 +47,18 @@ Route::middleware(['auth:sanctum', 'verified', 'role:admin'])
         Route::get('/users', [UserController::class, 'index']);
         Route::get('/activity-logs', [ActivityLogController::class, 'index']);
         Route::get('/alerts', [AlertController::class, 'index']);
+        Route::get('/alerts/queue', [AlertController::class, 'queue']);
+        Route::post('/alerts/{id}/acknowledge', [AlertController::class, 'acknowledge']);
+        Route::post('/alerts/{id}/resolve', [AlertController::class, 'resolve']);
         Route::get('/health-records', [AdminHealthRecordController::class, 'index']);
         Route::get('/sessions', [AdminKioskSessionController::class, 'index']);
         Route::get('/reports', [ReportController::class, 'index']);
+        Route::get('/reports/download-pdf', [ReportController::class, 'downloadPdf']);
+        Route::get('/reports/download-excel', [ReportController::class, 'downloadExcel']);
+        Route::get('/reports/filter-options', [ReportController::class, 'filterOptions']);
         Route::get('/settings', [SettingController::class, 'show']);
         Route::put('/settings', [SettingController::class, 'update']);
+        Route::post('/sync/users', UserSyncController::class)->middleware('throttle:10,1');
     });
 
 Route::middleware(['auth:sanctum', 'verified', 'role:student,teacher'])

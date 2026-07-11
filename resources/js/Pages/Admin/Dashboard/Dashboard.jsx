@@ -11,13 +11,16 @@ export default function Dashboard({ navigate }) {
     const { showToast } = useToast();
     const [loading, setLoading] = useState(true);
     const [dashboardData, setDashboardData] = useState(null);
+    const [period, setPeriod] = useState("weekly");
     const shouldReduceMotion = useReducedMotion();
 
     useEffect(() => {
         let alive = true;
 
+        if (!dashboardData) setLoading(true);
+
         authService
-            .adminDashboard()
+            .adminDashboard({ period })
             .then((response) => {
                 if (alive) setDashboardData(response.data);
             })
@@ -43,9 +46,9 @@ export default function Dashboard({ navigate }) {
         return () => {
             alive = false;
         };
-    }, [navigate, showToast]);
+    }, [navigate, showToast, period]);
 
-    if (loading) {
+    if (loading && !dashboardData) {
         return <DashboardSkeleton />;
     }
 
@@ -59,7 +62,7 @@ export default function Dashboard({ navigate }) {
         >
             <WelcomeBanner />
             <StatsGrid stats={dashboardData?.stats || []} />
-            <DashboardCharts data={dashboardData} />
+            <DashboardCharts data={dashboardData} period={period} onPeriodChange={setPeriod} />
         </motion.div>
     );
 }

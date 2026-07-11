@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Barcode, CalendarClock, Loader2, Printer } from "lucide-react";
+import { Activity, ArrowLeft, Barcode, CalendarClock, HeartPulse, Loader2, Printer, Ruler, Scale, TrendingUp } from "lucide-react";
 import DrawerShell from "../../Global/DrawerShell";
 import { printHealthReceipt } from "../../Global/receiptPrinter";
 import { useAssistant } from "../AI-Assistant/context/AssistantProvider";
@@ -62,7 +62,7 @@ export default function HealthRecordsDrawer({ open, onClose, user = {} }) {
         setError("");
 
         measurementService
-            .records(controller.signal)
+            .records(controller.signal, 100)
             .then((response) => {
                 if (!alive) return;
                 setRecords((response.data?.data || []).map((record) => formatApiRecord(record, user)));
@@ -102,8 +102,8 @@ export default function HealthRecordsDrawer({ open, onClose, user = {} }) {
         <DrawerShell
             open={open}
             onClose={close}
-            title={selectedRecord ? "Record Details" : "Health Records"}
-            description={selectedRecord ? "Available kiosk readings for this visit." : "Recent kiosk readings and receipt actions."}
+            title={selectedRecord ? "Record Details" : "Health Journey"}
+            description={selectedRecord ? "Available kiosk readings for this visit." : "Long-term health records, body changes, and receipt actions."}
             closeOnOverlay={false}
             closeLabel="Exit"
         >
@@ -136,16 +136,31 @@ export default function HealthRecordsDrawer({ open, onClose, user = {} }) {
                         </div>
                     ) : null}
 
-                    {!loading && !error ? records.map((record) => (
-                        <RecordCard
-                            key={record.id}
-                            record={record}
-                            onView={() => {
-                                speak("Opening record details. You can review the full summary and print this receipt again.");
-                                setSelectedRecord(record);
-                            }}
-                        />
-                    )) : null}
+                    {!loading && !error && records.length > 0 ? (
+                        <>
+                            <HealthJourney records={records} />
+
+                            <section className="space-y-3">
+                                <div>
+                                    <p className="text-sm font-black">Record timeline</p>
+                                    <p className="mt-1 text-xs leading-5" style={{ color: "var(--color-muted)" }}>
+                                        Latest kiosk checks first. Open any record to review details or print again.
+                                    </p>
+                                </div>
+
+                                {records.map((record) => (
+                                    <RecordCard
+                                        key={record.id}
+                                        record={record}
+                                        onView={() => {
+                                            speak("Opening record details. You can review the full summary and print this receipt again.");
+                                            setSelectedRecord(record);
+                                        }}
+                                    />
+                                ))}
+                            </section>
+                        </>
+                    ) : null}
                 </div>
             )}
         </DrawerShell>
@@ -163,6 +178,7 @@ function formatApiRecord(record, fallbackUser = {}) {
         barcode: apiUser.barcode || fallbackUser?.barcode || "N/A",
         school_id: apiUser.barcode || fallbackUser?.barcode || "N/A",
         role: apiUser.role || fallbackUser?.role,
+        department: apiUser.department || fallbackUser?.department,
         session_number: record.session?.session_number,
         date: validDate ? phDateTime.format(createdAt) : "No date",
         date_label: validDate ? phDate.format(createdAt) : "No date",
@@ -175,6 +191,7 @@ function formatApiRecord(record, fallbackUser = {}) {
         weight: record.weight,
         bmi: record.bmi,
         status: formatStatus(record.health_status),
+        created_at: record.created_at,
     };
 }
 
@@ -196,7 +213,7 @@ function RecordCard({ record, onView }) {
                 <div>
                     <p className="text-sm font-black">{record.date}</p>
                     <p className="mt-1 text-xs" style={{ color: "var(--color-muted)" }}>
-                        Barcode {record.barcode}
+                        {record.department || "Health record"} · Barcode {record.barcode}
                     </p>
                 </div>
                 <StatusBadge status={record.status} />
@@ -220,6 +237,143 @@ function RecordCard({ record, onView }) {
             </div>
         </article>
     );
+}
+
+function HealthJourney({ records }) {
+    const chronological = [...records].sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+    const earliest = chronological[0];
+    const latest = chronological[chronological.length - 1];
+    const trendMetrics = [
+        { key: "weight", label: "Weight", unit: "kg", icon: Scale },
+        { key: "height", label: "Height", unit: "cm", icon: Ruler },
+        { key: "bmi", label: "BMI", unit: "", icon: TrendingUp },
+        { key: "heart_rate", label: "Heart Rate", unit: "bpm", icon: HeartPulse },
+    ];
+
+    return (
+        <section className="space-y-4 rounded-3xl border p-4" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <p className="text-sm font-black">Personal health timeline</p>
+                    <p className="mt-1 text-xs leading-5" style={{ color: "var(--color-muted)" }}>
+                        Track body and vital changes across every kiosk visit, from earlier school years to the latest record.
+                    </p>
+                </div>
+                <span className="rounded-full px-3 py-1 text-xs font-black" style={{ backgroundColor: "var(--color-surface)", color: "var(--color-primary)" }}>
+                    {records.length} records
+                </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+                {trendMetrics.map((metric) => (
+                    <TrendSummaryCard key={metric.key} metric={metric} earliest={earliest} latest={latest} records={chronological} />
+                ))}
+            </div>
+
+            <div className="rounded-2xl p-3" style={{ backgroundColor: "var(--color-surface)" }}>
+                <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--color-muted)" }}>
+                    <Activity size={14} />
+                    Journey checkpoints
+                </div>
+                <div className="space-y-3">
+                    {chronological.slice(-6).map((record, index, visibleRecords) => (
+                        <JourneyPoint key={record.id} record={record} isLast={index === visibleRecords.length - 1} />
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+}
+
+function TrendSummaryCard({ metric, earliest, latest, records }) {
+    const Icon = metric.icon;
+    const start = numberValue(earliest?.[metric.key]);
+    const end = numberValue(latest?.[metric.key]);
+    const delta = start !== null && end !== null ? end - start : null;
+    const direction = delta === null || Math.abs(delta) < 0.01 ? "Stable" : delta > 0 ? "Increased" : "Decreased";
+    const value = end !== null ? `${formatNumber(end)}${metric.unit ? ` ${metric.unit}` : ""}` : "--";
+
+    return (
+        <div className="rounded-2xl p-3" style={{ backgroundColor: "var(--color-surface)" }}>
+            <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 12%, transparent)", color: "var(--color-primary)" }}>
+                        <Icon size={15} />
+                    </span>
+                    <p className="text-xs font-black">{metric.label}</p>
+                </div>
+                <span className="text-[0.65rem] font-black" style={{ color: delta && delta > 0 ? "var(--color-success)" : "var(--color-muted)" }}>
+                    {direction}
+                </span>
+            </div>
+            <p className="text-lg font-black">{value}</p>
+            <p className="mt-1 text-xs font-bold" style={{ color: "var(--color-muted)" }}>
+                {delta === null ? "Not enough data yet" : `${delta > 0 ? "+" : ""}${formatNumber(delta)}${metric.unit ? ` ${metric.unit}` : ""} since first record`}
+            </p>
+            <MiniTrend values={records.map((record) => numberValue(record[metric.key]))} />
+        </div>
+    );
+}
+
+function JourneyPoint({ record, isLast }) {
+    return (
+        <div className="relative flex gap-3">
+            <div className="flex flex-col items-center">
+                <span className="mt-1 h-3 w-3 rounded-full" style={{ backgroundColor: statusColor(record.status) }} />
+                {!isLast ? <span className="mt-1 h-full min-h-10 w-px" style={{ backgroundColor: "var(--color-border)" }} /> : null}
+            </div>
+            <div className="min-w-0 flex-1 pb-2">
+                <div className="flex items-start justify-between gap-2">
+                    <div>
+                        <p className="text-sm font-black">{record.department || "Health Check"}</p>
+                        <p className="mt-1 text-xs" style={{ color: "var(--color-muted)" }}>
+                            {record.full_date || record.date_label} · {record.time}
+                        </p>
+                    </div>
+                    <StatusBadge status={record.status} />
+                </div>
+                <p className="mt-2 text-xs leading-5" style={{ color: "var(--color-muted)" }}>
+                    Weight {record.weight || "--"} kg · Height {record.height || "--"} cm · BMI {record.bmi || "--"} · HR {record.heart_rate || "--"} bpm
+                </p>
+            </div>
+        </div>
+    );
+}
+
+function MiniTrend({ values }) {
+    const cleanValues = values.filter((value) => value !== null);
+
+    if (cleanValues.length < 2) {
+        return <div className="mt-3 h-8 rounded-xl" style={{ backgroundColor: "color-mix(in srgb, var(--color-muted) 8%, transparent)" }} />;
+    }
+
+    const min = Math.min(...cleanValues);
+    const max = Math.max(...cleanValues);
+    const range = max - min || 1;
+    const width = 120;
+    const height = 34;
+    const points = cleanValues
+        .map((value, index) => {
+            const x = cleanValues.length === 1 ? 0 : (index / (cleanValues.length - 1)) * width;
+            const y = height - ((value - min) / range) * (height - 6) - 3;
+            return `${x},${y}`;
+        })
+        .join(" ");
+
+    return (
+        <svg className="mt-3 h-8 w-full overflow-visible" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+            <polyline points={points} fill="none" stroke="var(--color-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    );
+}
+
+function numberValue(value) {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : null;
+}
+
+function formatNumber(value) {
+    return Number(value).toFixed(Math.abs(value) >= 10 ? 1 : 2).replace(/\.0$/, "");
 }
 
 function RecordDetails({ record, onBack }) {

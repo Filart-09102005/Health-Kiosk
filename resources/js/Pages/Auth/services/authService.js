@@ -67,8 +67,8 @@ export const authService = {
         return withCsrf(() => axios.post("/api/auth/reset-password", payload));
     },
 
-    adminDashboard() {
-        return axios.get("/api/admin/dashboard");
+    adminDashboard(params = {}) {
+        return axios.get("/api/admin/dashboard", { params });
     },
 
     adminHealthRecords() {
@@ -91,8 +91,36 @@ export const authService = {
         return axios.get("/api/admin/alerts");
     },
 
+    adminAlertsQueue() {
+        return axios.get("/api/admin/alerts/queue");
+    },
+
+    acknowledgeAlert(id) {
+        return withCsrf(() => axios.post(`/api/admin/alerts/${id}/acknowledge`));
+    },
+
+    resolveAlert(id, payload) {
+        return withCsrf(() => axios.post(`/api/admin/alerts/${id}/resolve`, payload));
+    },
+
     adminReports(params = {}) {
         return axios.get("/api/admin/reports", { params });
+    },
+
+    downloadReportPdf(params = {}) {
+        return axios.get("/api/admin/reports/download-pdf", { params, responseType: "blob" });
+    },
+
+    downloadReportExcel(params = {}) {
+        return axios.get("/api/admin/reports/download-excel", { params, responseType: "blob" });
+    },
+
+    adminReportFilterOptions() {
+        return axios.get("/api/admin/reports/filter-options");
+    },
+
+    syncAdminUsersToCloud() {
+        return withCsrf(() => axios.post("/api/admin/sync/users"));
     },
 
     adminSettings() {
@@ -103,8 +131,8 @@ export const authService = {
         return withCsrf(() => axios.put("/api/admin/settings", { settings }));
     },
 
-    adminAnalytics() {
-        return axios.get("/api/admin/analytics");
+    adminAnalytics(params = {}) {
+        return axios.get("/api/admin/analytics", { params });
     },
 
     userDashboard() {
@@ -113,6 +141,10 @@ export const authService = {
 };
 
 export function getErrorMessage(error, fallback = "Something went wrong. Please try again.") {
+    if (error?.response?.data?.error) {
+        return error.response.data.error;
+    }
+
     if (error?.response?.data?.message) {
         return error.response.data.message;
     }

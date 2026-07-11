@@ -57,7 +57,7 @@ const kioskRestrictedRoutes = new Set(["/register", "/user/dashboard", "/measure
 const adminRoutes = {
     "/admin/dashboard": { component: AdminDashboard, eyebrow: "Admin Dashboard", title: "Health Kiosk Overview" },
     "/admin/health-records": { component: AdminHealthRecords, eyebrow: "Health Records", title: "Student and Teacher Records" },
-    "/admin/analytics": { component: AdminAnalytics, eyebrow: "Measurement Analytics", title: "Kiosk Measurement Insights" },
+    "/admin/analytics": { component: AdminAnalytics, eyebrow: "Data Analytics", title: "Kiosk Measurement Insights" },
     "/admin/alerts": { component: AdminAlerts, eyebrow: "Health Alerts", title: "Clinical Alert Center" },
     "/admin/reports": { component: AdminReports, eyebrow: "Reports", title: "Clinic Reports" },
     "/admin/students": { component: AdminStudents, eyebrow: "User Management", title: "Students" },

@@ -59,7 +59,7 @@ export default function ObjectDetectionGate({
     statusUrls = DEFAULT_STATUS_URLS,
 }) {
     const [detection, setDetection] = useState({ status: "UNAVAILABLE", hold_progress: 0 });
-    const [loginVisible, setLoginVisible] = useState(false);
+    const [loginVisible, setLoginVisible] = useState(true); // DISABLED IDLE FOR NOW: defaulted to true
     const [readyGuideVisible, setReadyGuideVisible] = useState(false);
     const [manualOverride, setManualOverride] = useState(false);
     const loginVisibleRef = useRef(loginVisible);
@@ -120,8 +120,9 @@ export default function ObjectDetectionGate({
                 }
 
                 if (loginVisibleRef.current && Date.now() - noStudentSinceRef.current >= RETURN_TO_IDLE_MS) {
-                    setManualOverride(false);
-                    setLoginVisible(false);
+                    // DISABLED FOR NOW
+                    // setManualOverride(false);
+                    // setLoginVisible(false);
                 }
 
                 return;
@@ -130,7 +131,8 @@ export default function ObjectDetectionGate({
             noStudentSinceRef.current = null;
 
             if (!manualOverrideRef.current) {
-                setLoginVisible(false);
+                // DISABLED FOR NOW
+                // setLoginVisible(false);
             }
         };
 

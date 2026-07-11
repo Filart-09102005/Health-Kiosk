@@ -2,7 +2,7 @@
 // UI redesign — data/imports untouched.
 
 import { useMemo } from "react";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { chartTooltipStyle, getChartTheme } from "../utils/chartTheme";
 import AnalyticsChartCard from "./AnalyticsChartCard";
 
@@ -68,7 +68,6 @@ export default function SpO2Chart({ data = [] }) {
                                 <stop offset="100%" stopColor={COLOR} stopOpacity={0.02} />
                             </linearGradient>
                         </defs>
-                        <CartesianGrid stroke={theme.border} strokeDasharray="4 4" vertical={false} />
                         <XAxis dataKey="label" tick={{ fill: theme.muted, fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
                         <YAxis domain={[96, 99]} tick={{ fill: theme.muted, fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
                         <Tooltip content={<CustomTooltip />} />

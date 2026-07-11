@@ -25,8 +25,8 @@ export const measurementService = {
         return axios.get("/api/user/measurements/summary", { signal });
     },
 
-    records(signal) {
-        return axios.get("/api/user/health-records", { params: { per_page: 20 }, signal });
+    records(signal, perPage = 100) {
+        return axios.get("/api/user/health-records", { params: { per_page: perPage }, signal });
     },
 
     save(payload) {

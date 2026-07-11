@@ -5,12 +5,11 @@ import useModalLayer from "../../../../Global/useModalLayer";
 import AlertSummaryCard from "./AlertSummaryCard";
 import AlertTimeline from "./AlertTimeline";
 import MeasurementBreakdownCard from "./MeasurementBreakdownCard";
-import ResolveAlertButton from "./ResolveAlertButton";
-import ReviewAlertButton from "./ReviewAlertButton";
 import SessionInformationCard from "./SessionInformationCard";
 import UserHealthSummaryCard from "./UserHealthSummaryCard";
+import AlertResolutionForm from "./AlertResolutionForm";
 
-export default function AlertDetailsDrawer({ alert, open, onClose }) {
+export default function AlertDetailsDrawer({ alert, open, onClose, onResolved }) {
     useModalLayer(open);
 
     const drawer = (
@@ -43,12 +42,9 @@ export default function AlertDetailsDrawer({ alert, open, onClose }) {
                             <MeasurementBreakdownCard alert={alert} />
                             <div className="rounded-[14px] border p-4" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
                                 <p className="mb-4 font-black">Response timeline</p>
-                                <AlertTimeline />
+                                <AlertTimeline alert={alert} />
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <ReviewAlertButton />
-                                <ResolveAlertButton />
-                            </div>
+                            <AlertResolutionForm alert={alert} onResolved={onResolved} />
                         </div>
                     </motion.aside>
                 </>

@@ -1,5 +1,6 @@
 import Header from "./Header";
 import Sidebar from "./Sidebar";
+import GlobalAlertModal from "./GlobalAlertModal";
 import { useToast } from "../../Global/Toast";
 import { authService, getErrorMessage } from "../../Auth/services/authService";
 
@@ -45,6 +46,8 @@ export default function AdminLayout({
                     {children}
                 </div>
             </section>
+
+            <GlobalAlertModal navigate={navigate} />
         </main>
     );
 }

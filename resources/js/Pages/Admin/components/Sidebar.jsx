@@ -20,7 +20,7 @@ import {
 const mainItems = [
     { label: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
     { label: "Health Records", icon: ClipboardList, path: "/admin/health-records" },
-    { label: "Measurement Analytics", icon: BarChart3, path: "/admin/analytics" },
+    { label: "Data Analytics", icon: BarChart3, path: "/admin/analytics" },
     { label: "Health Alerts", icon: ShieldAlert, path: "/admin/alerts" },
     { label: "Reports", icon: FileText, path: "/admin/reports" },
 ];

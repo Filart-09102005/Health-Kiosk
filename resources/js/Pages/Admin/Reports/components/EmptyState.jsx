@@ -1,9 +1,9 @@
 import { FileSearch } from "lucide-react";
 
-export default function EmptyState({ title = "No reports found", description = "There are no reports for the selected filters." }) {
+export default function EmptyState({ title = "No reports found", description = "There are no reports for the selected filters.", className = "" }) {
     return (
         <section
-            className="flex min-h-[22rem] flex-col items-center justify-center rounded-[14px] border p-8 text-center shadow-xl"
+            className={`flex min-h-[22rem] flex-col items-center justify-center rounded-[14px] border p-8 text-center shadow-xl ${className}`}
             style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
         >
             <div className="flex h-14 w-14 items-center justify-center rounded-[14px] border" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>

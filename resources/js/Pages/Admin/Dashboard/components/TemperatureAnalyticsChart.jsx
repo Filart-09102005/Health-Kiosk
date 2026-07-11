@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { chartTooltipStyle, getChartTheme } from "../utils/chartTheme";
 import ChartCard from "./ChartCard";
 
@@ -16,7 +16,6 @@ export default function TemperatureAnalyticsChart({ data = [] }) {
                             <stop offset="100%" stopColor={theme.primary} stopOpacity={0.02} />
                         </linearGradient>
                     </defs>
-                    <CartesianGrid stroke={theme.border} strokeDasharray="4 4" vertical={false} />
                     <XAxis dataKey="time" tick={{ fill: theme.muted, fontSize: 11, fontWeight: 700 }} axisLine={false} tickLine={false} />
                     <YAxis domain={[36, 38]} tick={{ fill: theme.muted, fontSize: 11, fontWeight: 700 }} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={chartTooltipStyle} />

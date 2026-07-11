@@ -29,7 +29,7 @@ const initialForm = {
     firstname: "",
     lastname: "",
     email: "",
-    age: "",
+    birthday: "",
     gender: "",
     department: "",
     grade_level: "",
@@ -41,6 +41,7 @@ const initialForm = {
 };
 
 const studentDepartments = ["COLLEGE", "BED"];
+const personnelDepartments = ["COLLEGE", "BED", "NTP"];
 
 const gradeLevels = [
     "Grade 7",
@@ -91,11 +92,10 @@ export default function Register({ navigate }) {
             : strengthLabel === "Medium"
               ? "var(--color-primary)"
               : "var(--color-error)";
-    const isBed = form.department === "BED";
-    const isCollege = form.department === "COLLEGE";
-    const isFaculty = form.department === "FACULTY";
+    const isBed = form.department === "BED" && form.role === "student";
+    const isCollege = form.department === "COLLEGE" && form.role === "student";
     const needsStrand = isBed && seniorHighGrades.includes(form.grade_level);
-    const departmentOptions = form.role === "teacher" ? ["FACULTY"] : studentDepartments;
+    const departmentOptions = form.role === "teacher" ? personnelDepartments : studentDepartments;
 
     const updateField = (field, value) => {
         setForm((current) => ({ ...current, [field]: value }));
@@ -133,25 +133,21 @@ export default function Register({ navigate }) {
 
     useEffect(() => {
         setForm((current) => {
-            if (current.role === "teacher" && current.department !== "FACULTY") {
+            if (current.role === "teacher") {
                 return {
                     ...current,
-                    department: "FACULTY",
                     grade_level: "",
                     strand: "",
                     year_level: "",
                     program: "",
+                    department: personnelDepartments.includes(current.department) ? current.department : "",
                 };
             }
 
-            if (current.role === "student" && current.department === "FACULTY") {
+            if (current.role === "student") {
                 return {
                     ...current,
-                    department: "",
-                    grade_level: "",
-                    strand: "",
-                    year_level: "",
-                    program: "",
+                    department: studentDepartments.includes(current.department) ? current.department : "",
                 };
             }
 
@@ -254,13 +250,12 @@ export default function Register({ navigate }) {
                 form.firstname &&
                     form.lastname &&
                     form.email &&
-                    form.age &&
+                    form.birthday &&
                     form.gender &&
                     form.department &&
                     (! isBed || form.grade_level) &&
                     (! needsStrand || form.strand) &&
-                    (! isCollege || (form.year_level && form.program)) &&
-                    (! isFaculty || form.department),
+                    (! isCollege || (form.year_level && form.program)),
             );
         }
         if (step === 3) return strengthScore === 5 && form.password === form.password_confirmation;
@@ -366,14 +361,14 @@ export default function Register({ navigate }) {
                         </div>
 
                         <div className="grid gap-4 md:grid-cols-2">
-                            <TextField icon={UserRound} label="First name" value={form.firstname} error={errors.firstname} onChange={(value) => updateField("firstname", value)} />
-                            <TextField icon={UserRound} label="Last name" value={form.lastname} error={errors.lastname} onChange={(value) => updateField("lastname", value)} />
+                            <TextField icon={UserRound} label="First name" value={form.firstname} error={errors.firstname} placeholder="e.g. Juan" onChange={(value) => updateField("firstname", value)} />
+                            <TextField icon={UserRound} label="Last name" value={form.lastname} error={errors.lastname} placeholder="e.g. Dela Cruz" onChange={(value) => updateField("lastname", value)} />
                             <SchoolEmailField
                                 value={form.email}
                                 error={errors.email}
                                 onChange={updateSchoolEmail}
                             />
-                            <TextField label="Age" type="number" value={form.age} error={errors.age} onChange={(value) => updateField("age", value)} />
+                            <TextField label="Birthday" type="date" value={form.birthday} error={errors.birthday} max={new Date().toISOString().split("T")[0]} onChange={(value) => updateField("birthday", value)} />
                             <SelectField label="Gender" value={form.gender} error={errors.gender} onChange={(value) => updateField("gender", value)} options={[
                                 ["", "Choose gender"],
                                 ["male", "Male"],
@@ -385,8 +380,6 @@ export default function Register({ navigate }) {
                                 label="Department"
                                 value={form.department}
                                 error={errors.department}
-                                disabled={form.role === "teacher"}
-                                helper={form.role === "teacher" ? "Teachers are assigned to Faculty." : ""}
                                 onChange={(value) => updateField("department", value)}
                                 options={[
                                     ["", "Choose department"],
@@ -563,7 +556,7 @@ function StepTracker({ currentStep }) {
     );
 }
 
-function TextField({ label, value, onChange, error, type = "text", icon: Icon }) {
+function TextField({ label, value, onChange, error, type = "text", icon: Icon, max, placeholder }) {
     return (
         <label className="block text-left">
             <span className="text-sm font-black auth-strong-text">{label}</span>
@@ -572,6 +565,8 @@ function TextField({ label, value, onChange, error, type = "text", icon: Icon })
                 <input
                     type={type}
                     value={value}
+                    max={max}
+                    placeholder={placeholder}
                     onChange={(event) => onChange(event.target.value)}
                     className="w-full bg-transparent text-sm font-semibold outline-none"
                 />

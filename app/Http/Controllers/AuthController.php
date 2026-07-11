@@ -9,6 +9,7 @@ use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\ActivityLog;
 use App\Models\User;
 use App\Services\Health\KioskSessionService;
+use App\Services\SupabaseAuthUserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +19,7 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function register(RegisterRequest $request): JsonResponse
+    public function register(RegisterRequest $request, SupabaseAuthUserService $supabaseAuth): JsonResponse
     {
         $validated = $request->validated();
         $barcode = ($validated['barcode'] ?? null) ?: User::generateUniqueBarcode();
@@ -36,10 +37,16 @@ class AuthController extends Controller
             'strand' => $academicInfo['strand'],
             'year_level' => $academicInfo['year_level'],
             'program' => $academicInfo['program'],
-            'age' => $validated['age'],
+            'birthday' => $validated['birthday'],
             'gender' => $validated['gender'],
             'barcode' => $barcode,
         ]);
+
+        try {
+            $supabaseAuth->createOrUpdate($user, $validated['password']);
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
 
         $user->sendEmailVerificationNotification();
 

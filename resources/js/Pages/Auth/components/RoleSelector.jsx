@@ -97,8 +97,8 @@ const roles = [
     },
     {
         value: "teacher",
-        title: "TEACHER",
-        description: "For faculty and staff health kiosk access.",
+        title: "PERSONNEL",
+        description: "For teaching and non-teaching personnel access.",
         Animation: TeacherAnimation,
     },
 ];

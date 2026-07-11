@@ -22,7 +22,7 @@ class AdminSeeder extends Seeder
                 'password' => Hash::make('admin123'),
                 'role' => 'admin',
                 'department' => 'Clinic',
-                'age' => null,
+                'birthday' => null,
                 'gender' => null,
                 'barcode' => null,
                 'email_verified_at' => now(),

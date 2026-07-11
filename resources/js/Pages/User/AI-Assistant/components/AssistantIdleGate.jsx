@@ -8,7 +8,7 @@ const IDLE_AFTER_NO_USER_MS = 30000;
 
 export default function AssistantIdleGate({ children }) {
     const { enabled, speak } = useAssistant();
-    const [loginVisible, setLoginVisible] = useState(false);
+    const [loginVisible, setLoginVisible] = useState(true); // DISABLED IDLE FOR NOW: defaulted to true
     const noUserSinceRef = useRef(Date.now());
     const wasVisibleRef = useRef(false);
     const detection = useFacePresenceDetection({ enabled });
@@ -34,7 +34,8 @@ export default function AssistantIdleGate({ children }) {
             if (detection.userDetected) return;
 
             if (noUserSinceRef.current && Date.now() - noUserSinceRef.current >= IDLE_AFTER_NO_USER_MS) {
-                setLoginVisible(false);
+                // DISABLED FOR NOW
+                // setLoginVisible(false);
             }
         }, 1000);
 

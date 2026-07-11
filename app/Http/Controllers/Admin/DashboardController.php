@@ -18,8 +18,6 @@ class DashboardController extends Controller
     public function __invoke(Request $request): JsonResponse
     {
         $today = now()->startOfDay();
-        $weekStart = now()->startOfWeek(CarbonInterface::MONDAY)->startOfDay();
-        $weekEnd = now()->endOfWeek(CarbonInterface::SUNDAY)->startOfDay();
 
         $counts = [
             'total_users' => User::count(),
@@ -32,20 +30,12 @@ class DashboardController extends Controller
             'active_alerts' => DB::table('alerts')->whereNull('read_at')->count(),
         ];
 
-        $dailyHealthChecks = KioskSession::query()
-            ->selectRaw('DATE(COALESCE(ended_at, started_at)) as record_date, COUNT(*) as checks')
+        $period = $request->query('period', 'weekly');
+        $healthChecksQuery = KioskSession::query()
             ->whereHas('user', fn ($query) => $query->where('role', '!=', 'admin'))
-            ->where('status', 'completed')
-            ->whereBetween(DB::raw('COALESCE(ended_at, started_at)'), [$weekStart, $weekEnd->copy()->endOfDay()])
-            ->groupBy('record_date')
-            ->pluck('checks', 'record_date');
+            ->where('status', 'completed');
 
-        $dailyHealthChecks = collect(CarbonPeriod::create($weekStart, $weekEnd))
-            ->map(fn ($date) => [
-                'day' => $date->format('D'),
-                'checks' => (int) ($dailyHealthChecks[$date->toDateString()] ?? 0),
-            ])
-            ->values();
+        $dailyHealthChecks = $this->getDailyHealthChecks($healthChecksQuery, $period);
 
         $recentSessions = KioskSession::query()
             ->with('user:id,firstname,lastname,student_id,barcode')
@@ -117,5 +107,61 @@ class DashboardController extends Controller
         $minutes = max(1, $session->started_at->diffInMinutes($session->ended_at));
 
         return "{$minutes} min";
+    }
+
+    private function getDailyHealthChecks($healthChecksQuery, string $period)
+    {
+        if ($period === 'yearly') {
+            $start = now()->startOfYear();
+            $end = now()->endOfYear();
+            
+            $checks = (clone $healthChecksQuery)
+                ->selectRaw('YEAR(COALESCE(ended_at, started_at)) as y, MONTH(COALESCE(ended_at, started_at)) as m, COUNT(*) as checks')
+                ->whereBetween(DB::raw('COALESCE(ended_at, started_at)'), [$start, $end])
+                ->groupBy('y', 'm')
+                ->get()
+                ->keyBy(fn ($row) => $row->y . '-' . sprintf('%02d', $row->m));
+                
+            return collect(CarbonPeriod::create($start, '1 month', $end))
+                ->map(fn ($date) => [
+                    'day' => $date->format('M'),
+                    'checks' => (int) ($checks[$date->format('Y-m')]->checks ?? 0),
+                ])
+                ->values();
+        } 
+        
+        if ($period === 'monthly') {
+            $start = now()->startOfMonth();
+            $end = now()->endOfMonth();
+            
+            $checks = (clone $healthChecksQuery)
+                ->selectRaw('DATE(COALESCE(ended_at, started_at)) as record_date, COUNT(*) as checks')
+                ->whereBetween(DB::raw('COALESCE(ended_at, started_at)'), [$start, $end])
+                ->groupBy('record_date')
+                ->pluck('checks', 'record_date');
+                
+            return collect(CarbonPeriod::create($start, '1 day', $end))
+                ->map(fn ($date) => [
+                    'day' => $date->format('j'),
+                    'checks' => (int) ($checks[$date->toDateString()] ?? 0),
+                ])
+                ->values();
+        } 
+        
+        $start = now()->startOfWeek(1)->startOfDay(); // 1 = Monday
+        $end = now()->endOfWeek(7)->startOfDay(); // 7 = Sunday
+        
+        $checks = (clone $healthChecksQuery)
+            ->selectRaw('DATE(COALESCE(ended_at, started_at)) as record_date, COUNT(*) as checks')
+            ->whereBetween(DB::raw('COALESCE(ended_at, started_at)'), [$start, $end->copy()->endOfDay()])
+            ->groupBy('record_date')
+            ->pluck('checks', 'record_date');
+            
+        return collect(CarbonPeriod::create($start, '1 day', $end))
+            ->map(fn ($date) => [
+                'day' => $date->format('D'),
+                'checks' => (int) ($checks[$date->toDateString()] ?? 0),
+            ])
+            ->values();
     }
 }

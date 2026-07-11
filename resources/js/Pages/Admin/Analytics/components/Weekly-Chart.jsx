@@ -1,13 +1,11 @@
 // resources/js/Pages/Admin/Analytics/components/Weekly-Chart.jsx
-// UI redesign only — demo data and chart logic untouched.
+// UI redesign only - demo data and chart logic untouched.
 // Replaces the <select> period picker with a pill-button group.
 // Adds a 3-stat average row above the chart.
 // Custom tooltip and HTML legend replace Recharts defaults.
-// Each line uses a distinct dash pattern for colorblind-safe encoding.
 
 import { useMemo, useState } from "react";
 import {
-    CartesianGrid,
     Line,
     LineChart,
     ResponsiveContainer,
@@ -18,7 +16,7 @@ import {
 import { chartTooltipStyle, getChartTheme } from "../utils/chartTheme";
 import AnalyticsChartCard from "./AnalyticsChartCard";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// Constants
 
 const periodOptions = [
     { value: "weekly",  label: "Weekly"  },
@@ -27,12 +25,12 @@ const periodOptions = [
 ];
 
 const SERIES = [
-    { key: "heartRate",    label: "Heart rate",   unit: "bpm", color: "#1D9E75", strokeDasharray: undefined },
-    { key: "spo2",         label: "SpO₂",         unit: "%",   color: "#378ADD", strokeDasharray: "6 3" },
-    { key: "temperature",  label: "Temperature",  unit: "°C",  color: "#E24B4A", strokeDasharray: "3 3" },
+    { key: "heartRate", label: "Heart rate", unit: "bpm", color: "#1D9E75" },
+    { key: "spo2", label: "SpO2", unit: "%", color: "#378ADD" },
+    { key: "temperature", label: "Temperature", unit: "C", color: "#E24B4A" },
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers
 
 function avg(arr) {
     if (!arr?.length) return 0;
@@ -44,7 +42,7 @@ function fmtAvg(arr, key) {
     return key === "temperature" ? v.toFixed(1) : Math.round(v);
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// Sub-components
 
 function PeriodPicker({ value, onChange }) {
     return (
@@ -122,14 +120,16 @@ function StatStrip({ chartData }) {
 function ChartLegend() {
     return (
         <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", marginTop: "10px" }}>
-            {SERIES.map(({ key, label, color, strokeDasharray }) => (
+            {SERIES.map(({ key, label, color }) => (
                 <div key={key} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                     <svg width="18" height="10" aria-hidden="true">
                         <line
-                            x1="0" y1="5" x2="18" y2="5"
+                            x1="0"
+                            y1="5"
+                            x2="18"
+                            y2="5"
                             stroke={color}
                             strokeWidth="2.5"
-                            strokeDasharray={strokeDasharray}
                             strokeLinecap="round"
                         />
                     </svg>
@@ -172,7 +172,7 @@ function CustomTooltip({ active, payload, label }) {
     );
 }
 
-// ─── Main component ────────────────────────────────────────────────────────────
+// Main component
 
 export default function WeeklyChart({ data }) {
     const theme = useMemo(() => getChartTheme(), []);
@@ -184,16 +184,13 @@ export default function WeeklyChart({ data }) {
     return (
         <AnalyticsChartCard
             title={`${periodLabel} analytics`}
-            description="Shows average heart rate, SpO₂, and temperature trends."
+            description="Shows average heart rate, SpO2, and temperature trends."
             className="xl:col-span-2"
             heightClass="h-auto"
             action={<PeriodPicker value={period} onChange={setPeriod} />}
         >
             {/* Stats strip */}
             <StatStrip chartData={chartData} />
-
-            {/* Divider */}
-            <div style={{ height: "0.5px", backgroundColor: "var(--color-border)", marginBottom: "1rem" }} />
 
             {/* Chart */}
             <div style={{ height: "220px" }}>
@@ -202,11 +199,6 @@ export default function WeeklyChart({ data }) {
                         data={chartData}
                         margin={{ top: 6, right: 6, left: -18, bottom: 0 }}
                     >
-                        <CartesianGrid
-                            stroke={theme.border}
-                            strokeDasharray="4 4"
-                            vertical={false}
-                        />
                         <XAxis
                             dataKey="label"
                             tick={{ fill: theme.muted, fontSize: 11, fontWeight: 600 }}
@@ -220,7 +212,7 @@ export default function WeeklyChart({ data }) {
                         />
                         <Tooltip content={<CustomTooltip />} />
 
-                        {SERIES.map(({ key, label, color, strokeDasharray }) => (
+                        {SERIES.map(({ key, label, color }) => (
                             <Line
                                 key={key}
                                 type="monotone"
@@ -228,7 +220,6 @@ export default function WeeklyChart({ data }) {
                                 name={label}
                                 stroke={color}
                                 strokeWidth={2}
-                                strokeDasharray={strokeDasharray}
                                 dot={false}
                                 activeDot={{ r: 4, strokeWidth: 2, stroke: color, fill: "var(--color-surface)" }}
                             />
