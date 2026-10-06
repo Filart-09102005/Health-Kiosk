@@ -156,6 +156,8 @@ AI Assistant Mode is a lightweight voice-guided kiosk assistant for first-time u
 
 ## Setup
 
+For complete instructions for setting up this project on another laptop, see [STEP_SETUP.md](STEP_SETUP.md).
+
 ```bash
 composer install
 npm install
