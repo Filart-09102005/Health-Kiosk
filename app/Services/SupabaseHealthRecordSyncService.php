@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\HealthRecord;
 use App\Services\Health\HealthEvaluationService;
+use App\Support\SupabaseHeaders;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -81,12 +82,9 @@ class SupabaseHealthRecordSyncService
                         'local_health_record_ids' => $records->pluck('id')->values()->all(),
                     ]);
 
-                    $response = Http::withHeaders([
-                        'apikey' => $secretKey,
-                        'Authorization' => "Bearer {$secretKey}",
-                        'Content-Type' => 'application/json',
+                    $response = Http::withHeaders(SupabaseHeaders::forServer($secretKey, [
                         'Prefer' => 'resolution=merge-duplicates,return=representation',
-                    ])
+                    ]))
                         ->connectTimeout(5)
                         ->timeout(12)
                         ->post("{$url}/rest/v1/health_records?on_conflict=local_health_record_id", $payloads);

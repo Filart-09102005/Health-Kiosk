@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Support\SupabaseHeaders;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -258,11 +259,7 @@ class SupabaseAuthUserService
 
     private function request(string $url, string $secretKey)
     {
-        return Http::withHeaders([
-            'apikey' => $secretKey,
-            'Authorization' => "Bearer {$secretKey}",
-            'Content-Type' => 'application/json',
-        ])
+        return Http::withHeaders(SupabaseHeaders::forServer($secretKey))
             ->connectTimeout(5)
             ->timeout(12);
     }

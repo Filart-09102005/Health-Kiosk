@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Support\SupabaseHeaders;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -241,12 +242,9 @@ class SupabaseUserSyncService
     {
         $payloads = $users->map(fn (User $user) => $this->payload($user))->values()->all();
 
-        $response = Http::withHeaders([
-            'apikey' => $secretKey,
-            'Authorization' => "Bearer {$secretKey}",
-            'Content-Type' => 'application/json',
+        $response = Http::withHeaders(SupabaseHeaders::forServer($secretKey, [
             'Prefer' => 'resolution=merge-duplicates,return=representation',
-        ])
+        ]))
             // connectTimeout only covers opening the socket; without a
             // response timeout a stalled Supabase reply holds the worker
             // until PHP's own limit, which is how a "quick" sync ended up
@@ -338,7 +336,6 @@ class SupabaseUserSyncService
             'lastname' => $user->lastname,
             'student_id' => $user->student_id,
             'email' => $user->email,
-            'password' => $user->password,
             'role' => $user->role,
             'department' => $user->department,
             'grade_level' => $user->grade_level,

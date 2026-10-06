@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\HealthRecord;
+use App\Support\SupabaseHeaders;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 
@@ -36,11 +37,7 @@ class SupabasePurgeOrphansCommand extends Command
             return self::FAILURE;
         }
 
-        $headers = [
-            'apikey' => $key,
-            'Authorization' => "Bearer {$key}",
-            'Content-Type' => 'application/json',
-        ];
+        $headers = SupabaseHeaders::forServer($key);
 
         $this->line('Reading Supabase health_records…');
 

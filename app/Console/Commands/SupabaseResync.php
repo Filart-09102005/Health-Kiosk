@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\SupabaseAuthUserService;
 use App\Services\SupabaseHealthRecordSyncService;
 use App\Services\SupabaseUserSyncService;
+use App\Support\SupabaseHeaders;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Throwable;
@@ -216,7 +217,7 @@ class SupabaseResync extends Command
         }
 
         try {
-            $headers = ['apikey' => $key, 'Authorization' => "Bearer {$key}"];
+            $headers = SupabaseHeaders::forServer($key);
 
             $users = Http::withHeaders($headers)->timeout(20)->get("{$url}/rest/v1/users", ['select' => 'email']);
             $records = Http::withHeaders($headers)->timeout(20)->get("{$url}/rest/v1/health_records", ['select' => 'id']);

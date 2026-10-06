@@ -163,17 +163,17 @@ questions that actually carry text:
 
 **Auth:** Supabase Auth (GoTrue). A student account is created through
 `/auth/v1/admin/users` by the kiosk. The app signs in with the school email and
-password — it must NOT use the `password` column on the profile row, which is a
-bcrypt hash carried for the kiosk's own use.
+password. Passwords and password hashes exist only in Supabase Auth; the
+`public.users` profile row intentionally has no `password` column.
 
 **Accounts:** email domain `@smcbi.edu.ph`. Default password when an admin
 creates the account is `<Firstname>12345` — first name with spaces removed,
 e.g. `Hans12345`. Email is auto-verified on admin-created accounts.
 
-**Table `public.users`** — one row per account, upserted on `email`:
+**Table `public.users`** — one row per account, upserted on `local_user_id`:
 
     local_user_id, auth_user_id, firstname, lastname, student_id, email,
-    password, role, department, grade_level, strand, year_level, program,
+    role, department, grade_level, strand, year_level, program,
     age, gender, barcode, is_active, created_at, updated_at
 
   role         : student | personnel | admin
@@ -189,6 +189,10 @@ e.g. `Hans12345`. Email is auto-verified on admin-created accounts.
     heart_rate, spo2, temperature, height, weight, bmi, bmi_category,
     health_status, measurement_statuses, missing_measurements,
     recorded_at, created_at, updated_at
+
+**Table `public.user_push_tokens`** — companion-app devices, keyed by `token`:
+
+    token, auth_user_id, platform, device_name, last_seen_at, created_at
 
 **Important — do not display `health_status` on its own.** It collapses a whole
 session into one word, and completeness outranks severity: a 40 °C reading taken
