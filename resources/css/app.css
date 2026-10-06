@@ -21,11 +21,26 @@
     --color-info: #38bdf8;
     --color-gray: #94a3b8;
 
+    /* Foreground for text/icons placed directly on a solid semantic
+       background (a primary button, a success/error/warning/info badge).
+       Matches what every such spot in the app already hardcodes today
+       (white, except dark text on the light warning amber), so introducing
+       these here changes nothing for Light/Dark - it only gives the other
+       13 themes, whose semantic colors aren't reliably dark enough for
+       white text, a correct value to switch to instead. */
+    --color-primary-content: #ffffff;
+    --color-success-content: #ffffff;
+    --color-warning-content: #1f2937;
+    --color-error-content: #ffffff;
+    --color-info-content: #ffffff;
+
     /* ── Health measurement metric colors ── */
     --health-bmi:          #3b82f6;   /* blue        — BMI         */
     --health-temperature:  #f97316;   /* orange      — Temperature */
     --health-heart-rate:   #a855f7;   /* purple      — Heart Rate  */
     --health-spo2:         #06b6d4;   /* cyan        — SpO2        */
+    --health-height:       #f59e0b;   /* amber       — Height      */
+    --health-weight:       #10b981;   /* emerald     — Weight      */
 
     /* ── Clinical category colors ── */
     --clinical-normal:      #16a34a;  /* green       — Normal / Healthy  */
@@ -87,11 +102,19 @@
     --color-info: #38bdf8;
     --color-gray: #737373;
 
+    --color-primary-content: #ffffff;
+    --color-success-content: #ffffff;
+    --color-warning-content: #1f2937;
+    --color-error-content: #ffffff;
+    --color-info-content: #ffffff;
+
     /* ── Health measurement metric colors (dark) ── */
     --health-bmi:          #60a5fa;   /* blue brighter for dark  */
     --health-temperature:  #fb923c;   /* orange brighter         */
     --health-heart-rate:   #c084fc;   /* purple brighter         */
     --health-spo2:         #22d3ee;   /* cyan brighter           */
+    --health-height:       #fbbf24;   /* amber brighter          */
+    --health-weight:       #34d399;   /* emerald brighter        */
 
     /* ── Clinical category colors (dark) ── */
     --clinical-normal:      #22c55e;  /* green brighter          */
@@ -136,11 +159,611 @@
     --skeleton-edge: #111111;
 }
 
+/* ── Additional selectable themes ──────────────────────────────────────
+   Color values below are taken from DaisyUI's published theme tokens, used
+   here purely as design-token *data* — this project does not depend on
+   DaisyUI. Each block keeps the source tokens under a `--theme-*` namespace
+   so they never collide with (or get mistaken for) the app's own `--color-*`
+   variables, then maps a handful of them onto those existing variables. Only
+   base surfaces (bg/surface/card/border/text) and the four semantic colors
+   (primary/success/warning/error/info) are mapped — everything else
+   (`--health-*`, `--clinical-*`, `--alert-*`, `--auth-*`, `--skeleton-*`) is
+   intentionally left alone and keeps inheriting the light values from
+   `:root`, exactly as unmapped properties already do for any theme block
+   that doesn't redeclare them.
+
+   DaisyUI's --radius-*, --size-*, --border (width), --depth and --noise
+   tokens are deliberately NOT carried over: those are spacing/geometry
+   tokens, not colors, and pulling them in would change layout rather than
+   just the palette. */
+
+[data-theme="valentine"] {
+    --theme-base-100: oklch(97% 0.014 343.198);
+    --theme-base-200: oklch(94% 0.028 342.258);
+    --theme-base-300: oklch(89% 0.061 343.231);
+    --theme-base-content: oklch(52% 0.223 3.958);
+    --theme-primary: oklch(65% 0.241 354.308);
+    --theme-success: oklch(84% 0.143 164.978);
+    --theme-warning: oklch(75% 0.183 55.934);
+    --theme-error: oklch(63% 0.237 25.331);
+    --theme-info: oklch(86% 0.127 207.078);
+    --color-primary-content: #0f172a;
+    --color-success-content: #0f172a;
+    --color-warning-content: #0f172a;
+    --color-error-content: #0f172a;
+    --color-info-content: #0f172a;
+
+    --color-bg: var(--theme-base-100);
+    --color-surface: var(--theme-base-200);
+    --color-card: var(--theme-base-100);
+    --color-border: var(--theme-base-300);
+    --color-text: var(--theme-base-content);
+    --color-muted: color-mix(in srgb, var(--theme-base-content) 58%, var(--theme-base-100) 42%);
+    --color-gray: var(--color-muted);
+
+    --color-primary: var(--theme-primary);
+    --color-primary-hover: color-mix(in srgb, var(--theme-primary) 85%, var(--theme-base-content) 15%);
+
+    --color-success: var(--theme-success);
+    --color-warning: var(--theme-warning);
+    --color-error: var(--theme-error);
+    --color-info: var(--theme-info);
+
+    --auth-bg: var(--color-bg);
+    --auth-grid: color-mix(in srgb, var(--color-text) 6%, transparent);
+    --auth-glow-a: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+    --auth-glow-b: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+    --auth-overlay: color-mix(in srgb, var(--color-bg) 30%, transparent);
+    --auth-text: var(--color-text);
+    --auth-muted: var(--color-muted);
+    --auth-panel: color-mix(in srgb, var(--color-bg) 80%, transparent);
+    --auth-control: color-mix(in srgb, var(--color-bg) 85%, transparent);
+    --auth-border: color-mix(in srgb, var(--color-text) 11%, transparent);
+}
+
+[data-theme="lemonade"] {
+    --theme-base-100: oklch(98.71% 0.02 123.72);
+    --theme-base-200: oklch(91.8% 0.018 123.72);
+    --theme-base-300: oklch(84.89% 0.017 123.72);
+    --theme-base-content: oklch(19.742% 0.004 123.72);
+    --theme-primary: oklch(58.92% 0.199 134.6);
+    --theme-success: oklch(86.19% 0.047 157.85);
+    --theme-warning: oklch(86.19% 0.047 102.15);
+    --theme-error: oklch(86.19% 0.047 25.85);
+    --theme-info: oklch(86.19% 0.047 224.14);
+    --color-primary-content: #0f172a;
+    --color-success-content: #0f172a;
+    --color-warning-content: #0f172a;
+    --color-error-content: #0f172a;
+    --color-info-content: #0f172a;
+
+    --color-bg: var(--theme-base-100);
+    --color-surface: var(--theme-base-200);
+    --color-card: var(--theme-base-100);
+    --color-border: var(--theme-base-300);
+    --color-text: var(--theme-base-content);
+    --color-muted: color-mix(in srgb, var(--theme-base-content) 58%, var(--theme-base-100) 42%);
+    --color-gray: var(--color-muted);
+
+    --color-primary: var(--theme-primary);
+    --color-primary-hover: color-mix(in srgb, var(--theme-primary) 85%, var(--theme-base-content) 15%);
+
+    --color-success: var(--theme-success);
+    --color-warning: var(--theme-warning);
+    --color-error: var(--theme-error);
+    --color-info: var(--theme-info);
+
+    --auth-bg: var(--color-bg);
+    --auth-grid: color-mix(in srgb, var(--color-text) 6%, transparent);
+    --auth-glow-a: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+    --auth-glow-b: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+    --auth-overlay: color-mix(in srgb, var(--color-bg) 30%, transparent);
+    --auth-text: var(--color-text);
+    --auth-muted: var(--color-muted);
+    --auth-panel: color-mix(in srgb, var(--color-bg) 80%, transparent);
+    --auth-control: color-mix(in srgb, var(--color-bg) 85%, transparent);
+    --auth-border: color-mix(in srgb, var(--color-text) 11%, transparent);
+}
+
+[data-theme="caramellatte"] {
+    --theme-base-100: oklch(98% 0.016 73.684);
+    --theme-base-200: oklch(95% 0.038 75.164);
+    --theme-base-300: oklch(90% 0.076 70.697);
+    --theme-base-content: oklch(40% 0.123 38.172);
+    --theme-primary: oklch(0% 0 0);
+    --theme-success: oklch(43% 0.095 166.913);
+    --theme-warning: oklch(82% 0.189 84.429);
+    --theme-error: oklch(70% 0.191 22.216);
+    --theme-info: oklch(42% 0.199 265.638);
+    --color-primary-content: #ffffff;
+    --color-success-content: #ffffff;
+    --color-warning-content: #0f172a;
+    --color-error-content: #0f172a;
+    --color-info-content: #ffffff;
+
+    --color-bg: var(--theme-base-100);
+    --color-surface: var(--theme-base-200);
+    --color-card: var(--theme-base-100);
+    --color-border: var(--theme-base-300);
+    --color-text: var(--theme-base-content);
+    --color-muted: color-mix(in srgb, var(--theme-base-content) 58%, var(--theme-base-100) 42%);
+    --color-gray: var(--color-muted);
+
+    --color-primary: var(--theme-primary);
+    --color-primary-hover: color-mix(in srgb, var(--theme-primary) 85%, var(--theme-base-content) 15%);
+
+    --color-success: var(--theme-success);
+    --color-warning: var(--theme-warning);
+    --color-error: var(--theme-error);
+    --color-info: var(--theme-info);
+
+    --auth-bg: var(--color-bg);
+    --auth-grid: color-mix(in srgb, var(--color-text) 6%, transparent);
+    --auth-glow-a: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+    --auth-glow-b: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+    --auth-overlay: color-mix(in srgb, var(--color-bg) 30%, transparent);
+    --auth-text: var(--color-text);
+    --auth-muted: var(--color-muted);
+    --auth-panel: color-mix(in srgb, var(--color-bg) 80%, transparent);
+    --auth-control: color-mix(in srgb, var(--color-bg) 85%, transparent);
+    --auth-border: color-mix(in srgb, var(--color-text) 11%, transparent);
+}
+
+[data-theme="aqua"] {
+    --theme-base-100: oklch(37% 0.146 265.522);
+    --theme-base-200: oklch(28% 0.091 267.935);
+    --theme-base-300: oklch(22% 0.091 267.935);
+    --theme-base-content: oklch(90% 0.058 230.902);
+    --theme-primary: oklch(85.661% 0.144 198.645);
+    --theme-success: oklch(62.705% 0.169 149.213);
+    --theme-warning: oklch(66.584% 0.157 58.318);
+    --theme-error: oklch(73.95% 0.19 27.33);
+    --theme-info: oklch(54.615% 0.215 262.88);
+    --color-primary-content: #0f172a;
+    --color-success-content: #0f172a;
+    --color-warning-content: #0f172a;
+    --color-error-content: #0f172a;
+    --color-info-content: #ffffff;
+
+    --color-bg: var(--theme-base-100);
+    --color-surface: var(--theme-base-200);
+    --color-card: var(--theme-base-100);
+    --color-border: var(--theme-base-300);
+    --color-text: var(--theme-base-content);
+    --color-muted: color-mix(in srgb, var(--theme-base-content) 58%, var(--theme-base-100) 42%);
+    --color-gray: var(--color-muted);
+
+    --color-primary: var(--theme-primary);
+    --color-primary-hover: color-mix(in srgb, var(--theme-primary) 85%, var(--theme-base-content) 15%);
+
+    --color-success: var(--theme-success);
+    --color-warning: var(--theme-warning);
+    --color-error: var(--theme-error);
+    --color-info: var(--theme-info);
+
+    --auth-bg: var(--color-bg);
+    --auth-grid: color-mix(in srgb, var(--color-text) 6%, transparent);
+    --auth-glow-a: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+    --auth-glow-b: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+    --auth-overlay: color-mix(in srgb, var(--color-bg) 30%, transparent);
+    --auth-text: var(--color-text);
+    --auth-muted: var(--color-muted);
+    --auth-panel: color-mix(in srgb, var(--color-bg) 80%, transparent);
+    --auth-control: color-mix(in srgb, var(--color-bg) 85%, transparent);
+    --auth-border: color-mix(in srgb, var(--color-text) 11%, transparent);
+}
+
+[data-theme="emerald"] {
+    --theme-base-100: oklch(100% 0 0);
+    --theme-base-200: oklch(93% 0 0);
+    --theme-base-300: oklch(86% 0 0);
+    --theme-base-content: oklch(35.519% 0.032 262.988);
+    --theme-primary: oklch(76.662% 0.135 153.45);
+    --theme-success: oklch(64.8% 0.15 160);
+    --theme-warning: oklch(84.71% 0.199 83.87);
+    --theme-error: oklch(71.76% 0.221 22.18);
+    --theme-info: oklch(72.06% 0.191 231.6);
+    --color-primary-content: #0f172a;
+    --color-success-content: #0f172a;
+    --color-warning-content: #0f172a;
+    --color-error-content: #0f172a;
+    --color-info-content: #0f172a;
+
+    --color-bg: var(--theme-base-100);
+    --color-surface: var(--theme-base-200);
+    --color-card: var(--theme-base-100);
+    --color-border: var(--theme-base-300);
+    --color-text: var(--theme-base-content);
+    --color-muted: color-mix(in srgb, var(--theme-base-content) 58%, var(--theme-base-100) 42%);
+    --color-gray: var(--color-muted);
+
+    --color-primary: var(--theme-primary);
+    --color-primary-hover: color-mix(in srgb, var(--theme-primary) 85%, var(--theme-base-content) 15%);
+
+    --color-success: var(--theme-success);
+    --color-warning: var(--theme-warning);
+    --color-error: var(--theme-error);
+    --color-info: var(--theme-info);
+
+    --auth-bg: var(--color-bg);
+    --auth-grid: color-mix(in srgb, var(--color-text) 6%, transparent);
+    --auth-glow-a: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+    --auth-glow-b: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+    --auth-overlay: color-mix(in srgb, var(--color-bg) 30%, transparent);
+    --auth-text: var(--color-text);
+    --auth-muted: var(--color-muted);
+    --auth-panel: color-mix(in srgb, var(--color-bg) 80%, transparent);
+    --auth-control: color-mix(in srgb, var(--color-bg) 85%, transparent);
+    --auth-border: color-mix(in srgb, var(--color-text) 11%, transparent);
+}
+
+[data-theme="cupcake"] {
+    --theme-base-100: oklch(97.788% 0.004 56.375);
+    --theme-base-200: oklch(93.982% 0.007 61.449);
+    --theme-base-300: oklch(91.586% 0.006 53.44);
+    --theme-base-content: oklch(23.574% 0.066 313.189);
+    --theme-primary: oklch(85% 0.138 181.071);
+    --theme-success: oklch(69% 0.17 162.48);
+    --theme-warning: oklch(79% 0.184 86.047);
+    --theme-error: oklch(64% 0.246 16.439);
+    --theme-info: oklch(68% 0.169 237.323);
+    --color-primary-content: #0f172a;
+    --color-success-content: #0f172a;
+    --color-warning-content: #0f172a;
+    --color-error-content: #0f172a;
+    --color-info-content: #0f172a;
+
+    --color-bg: var(--theme-base-100);
+    --color-surface: var(--theme-base-200);
+    --color-card: var(--theme-base-100);
+    --color-border: var(--theme-base-300);
+    --color-text: var(--theme-base-content);
+    --color-muted: color-mix(in srgb, var(--theme-base-content) 58%, var(--theme-base-100) 42%);
+    --color-gray: var(--color-muted);
+
+    --color-primary: var(--theme-primary);
+    --color-primary-hover: color-mix(in srgb, var(--theme-primary) 85%, var(--theme-base-content) 15%);
+
+    --color-success: var(--theme-success);
+    --color-warning: var(--theme-warning);
+    --color-error: var(--theme-error);
+    --color-info: var(--theme-info);
+
+    --auth-bg: var(--color-bg);
+    --auth-grid: color-mix(in srgb, var(--color-text) 6%, transparent);
+    --auth-glow-a: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+    --auth-glow-b: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+    --auth-overlay: color-mix(in srgb, var(--color-bg) 30%, transparent);
+    --auth-text: var(--color-text);
+    --auth-muted: var(--color-muted);
+    --auth-panel: color-mix(in srgb, var(--color-bg) 80%, transparent);
+    --auth-control: color-mix(in srgb, var(--color-bg) 85%, transparent);
+    --auth-border: color-mix(in srgb, var(--color-text) 11%, transparent);
+}
+
+[data-theme="retro"] {
+    --theme-base-100: oklch(91.637% 0.034 90.515);
+    --theme-base-200: oklch(88.272% 0.049 91.774);
+    --theme-base-300: oklch(84.133% 0.065 90.856);
+    --theme-base-content: oklch(41% 0.112 45.904);
+    --theme-primary: oklch(80% 0.114 19.571);
+    --theme-success: oklch(51% 0.096 186.391);
+    --theme-warning: oklch(64% 0.222 41.116);
+    --theme-error: oklch(70% 0.191 22.216);
+    --theme-info: oklch(58% 0.158 241.966);
+    --color-primary-content: #0f172a;
+    --color-success-content: #ffffff;
+    --color-warning-content: #0f172a;
+    --color-error-content: #0f172a;
+    --color-info-content: #0f172a;
+
+    --color-bg: var(--theme-base-100);
+    --color-surface: var(--theme-base-200);
+    --color-card: var(--theme-base-100);
+    --color-border: var(--theme-base-300);
+    --color-text: var(--theme-base-content);
+    --color-muted: color-mix(in srgb, var(--theme-base-content) 58%, var(--theme-base-100) 42%);
+    --color-gray: var(--color-muted);
+
+    --color-primary: var(--theme-primary);
+    --color-primary-hover: color-mix(in srgb, var(--theme-primary) 85%, var(--theme-base-content) 15%);
+
+    --color-success: var(--theme-success);
+    --color-warning: var(--theme-warning);
+    --color-error: var(--theme-error);
+    --color-info: var(--theme-info);
+
+    --auth-bg: var(--color-bg);
+    --auth-grid: color-mix(in srgb, var(--color-text) 6%, transparent);
+    --auth-glow-a: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+    --auth-glow-b: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+    --auth-overlay: color-mix(in srgb, var(--color-bg) 30%, transparent);
+    --auth-text: var(--color-text);
+    --auth-muted: var(--color-muted);
+    --auth-panel: color-mix(in srgb, var(--color-bg) 80%, transparent);
+    --auth-control: color-mix(in srgb, var(--color-bg) 85%, transparent);
+    --auth-border: color-mix(in srgb, var(--color-text) 11%, transparent);
+}
+
+[data-theme="garden"] {
+    --theme-base-100: oklch(92.951% 0.002 17.197);
+    --theme-base-200: oklch(86.445% 0.002 17.197);
+    --theme-base-300: oklch(79.938% 0.001 17.197);
+    --theme-base-content: oklch(16.961% 0.001 17.32);
+    --theme-primary: oklch(62.45% 0.278 3.836);
+    --theme-success: oklch(64.8% 0.15 160);
+    --theme-warning: oklch(84.71% 0.199 83.87);
+    --theme-error: oklch(71.76% 0.221 22.18);
+    --theme-info: oklch(72.06% 0.191 231.6);
+    --color-primary-content: #0f172a;
+    --color-success-content: #0f172a;
+    --color-warning-content: #0f172a;
+    --color-error-content: #0f172a;
+    --color-info-content: #0f172a;
+
+    --color-bg: var(--theme-base-100);
+    --color-surface: var(--theme-base-200);
+    --color-card: var(--theme-base-100);
+    --color-border: var(--theme-base-300);
+    --color-text: var(--theme-base-content);
+    --color-muted: color-mix(in srgb, var(--theme-base-content) 58%, var(--theme-base-100) 42%);
+    --color-gray: var(--color-muted);
+
+    --color-primary: var(--theme-primary);
+    --color-primary-hover: color-mix(in srgb, var(--theme-primary) 85%, var(--theme-base-content) 15%);
+
+    --color-success: var(--theme-success);
+    --color-warning: var(--theme-warning);
+    --color-error: var(--theme-error);
+    --color-info: var(--theme-info);
+
+    --auth-bg: var(--color-bg);
+    --auth-grid: color-mix(in srgb, var(--color-text) 6%, transparent);
+    --auth-glow-a: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+    --auth-glow-b: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+    --auth-overlay: color-mix(in srgb, var(--color-bg) 30%, transparent);
+    --auth-text: var(--color-text);
+    --auth-muted: var(--color-muted);
+    --auth-panel: color-mix(in srgb, var(--color-bg) 80%, transparent);
+    --auth-control: color-mix(in srgb, var(--color-bg) 85%, transparent);
+    --auth-border: color-mix(in srgb, var(--color-text) 11%, transparent);
+}
+
+[data-theme="halloween"] {
+    --theme-base-100: oklch(21% 0.006 56.043);
+    --theme-base-200: oklch(14% 0.004 49.25);
+    --theme-base-300: oklch(0% 0 0);
+    --theme-base-content: oklch(84.955% 0 0);
+    --theme-primary: oklch(77.48% 0.204 60.62);
+    --theme-success: oklch(62.705% 0.169 149.213);
+    --theme-warning: oklch(66.584% 0.157 58.318);
+    --theme-error: oklch(65.72% 0.199 27.33);
+    --theme-info: oklch(54.615% 0.215 262.88);
+    --color-primary-content: #0f172a;
+    --color-success-content: #0f172a;
+    --color-warning-content: #0f172a;
+    --color-error-content: #0f172a;
+    --color-info-content: #ffffff;
+
+    --color-bg: var(--theme-base-100);
+    --color-surface: var(--theme-base-200);
+    --color-card: var(--theme-base-100);
+    --color-border: var(--theme-base-300);
+    --color-text: var(--theme-base-content);
+    --color-muted: color-mix(in srgb, var(--theme-base-content) 58%, var(--theme-base-100) 42%);
+    --color-gray: var(--color-muted);
+
+    --color-primary: var(--theme-primary);
+    --color-primary-hover: color-mix(in srgb, var(--theme-primary) 85%, var(--theme-base-content) 15%);
+
+    --color-success: var(--theme-success);
+    --color-warning: var(--theme-warning);
+    --color-error: var(--theme-error);
+    --color-info: var(--theme-info);
+
+    --auth-bg: var(--color-bg);
+    --auth-grid: color-mix(in srgb, var(--color-text) 6%, transparent);
+    --auth-glow-a: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+    --auth-glow-b: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+    --auth-overlay: color-mix(in srgb, var(--color-bg) 30%, transparent);
+    --auth-text: var(--color-text);
+    --auth-muted: var(--color-muted);
+    --auth-panel: color-mix(in srgb, var(--color-bg) 80%, transparent);
+    --auth-control: color-mix(in srgb, var(--color-bg) 85%, transparent);
+    --auth-border: color-mix(in srgb, var(--color-text) 11%, transparent);
+}
+
+[data-theme="lofi"] {
+    --theme-base-100: oklch(100% 0 0);
+    --theme-base-200: oklch(97% 0 0);
+    --theme-base-300: oklch(94% 0 0);
+    --theme-base-content: oklch(0% 0 0);
+    --theme-primary: oklch(15.906% 0 0);
+    --theme-success: oklch(90.13% 0.153 164.14);
+    --theme-warning: oklch(88.37% 0.135 79.94);
+    --theme-error: oklch(78.66% 0.15 28.47);
+    --theme-info: oklch(79.54% 0.103 205.9);
+    --color-primary-content: #ffffff;
+    --color-success-content: #0f172a;
+    --color-warning-content: #0f172a;
+    --color-error-content: #0f172a;
+    --color-info-content: #0f172a;
+
+    --color-bg: var(--theme-base-100);
+    --color-surface: var(--theme-base-200);
+    --color-card: var(--theme-base-100);
+    --color-border: var(--theme-base-300);
+    --color-text: var(--theme-base-content);
+    --color-muted: color-mix(in srgb, var(--theme-base-content) 58%, var(--theme-base-100) 42%);
+    --color-gray: var(--color-muted);
+
+    --color-primary: var(--theme-primary);
+    --color-primary-hover: color-mix(in srgb, var(--theme-primary) 85%, var(--theme-base-content) 15%);
+
+    --color-success: var(--theme-success);
+    --color-warning: var(--theme-warning);
+    --color-error: var(--theme-error);
+    --color-info: var(--theme-info);
+
+    --auth-bg: var(--color-bg);
+    --auth-grid: color-mix(in srgb, var(--color-text) 6%, transparent);
+    --auth-glow-a: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+    --auth-glow-b: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+    --auth-overlay: color-mix(in srgb, var(--color-bg) 30%, transparent);
+    --auth-text: var(--color-text);
+    --auth-muted: var(--color-muted);
+    --auth-panel: color-mix(in srgb, var(--color-bg) 80%, transparent);
+    --auth-control: color-mix(in srgb, var(--color-bg) 85%, transparent);
+    --auth-border: color-mix(in srgb, var(--color-text) 11%, transparent);
+}
+
+[data-theme="luxury"] {
+    --theme-base-100: oklch(14.076% 0.004 285.822);
+    --theme-base-200: oklch(20.219% 0.004 308.229);
+    --theme-base-300: oklch(23.219% 0.004 308.229);
+    --theme-base-content: oklch(75.687% 0.123 76.89);
+    --theme-primary: oklch(100% 0 0);
+    --theme-success: oklch(78.119% 0.192 132.154);
+    --theme-warning: oklch(86.127% 0.136 102.891);
+    --theme-error: oklch(71.753% 0.176 22.568);
+    --theme-info: oklch(79.061% 0.121 237.133);
+    --color-primary-content: #0f172a;
+    --color-success-content: #0f172a;
+    --color-warning-content: #0f172a;
+    --color-error-content: #0f172a;
+    --color-info-content: #0f172a;
+
+    --color-bg: var(--theme-base-100);
+    --color-surface: var(--theme-base-200);
+    --color-card: var(--theme-base-100);
+    --color-border: var(--theme-base-300);
+    --color-text: var(--theme-base-content);
+    --color-muted: color-mix(in srgb, var(--theme-base-content) 58%, var(--theme-base-100) 42%);
+    --color-gray: var(--color-muted);
+
+    --color-primary: var(--theme-primary);
+    --color-primary-hover: color-mix(in srgb, var(--theme-primary) 85%, var(--theme-base-content) 15%);
+
+    --color-success: var(--theme-success);
+    --color-warning: var(--theme-warning);
+    --color-error: var(--theme-error);
+    --color-info: var(--theme-info);
+
+    --auth-bg: var(--color-bg);
+    --auth-grid: color-mix(in srgb, var(--color-text) 6%, transparent);
+    --auth-glow-a: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+    --auth-glow-b: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+    --auth-overlay: color-mix(in srgb, var(--color-bg) 30%, transparent);
+    --auth-text: var(--color-text);
+    --auth-muted: var(--color-muted);
+    --auth-panel: color-mix(in srgb, var(--color-bg) 80%, transparent);
+    --auth-control: color-mix(in srgb, var(--color-bg) 85%, transparent);
+    --auth-border: color-mix(in srgb, var(--color-text) 11%, transparent);
+}
+
+[data-theme="autumn"] {
+    --theme-base-100: oklch(95.814% 0 0);
+    --theme-base-200: oklch(89.107% 0 0);
+    --theme-base-300: oklch(82.4% 0 0);
+    --theme-base-content: oklch(19.162% 0 0);
+    --theme-primary: oklch(40.723% 0.161 17.53);
+    --theme-success: oklch(60.995% 0.08 174.616);
+    --theme-warning: oklch(70.081% 0.164 56.844);
+    --theme-error: oklch(53.07% 0.241 24.16);
+    --theme-info: oklch(69.224% 0.097 207.284);
+    --color-primary-content: #ffffff;
+    --color-success-content: #0f172a;
+    --color-warning-content: #0f172a;
+    --color-error-content: #ffffff;
+    --color-info-content: #0f172a;
+
+    --color-bg: var(--theme-base-100);
+    --color-surface: var(--theme-base-200);
+    --color-card: var(--theme-base-100);
+    --color-border: var(--theme-base-300);
+    --color-text: var(--theme-base-content);
+    --color-muted: color-mix(in srgb, var(--theme-base-content) 58%, var(--theme-base-100) 42%);
+    --color-gray: var(--color-muted);
+
+    --color-primary: var(--theme-primary);
+    --color-primary-hover: color-mix(in srgb, var(--theme-primary) 85%, var(--theme-base-content) 15%);
+
+    --color-success: var(--theme-success);
+    --color-warning: var(--theme-warning);
+    --color-error: var(--theme-error);
+    --color-info: var(--theme-info);
+
+    --auth-bg: var(--color-bg);
+    --auth-grid: color-mix(in srgb, var(--color-text) 6%, transparent);
+    --auth-glow-a: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+    --auth-glow-b: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+    --auth-overlay: color-mix(in srgb, var(--color-bg) 30%, transparent);
+    --auth-text: var(--color-text);
+    --auth-muted: var(--color-muted);
+    --auth-panel: color-mix(in srgb, var(--color-bg) 80%, transparent);
+    --auth-control: color-mix(in srgb, var(--color-bg) 85%, transparent);
+    --auth-border: color-mix(in srgb, var(--color-text) 11%, transparent);
+}
+
+[data-theme="abyss"] {
+    --theme-base-100: oklch(20% 0.08 209);
+    --theme-base-200: oklch(15% 0.08 209);
+    --theme-base-300: oklch(10% 0.08 209);
+    --theme-base-content: oklch(90% 0.076 70.697);
+    --theme-primary: oklch(92% 0.2653 125);
+    --theme-success: oklch(79% 0.209 151.711);
+    --theme-warning: oklch(84.8% 0.1962 84.62);
+    --theme-error: oklch(65% 0.1985 24.22);
+    --theme-info: oklch(74% 0.16 232.661);
+    --color-primary-content: #0f172a;
+    --color-success-content: #0f172a;
+    --color-warning-content: #0f172a;
+    --color-error-content: #0f172a;
+    --color-info-content: #0f172a;
+
+    --color-bg: var(--theme-base-100);
+    --color-surface: var(--theme-base-200);
+    --color-card: var(--theme-base-100);
+    --color-border: var(--theme-base-300);
+    --color-text: var(--theme-base-content);
+    --color-muted: color-mix(in srgb, var(--theme-base-content) 58%, var(--theme-base-100) 42%);
+    --color-gray: var(--color-muted);
+
+    --color-primary: var(--theme-primary);
+    --color-primary-hover: color-mix(in srgb, var(--theme-primary) 85%, var(--theme-base-content) 15%);
+
+    --color-success: var(--theme-success);
+    --color-warning: var(--theme-warning);
+    --color-error: var(--theme-error);
+    --color-info: var(--theme-info);
+
+    --auth-bg: var(--color-bg);
+    --auth-grid: color-mix(in srgb, var(--color-text) 6%, transparent);
+    --auth-glow-a: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+    --auth-glow-b: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+    --auth-overlay: color-mix(in srgb, var(--color-bg) 30%, transparent);
+    --auth-text: var(--color-text);
+    --auth-muted: var(--color-muted);
+    --auth-panel: color-mix(in srgb, var(--color-bg) 80%, transparent);
+    --auth-control: color-mix(in srgb, var(--color-bg) 85%, transparent);
+    --auth-border: color-mix(in srgb, var(--color-text) 11%, transparent);
+}
+
 html {
     color-scheme: light;
 }
 
 html[data-theme="dark"] {
+    color-scheme: dark;
+}
+
+/* Aqua, Halloween, Luxury and Abyss are dark-based themes, so native form
+   controls / scrollbars should render in their dark variant too, same as
+   the existing dark theme already does above. */
+html[data-theme="aqua"],
+html[data-theme="halloween"],
+html[data-theme="luxury"],
+html[data-theme="abyss"] {
     color-scheme: dark;
 }
 
@@ -170,12 +793,29 @@ body {
     position: absolute;
 }
 
+/* Portrait kiosk monitors are too narrow for the brand/stats panel next to
+   the form - drop it so only the form is shown. Landscape is untouched. */
+@media (orientation: portrait) {
+    .auth-brand-panel {
+        display: none;
+    }
+}
+
+/* Drawers opted into this (Profile, Health Records) stay at their normal
+   md:w-[50vw] in landscape, but get noticeably more width in portrait, where
+   50vw of a rotated kiosk monitor reads as cramped rather than roomy. */
+@media (orientation: portrait) and (min-width: 768px) {
+    .hk-drawer-wide-portrait {
+        width: 70vw !important;
+    }
+}
+
 .auth-logo {
     align-items: center;
-    background: linear-gradient(135deg, #38bdf8, #2563eb);
+    background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 65%, black));
     border-radius: 1rem;
-    box-shadow: 0 22px 50px rgba(37, 99, 235, 0.24);
-    color: #ffffff;
+    box-shadow: 0 22px 50px color-mix(in srgb, var(--color-primary) 35%, transparent);
+    color: var(--color-primary-content);
     display: flex;
     height: 3.25rem;
     justify-content: center;
@@ -253,6 +893,39 @@ body {
 
 .hk-auth-form-scroll::-webkit-scrollbar-thumb {
     background: transparent;
+}
+
+/* Scrolls without showing a track. Used by short popovers - select dropdowns,
+   the birthday picker's year list - where the cut-off last row already says the
+   list continues, and a gutter inside a 2px-padded panel reads as grit. Larger
+   panels keep .hk-slim-scroll, where the indicator earns its place. */
+.hk-no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.hk-no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hides the window scrollbar across the whole app, which .hk-no-scrollbar
+   cannot reach: the viewport track is owned by <html>, not by any element a
+   component renders. Both html and body are targeted because browsers
+   disagree about which one the viewport track inherits from.
+
+   Deliberately limited to the window track. The in-component scrollbars
+   (.hk-slim-scroll, .hk-scrollbar, .hk-reports-table-scroll, the sidebar and
+   the admin tables) are styled affordances that tell you a panel has more
+   content, so they stay. Pages still scroll — only the window indicator goes. */
+html,
+body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
 }
 
 .auth-select option {
@@ -493,10 +1166,20 @@ body {
     color: var(--color-text) !important;
 }
 
-.hk-admin-sidebar {
-    position: relative;
-    transform-origin: left center;
-    will-change: width;
+/* Desktop only: below the lg breakpoint this class sits on a `fixed`
+   off-canvas drawer (see Sidebar.jsx). This rule's `position: relative`
+   used to apply unconditionally and, having the same specificity as
+   Tailwind's `.fixed` utility but appearing later in the stylesheet, always
+   won - silently turning the drawer back into an in-flow, `h-screen`-tall
+   block. That pushed the entire page below it down by one viewport height,
+   off-screen, the moment the window narrowed past lg: the "content
+   vanishes" collapse. */
+@media (min-width: 1024px) {
+    .hk-admin-sidebar {
+        position: relative;
+        transform-origin: left center;
+        will-change: width;
+    }
 }
 
 .hk-sidebar-shell {
@@ -608,8 +1291,150 @@ body.modal-open .hk-sidebar-flyout {
     background-clip: padding-box;
 }
 
+/* Slim scroll indicator for modal bodies and other tight panels.
+   The 14px .hk-scrollbar above is far too heavy inside a dialog, where the
+   scrollbar sits right beside the content instead of at a window edge.
+   Stays faint until the pointer is over the panel so it reads as a hint
+   rather than a piece of furniture. */
+.hk-slim-scroll {
+    scrollbar-color: color-mix(in srgb, var(--color-text) 18%, transparent) transparent;
+    scrollbar-width: thin;
+}
+
+.hk-slim-scroll::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+}
+
+.hk-slim-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.hk-slim-scroll::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-text) 16%, transparent);
+    border-radius: 999px;
+    transition: background 0.2s ease;
+}
+
+.hk-slim-scroll:hover {
+    scrollbar-color: color-mix(in srgb, var(--color-primary) 45%, transparent) transparent;
+}
+
+.hk-slim-scroll:hover::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-primary) 45%, transparent);
+}
+
+.hk-slim-scroll::-webkit-scrollbar-thumb:hover,
+.hk-slim-scroll::-webkit-scrollbar-thumb:active {
+    background: color-mix(in srgb, var(--color-primary) 70%, transparent);
+}
+
+/* Nothing to indicate when there is nothing to scroll. */
+.hk-slim-scroll::-webkit-scrollbar-thumb:vertical {
+    min-height: 32px;
+}
+
+/* ── Admin surfaces ───────────────────────────────────────────────────
+   Shared polish for the admin module pages so every screen picks up the
+   same treatment instead of each one restyling its own tables. */
+
+/* Replaces the blanket shadow-xl that sat on nearly every admin panel. A
+   heavy drop shadow on every surface flattens the hierarchy — nothing reads
+   as raised when everything is. */
+.hk-admin-card {
+    box-shadow:
+        0 1px 2px color-mix(in srgb, var(--color-text) 4%, transparent),
+        0 8px 24px -18px color-mix(in srgb, var(--color-text) 30%, transparent);
+}
+
+.hk-stat-card {
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--color-text) 5%, transparent);
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.hk-stat-card:hover {
+    border-color: color-mix(in srgb, var(--color-primary) 32%, var(--color-border));
+    box-shadow: 0 12px 28px -14px color-mix(in srgb, var(--color-primary) 55%, transparent);
+    transform: translateY(-2px);
+}
+
+/* Premium table skin. Apply .hk-table to a <table> inside a bordered card. */
+.hk-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    text-align: left;
+}
+
+.hk-table thead th {
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-muted);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    padding: 0.75rem 1rem;
+    position: sticky;
+    text-transform: uppercase;
+    top: 0;
+    z-index: 10;
+}
+
+.hk-table tbody td {
+    border-bottom: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+    font-weight: 700;
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+}
+
+.hk-table tbody tr {
+    transition: background-color 0.16s ease;
+}
+
+.hk-table tbody tr:hover {
+    background-color: color-mix(in srgb, var(--color-primary) 5%, transparent);
+}
+
+.hk-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Rows revealed by expanding a parent record. Tinted so the group is obvious
+   at a glance, and deliberately inert on hover — they are context for the row
+   above, not separate things to point at. */
+.hk-table tbody tr.hk-row-child,
+.hk-table tbody tr.hk-row-child:hover {
+    background-color: color-mix(in srgb, var(--color-primary) 6%, transparent);
+}
+
+.hk-table tbody tr.hk-row-child > td:first-child {
+    box-shadow: inset 3px 0 0 0 color-mix(in srgb, var(--color-primary) 45%, transparent);
+}
+
+/* The parent of an open group, so the pair reads as one block. */
+.hk-table tbody tr.hk-row-parent-open,
+.hk-table tbody tr.hk-row-parent-open:hover {
+    background-color: color-mix(in srgb, var(--color-primary) 9%, transparent);
+}
+
+/* Status pill used across alerts, sessions and records. */
+.hk-pill {
+    border-radius: 999px;
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 0.03em;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 0.25rem 0.625rem;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
 .voice-help-stack-wrap {
     border-radius: 1.35rem;
+    container-type: inline-size;
     overflow: hidden;
     position: relative;
 }
@@ -651,6 +1476,7 @@ body.modal-open .hk-sidebar-flyout {
 .voice-help-stack {
     display: grid;
     gap: 0.65rem;
+    grid-template-columns: 1fr;
     max-height: 19.6rem;
     overflow-x: hidden;
     overflow-y: auto;
@@ -660,6 +1486,32 @@ body.modal-open .hk-sidebar-flyout {
     scrollbar-color: color-mix(in srgb, var(--color-primary) 76%, var(--color-border)) color-mix(in srgb, var(--color-surface) 88%, var(--color-card));
     scrollbar-width: auto;
     z-index: 1;
+}
+
+/* When this card has room to breathe (e.g. it goes full-width once the
+   dashboard's two-column hero row collapses on a portrait screen), lay the
+   voice-help questions out as a grid instead of one long scrolling column. */
+@container (min-width: 520px) {
+    .voice-help-stack {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* The hero/voice-help row stays side-by-side even on a narrow portrait
+   screen, so this card can end up quite tight - shrink the question rows to
+   fit rather than let them clip. */
+@container (max-width: 280px) {
+    .voice-help-item {
+        font-size: 0.72rem;
+        gap: 0.45rem;
+        min-height: 2.5rem;
+        padding: 0.55rem 0.6rem;
+    }
+
+    .voice-help-item svg {
+        height: 14px;
+        width: 14px;
+    }
 }
 
 .voice-help-stack::-webkit-scrollbar {
@@ -838,6 +1690,20 @@ body.modal-open .hk-sidebar-flyout {
     outline-offset: 3px;
 }
 
+/* Header icon buttons (theme + assistant toggle) shrink at small widths
+   instead of the header ever scrolling or wrapping. */
+@media (max-width: 639px) {
+    .hk-header-toggle.theme-toggle {
+        gap: 0;
+        min-height: 2.25rem;
+        padding: 0 0.55rem;
+    }
+
+    .hk-header-toggle .theme-toggle__label {
+        display: none;
+    }
+}
+
 .theme-toggle__button-icon {
     align-items: center;
     border-radius: 999px;
@@ -978,4 +1844,100 @@ body.modal-open .hk-sidebar-flyout {
 
 .hk-alert-body-scroll::-webkit-scrollbar-thumb:hover {
     background: color-mix(in srgb, var(--color-primary) 65%, var(--color-border));
+}
+
+/* ── Premium health summary surfaces ── */
+/* Shared by the session summary screen and the results screen. The sheen is a
+   single low-opacity gradient rather than a stack of shadows so it stays clean
+   against both themes. */
+.hk-premium-card {
+    position: relative;
+    isolation: isolate;
+    transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.hk-premium-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: linear-gradient(
+        145deg,
+        color-mix(in srgb, var(--hk-accent, var(--color-primary)) 10%, transparent) 0%,
+        transparent 55%
+    );
+    pointer-events: none;
+}
+
+.hk-premium-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 38px color-mix(in srgb, var(--hk-accent, var(--color-primary)) 16%, transparent);
+}
+
+/* Accent rail running down the leading edge of a metric card. */
+.hk-accent-rail::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    border-radius: 999px 0 0 999px;
+    background: var(--hk-accent, var(--color-primary));
+    opacity: 0.85;
+}
+
+/* Radial halo behind the overall-status badge. */
+.hk-status-halo {
+    position: relative;
+}
+
+.hk-status-halo::before {
+    content: "";
+    position: absolute;
+    inset: -38%;
+    z-index: -1;
+    border-radius: 999px;
+    background: radial-gradient(
+        circle,
+        color-mix(in srgb, var(--hk-accent, var(--color-primary)) 26%, transparent) 0%,
+        transparent 68%
+    );
+    pointer-events: none;
+}
+
+/* Readings are compared down a column, so digits must not shift width. */
+.hk-tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hk-premium-card,
+    .hk-premium-card:hover {
+        transform: none;
+        transition: none;
+    }
+}
+
+/* ── Skeleton block ──
+   Used by placeholders that stand in for real content while it loads. Sized by
+   the caller so the placeholder occupies the same box as what replaces it. */
+.hk-skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--skeleton-base) 25%,
+        var(--skeleton-highlight) 37%,
+        var(--skeleton-base) 63%
+    );
+    background-size: 400% 100%;
+    animation: hk-skeleton-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes hk-skeleton-sweep {
+    0%   { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hk-skeleton { animation: none; }
 }

@@ -10,7 +10,7 @@ export default function DashboardCharts({ data, period, onPeriodChange }) {
         <motion.section
             initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 1.24, duration: 0.34, ease: "easeOut" }}
+            transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 0.26, duration: 0.34, ease: "easeOut" }}
         >
             <SectionHeader
                 title="Session overview"

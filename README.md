@@ -172,6 +172,26 @@ php artisan serve
 npm run build
 ```
 
+## Production Deployment Checklist
+
+Before this runs anywhere beyond local development, confirm in the server's `.env`:
+
+- `APP_ENV=production`
+- `APP_DEBUG=false` — leaving this `true` shows full stack traces (including file
+  paths and query context) to anyone who triggers an unhandled error.
+- `KIOSK_BRIDGE_TOKEN` is set to a real random value (see `.env.example`), and
+  the serial bridge's `config.json`/`--bridge-token` on the kiosk machine uses
+  the same value — otherwise the bridge cannot reach `/api/kiosk/*`. On the
+  kiosk PC: copy `scripts/config.example.json` to `scripts/config.json`, fill
+  in the real `port`/`url`/`command_url` for that machine, and paste the same
+  value as `KIOSK_BRIDGE_TOKEN` into `bridge_token`. `config.json` is
+  git-ignored on purpose (it holds the live secret) — `config.example.json`
+  is the tracked template. If `bridge_token` is missing or wrong, the bridge
+  gets a clean 401 from every request and does nothing else — it fails
+  closed rather than falling back to the old unauthenticated behavior.
+- Run `php artisan config:cache` and `php artisan route:cache` after setting
+  the above, and re-run them whenever `.env` or the routes change.
+
 ## Repository
 
 GitHub repository:

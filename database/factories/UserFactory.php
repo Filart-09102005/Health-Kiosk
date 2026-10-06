@@ -36,6 +36,7 @@ class UserFactory extends Factory
             'birthday' => fake()->dateTimeBetween('-65 years', '-16 years')->format('Y-m-d'),
             'gender' => fake()->randomElement(['male', 'female', 'other', 'prefer_not_to_say']),
             'barcode' => fake()->unique()->numerify('BC########'),
+            'is_active' => true,
             'remember_token' => Str::random(10),
         ];
     }

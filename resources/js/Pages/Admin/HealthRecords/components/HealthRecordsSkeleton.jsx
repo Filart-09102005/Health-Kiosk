@@ -31,59 +31,6 @@ function StatCardSkeleton() {
     );
 }
 
-function DistributionCardSkeleton() {
-    return (
-        <div className={`${cardClassName} p-4`} style={cardStyle}>
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <ShimmerSkeleton className="h-4 w-48" />
-                    <ShimmerSkeleton className="mt-2 h-3 w-40" />
-                </div>
-                <div className="flex flex-col items-end">
-                    <ShimmerSkeleton className="h-7 w-12" />
-                    <ShimmerSkeleton className="mt-2 h-3 w-20" />
-                </div>
-            </div>
-            <div className="mt-5 grid items-center gap-5 sm:grid-cols-[8rem_1fr]">
-                <div className="relative mx-auto h-28 w-28 rounded-full hk-skeleton-shimmer">
-                    <div className="absolute inset-8 rounded-full" style={{ backgroundColor: "var(--color-card)" }} />
-                </div>
-                <div className="space-y-3">
-                    {Array.from({ length: 3 }).map((_, index) => (
-                        <div key={index} className="grid grid-cols-[4rem_1fr_4.2rem] items-center gap-3">
-                            <div className="flex items-center gap-2">
-                                <ShimmerSkeleton className="h-2.5 w-2.5 rounded-sm" />
-                                <ShimmerSkeleton className="h-3 w-10" />
-                            </div>
-                            <ShimmerSkeleton className="h-2 w-full rounded-full" />
-                            <ShimmerSkeleton className="ml-auto h-4 w-12" />
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function AlertsCardSkeleton() {
-    return (
-        <div className={`${cardClassName} p-4`} style={cardStyle}>
-            <div className="flex items-center gap-2">
-                <ShimmerSkeleton className="h-4 w-4" />
-                <ShimmerSkeleton className="h-4 w-36" />
-            </div>
-            <ul className="mt-4 space-y-3">
-                {Array.from({ length: 4 }).map((_, index) => (
-                    <li key={index} className="flex items-center justify-between rounded-xl border px-3 py-2.5" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
-                        <ShimmerSkeleton className="h-3 w-40 max-w-[70%]" />
-                        <ShimmerSkeleton className="h-3 w-6" />
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-}
-
 function FiltersSkeleton() {
     return (
         <section className={`space-y-4 ${cardClassName} p-5`} style={cardStyle}>
@@ -196,17 +143,9 @@ export default function HealthRecordsSkeleton() {
                 ))}
             </section>
 
-            <section>
-                <ShimmerSkeleton className="h-5 w-40" />
-                <ShimmerSkeleton className="mt-2 h-3 w-80 max-w-full" />
-                <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                    <DistributionCardSkeleton />
-                    <AlertsCardSkeleton />
-                </div>
-            </section>
-
             <FiltersSkeleton />
             <TableSkeleton />
         </div>
     );
 }
+

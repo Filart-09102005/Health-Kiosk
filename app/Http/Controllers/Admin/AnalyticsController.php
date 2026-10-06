@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Alert;
 use App\Models\HealthRecord;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,7 +23,7 @@ class AnalyticsController extends Controller
             : 'monthly';
 
         return response()->json([
-            'filters' => $this->filterOptions(),
+            'filters' => $this->filterOptions($request),
             'summary' => $this->summary($records),
             'bmi_distribution' => $this->bmiDistribution($records),
             'heart_rate_distribution' => $this->heartRateDistribution($records),
@@ -77,18 +78,49 @@ class AnalyticsController extends Controller
         $query->where($column, $value);
     }
 
-    private function filterOptions(): array
+    private function filterOptions(Request $request): array
     {
         $base = User::query()->where('role', '!=', 'admin');
 
+        $baseForAcademicLevel = clone $base;
+
+        $baseForGender = clone $base;
+        $this->applyUserFilter($baseForGender, 'department', $request->input('academic_level'));
+        $this->applyUserFilter($baseForGender, 'grade_level', $request->input('grade_level'));
+        $this->applyUserFilter($baseForGender, 'strand', $request->input('strand'));
+        $this->applyUserFilter($baseForGender, 'year_level', $request->input('year_level'));
+        $this->applyUserFilter($baseForGender, 'program', $request->input('program'));
+        $this->applyUserFilter($baseForGender, 'section', $request->input('section'));
+
+        $baseForGradeLevel = clone $base;
+        $this->applyUserFilter($baseForGradeLevel, 'department', $request->input('academic_level'));
+
+        $baseForStrand = clone $base;
+        $this->applyUserFilter($baseForStrand, 'department', $request->input('academic_level'));
+        $this->applyUserFilter($baseForStrand, 'grade_level', $request->input('grade_level'));
+
+        $baseForYearLevel = clone $base;
+        $this->applyUserFilter($baseForYearLevel, 'department', $request->input('academic_level'));
+        $this->applyUserFilter($baseForYearLevel, 'program', $request->input('program'));
+
+        $baseForProgram = clone $base;
+        $this->applyUserFilter($baseForProgram, 'department', $request->input('academic_level'));
+
+        $baseForSection = clone $base;
+        $this->applyUserFilter($baseForSection, 'department', $request->input('academic_level'));
+        $this->applyUserFilter($baseForSection, 'grade_level', $request->input('grade_level'));
+        $this->applyUserFilter($baseForSection, 'strand', $request->input('strand'));
+        $this->applyUserFilter($baseForSection, 'program', $request->input('program'));
+        $this->applyUserFilter($baseForSection, 'year_level', $request->input('year_level'));
+
         return [
-            'academic_levels' => $this->distinctValues($base, 'department'),
-            'grade_levels' => $this->distinctValues($base, 'grade_level'),
-            'strands' => $this->distinctValues($base, 'strand'),
-            'year_levels' => $this->distinctValues($base, 'year_level'),
-            'programs' => $this->distinctValues($base, 'program'),
-            'genders' => $this->distinctValues($base, 'gender'),
-            'sections' => Schema::hasColumn('users', 'section') ? $this->distinctValues($base, 'section') : [],
+            'academic_levels' => $this->distinctValues($baseForAcademicLevel, 'department'),
+            'grade_levels' => $this->distinctValues($baseForGradeLevel, 'grade_level'),
+            'strands' => $this->distinctValues($baseForStrand, 'strand'),
+            'year_levels' => $this->distinctValues($baseForYearLevel, 'year_level'),
+            'programs' => $this->distinctValues($baseForProgram, 'program'),
+            'genders' => $this->distinctValues($baseForGender, 'gender'),
+            'sections' => Schema::hasColumn('users', 'section') ? $this->distinctValues($baseForSection, 'section') : [],
         ];
     }
 
@@ -588,10 +620,15 @@ class AnalyticsController extends Controller
 
         $temperature = (float) $record->temperature;
 
+        // Descriptive banding for the charts. The 'Low' floor follows the
+        // configured normal floor so a reading the kiosk calls Normal is not
+        // labelled Low Temperature here.
+        $low = (float) \App\Support\AdminSettings::group('temperature')['normalLow'];
+
         return match (true) {
             $temperature >= 38 => 'High Temperature',
             $temperature >= 37.3 => 'Elevated',
-            $temperature < 36 => 'Low Temperature',
+            $temperature < $low => 'Low Temperature',
             default => 'Normal',
         };
     }
@@ -739,7 +776,7 @@ class AnalyticsController extends Controller
             'spo2'            => $alert->spo2 ? round((float) $alert->spo2).'%' : 'N/A',
             'bmi'             => $alert->bmi ? number_format((float) $alert->bmi, 1) : 'N/A',
             'advice'          => $alert->message ?: 'Clinic review recommended.',
-            'newMeasurement'  => $alert->new_measurement,
+            'newMeasurement'  => Alert::displayableManualMeasurement($alert->new_measurement),
             'resolutionNotes' => $alert->resolution_notes,
             'type'            => $alert->type,
         ];

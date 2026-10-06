@@ -1,0 +1,365 @@
+# ALPHA TESTING - LOGIN & REGISTRATION
+
+**System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+**Test Type:** Alpha Testing (Internal)
+**Scope:** Authentication and account creation
+
+**Tester Name:** ______________________  **Testing Date:** ______________  **Testing Time:** __________
+
+### Revision note
+
+Questions are numbered **Q1-Q62 in final testing order**. User-Side and Admin-Side keep their own
+numbering and will restart at Q1 when they are revised separately.
+
+* Questions **without** a NEW marker were carried over from the previous questionnaire. Any result
+  already recorded against them has been migrated to the new number - they do not need retesting.
+* Questions marked **[NEW]** have never been run. Pass, Fail and Comment start empty.
+
+Removed: **Q13** and **Q17** of the previous numbering, on request.
+Merged: the Resend Verification colour-indicator questions were folded into the existing panel
+questions rather than duplicated.
+
+---
+
+### TC-1 - Login Page — Initial State  **[CONTAINS NEW]**
+- **Actor:** Student / Teacher / Admin
+- **Short Description:** What the tester should see before touching anything.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **[NEW]** Q1 | 1 | Open the Login Page | http://127.0.0.1:8000/login | Load the page and display the Sign in panel without any console or loading error | | | | |
+| **[NEW]** Q2 | 2 | Observe which login method is active when the page opens | None | Show Barcode as the default active method | | | | |
+
+**Overall Comment - TC-1:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-2 - Assistant Mode  **[CONTAINS NEW]**
+- **Actor:** Student / Teacher / Admin
+- **Short Description:** Checked before credential testing, because the assistant guides the whole login journey.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **[NEW]** Q3 | 1 | Switch “Assistant Mode” ON on the Login Page | Assistant ON | Enable the assistant and announce the login guidance by voice | | | | |
+| **[NEW]** Q4 | 2 | Move between the login fields with the assistant ON | Assistant ON | Speak guidance that matches the field currently in focus | | | | |
+| **[NEW]** Q5 | 3 | Switch “Assistant Mode” OFF | Assistant OFF | Stop the voice guidance immediately | | | | |
+
+**Overall Comment - TC-2:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-3 - Select Login Method  **[CONTAINS NEW]**
+- **Actor:** Student / Teacher
+- **Short Description:** The Email tab must be selected before any email login test, since the page opens on Barcode.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **[NEW]** Q6 | 1 | Click the “Email” tab | None | Switch to Email login and display the email and password fields | | | | |
+| Q7 | 2 | Click “Barcode” on the login method selector | None | Switch back to Barcode login and display the Barcode Scanner field | | | | |
+| **[NEW]** Q8 | 3 | Observe the Admin Login and Student Login options on the page | None | Display both options and make clear which account type each is for | | | | |
+
+**Overall Comment - TC-3:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-4 - Email Login — Field Validation  **[CONTAINS NEW]**
+- **Actor:** Student / Teacher
+- **Short Description:** Both credentials must be required before the system attempts to authenticate.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q9 | 1 | Click “Sign In” with both fields empty | None | Display a validation message that the email and password are required | | | | |
+| Q10 | 2 | Enter an email only, then click “Sign In” | hanskurveyfilart@smcbi.edu.ph | Display a validation message that the password is required | | | | |
+| Q11 | 3 | Enter a password only, then click “Sign In” | Hans123! | Display a validation message that the email is required | | | | |
+| Q12 | 4 | Enter an email in an invalid format | hanskurveyfilart | Display a validation message that a valid email is required | | | | |
+| **[NEW]** Q13 | 5 | Attempt to submit a malformed email in full | hanskurveyfilar@@smcbi | Allow an invalid address to actually reach validation — the username field currently auto-appends the domain, which prevents invalid email formats from being tested | | | | |
+
+**Overall Comment - TC-4:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-5 - Email Login — Credential Validation  **[CONTAINS NEW]**
+- **Actor:** Student / Teacher
+- **Short Description:** Wrong credentials must be rejected without revealing which part was wrong.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q14 | 1 | Enter a registered email with a wrong password | Correct email / wrongpass | Reject the login and display an invalid-credentials message | | | | |
+| Q15 | 2 | Enter an unregistered email with any password | nobody@smcbi.edu.ph / Test123! | Reject the login without revealing whether the account exists | | | | |
+| Q16 | 3 | Submit six failed logins within one minute | Wrong password ×6 | Block further attempts with a too-many-attempts message | | | | |
+| **[NEW]** Q17 | 4 | Observe what the system does after the “Too Many Attempts.” message | Wrong password ×6, then keep trying | Record the actual behaviour: whether any wait time is stated on screen, and how long the lockout really lasts before a valid login is accepted. No cooldown duration is currently displayed, so this establishes what the system actually does. | | | | |
+
+**Overall Comment - TC-5:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-6 - Successful Login  **[CONTAINS NEW]**
+- **Actor:** Student / Teacher
+- **Short Description:** Valid credentials must authenticate and open the User Dashboard.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q18 | 1 | Enter valid student credentials and click “Sign In” | hanskurveyfilart@smcbi.edu.ph / Student123! | Display the loading indicator while verifying the credentials | | | | |
+| Q19 | 2 | Wait for authentication to finish | None | Redirect the student to the User Dashboard | | | | |
+| Q20 | 3 | Observe the dashboard header after signing in | None | Display the signed-in user’s own name. Judge this step on the login and session working — the kiosk session number is checked separately in the next step. | | | | |
+| **[NEW]** Q21 | 4 | Look for the new Kiosk Session Number after signing in | None | State where the session number is expected to appear. It is not shown anywhere at present, and the intended location is not defined by the requirements — this step establishes that location before the display itself can be judged. | | | | |
+
+**Overall Comment - TC-6:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-7 - Student / Admin Role Login Validation  **[CONTAINS NEW]**
+- **Actor:** Student / Admin
+- **Short Description:** The selected login mode must match the account role, and block the login when it does not.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **[NEW]** Q22 | 1 | Sign in through Student Login using a student account | Student Login + student account | Allow the login and open the User Dashboard | | | | |
+| **[NEW]** Q23 | 2 | Sign in through Student Login using an admin account | Student Login + admin account | Block the login — an admin must not be admitted through Student Login | | | | |
+| Q24 | 3 | Sign in through Admin Login using an admin account | Admin Login + admin account | Allow the login and open the Admin Dashboard | | | | |
+| **[NEW]** Q25 | 4 | Sign in through Admin Login using a student account | Admin Login + student account | Block the login — a student must not be admitted through Admin Login | | | | |
+
+**Overall Comment - TC-7:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-8 - Session Behaviour  **[CONTAINS NEW]**
+- **Actor:** Student / Teacher
+- **Short Description:** The session must survive normal navigation while the user stays signed in.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **[NEW]** Q26 | 1 | Refresh the browser after signing in | None | Keep the user signed in and return to the dashboard | | | | |
+| **[NEW]** Q27 | 2 | Open the dashboard in a second browser tab | None | Keep the same session active in both tabs | | | | |
+
+**Overall Comment - TC-8:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-9 - Logout and Protected Pages
+- **Actor:** Student / Teacher
+- **Short Description:** Logging out must end the session and close off the pages behind it.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q28 | 1 | Navigate to the Logout function: open the Account Menu, then click “Logout” | None | Display the logout confirmation | | | | |
+| Q29 | 2 | Click “Cancel” in the confirmation | None | Close the confirmation and keep the user signed in | | | | |
+| Q30 | 3 | Click “Logout” and confirm | None | End the session and redirect to the Login Page | | | | |
+| Q31 | 4 | Navigate directly to /user/dashboard after logging out | None | Redirect back to the Login Page without displaying any data | | | | |
+| Q32 | 5 | Click the browser Back button after logging out | None | Remain on the Login Page and not restore the dashboard | | | | |
+
+**Overall Comment - TC-9:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-10 - Barcode Login  **[CONTAINS NEW]**
+- **Actor:** Student / Teacher
+- **Short Description:** Barcode login is automatic — the scanner is detected and the barcode fetched with no Sign In button.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **[NEW]** Q33 | 1 | Select “Barcode” and observe the scanner state | None | Activate the scanner and show that it is ready for input | | | | |
+| **[NEW]** Q34 | 2 | Scan a barcode without pressing anything else | Registered barcode | Detect and fetch the barcode automatically, then identify the account | | | | |
+| Q35 | 3 | Scan an unregistered barcode | Unknown barcode | Reject the login with an account-not-found message | | | | |
+| Q36 | 4 | Scan a registered student ID barcode | Registered barcode | Sign in the matching account and open the User Dashboard | | | | |
+
+**Overall Comment - TC-10:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-11 - Create One — Open Registration
+- **Actor:** Student / Teacher
+- **Short Description:** Reaching the registration flow from the Login Page.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q37 | 1 | Click “Create One” on the Login Page | None | Open the registration flow at Step 1 | | | | |
+
+**Overall Comment - TC-11:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-12 - Registration — Step 1 Barcode Validation  **[CONTAINS NEW]**
+- **Actor:** Student / Teacher
+- **Short Description:** Registration begins by scanning a barcode; it cannot be typed.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **[NEW]** Q38 | 1 | Attempt to type a barcode by hand at Step 1 | Typed text | Prevent manual entry — the barcode must be scanned | | | | |
+| **[NEW]** Q39 | 2 | Scan a barcode that is already registered | C-230204 | Show Scanner Active, the scanned barcode, and “This barcode is already registered.” | | | | |
+| **[NEW]** Q40 | 3 | Scan a barcode that is not yet registered | ABC-abc-1234 | Show Scanner Active, the scanned barcode, and “Barcode is available.” | | | | |
+
+**Overall Comment - TC-12:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-13 - Registration — Step 2 Role Selection  **[CONTAINS NEW]**
+- **Actor:** Student / Teacher
+- **Short Description:** Choosing the account role after the barcode is accepted.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **[NEW]** Q41 | 1 | Continue to Step 2 and choose a role | Student | Accept the role and continue to Step 3 | | | | |
+
+**Overall Comment - TC-13:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-14 - Registration — Step 3 Account Details  **[CONTAINS NEW]**
+- **Actor:** Student / Teacher
+- **Short Description:** Required account details must be complete before the flow continues.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **[NEW]** Q42 | 1 | Continue from Step 3 with required account details left empty | Blank fields | Block the step and require the missing details before continuing | | | | |
+| **[NEW]** Q43 | 2 | Complete Step 3 with valid account details | Name, school email, department | Accept the details and continue to Step 4 | | | | |
+
+**Overall Comment - TC-14:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-15 - Registration — Step 4 Password Validation  **[CONTAINS NEW]**
+- **Actor:** Student / Teacher
+- **Short Description:** Password rules: 8 characters, uppercase, lowercase, number, special character.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **[NEW]** Q44 | 1 | Enter a password that breaks the rules at Step 4 | password | Reject it and list what is missing — 8 characters, uppercase, lowercase, number, special character | | | | |
+| **[NEW]** Q45 | 2 | Enter a password meeting every rule | Hans123! | Accept the password and allow the registration to be submitted | | | | |
+
+**Overall Comment - TC-15:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-16 - Registration — Step 5 Email Verification  **[CONTAINS NEW]**
+- **Actor:** Student / Teacher
+- **Short Description:** From submitting the registration through to the new account signing in.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q46 | 1 | Submit the completed registration | All five steps completed | Create the account and open the Health Kiosk Verification screen | | | | |
+| **[NEW]** Q47 | 2 | Read the verification screen | None | Show “Check your email” and that the verification email was queued, with Go to Login, Register Another Account and Resend Link available | | | | |
+| **[NEW]** Q48 | 3 | Click “Register Another Account” | None | Restart the registration flow at Step 1 | | | | |
+| **[NEW]** Q49 | 4 | Click “Go to Login” | None | Return to the Login Page | | | | |
+| Q50 | 5 | Attempt to sign in before verifying | New account credentials | Block the login and require email verification first | | | | |
+| Q51 | 6 | Open the verification link received by email | Verification link | Mark the account as verified | | | | |
+| Q52 | 7 | Sign in using the newly verified account | New account credentials | Sign in successfully and open the User Dashboard | | | | |
+| Q53 | 8 | Confirm the account appears in Admin → Students | None | Display the new account in the student list | | | | |
+
+**Overall Comment - TC-16:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-17 - Resend Verification  **[CONTAINS NEW]**
+- **Actor:** Student / Teacher
+- **Short Description:** Requesting another verification email, from the verification screen and from the Login Page panel.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **[NEW]** Q54 | 1 | Click “Resend Link” on the verification screen | None | Send the verification email again and confirm it on screen | | | | |
+| Q55 | 2 | In the Resend Verification panel, enter an email that is not registered | nobody@smcbi.edu.ph | State that the email is not registered and show the grey indicator — email or account not found | | | | |
+| **[NEW]** Q56 | 3 | Enter an email that is registered and already verified | hanskurveyfilart@smcbi.edu.ph | Show the blue indicator — email found and already registered | | | | |
+| Q57 | 4 | Enter an email belonging to an unverified account and send the link | Unverified account email | Show the red indicator — account not yet verified — then resend the verification email and confirm it on screen | | | | |
+
+**Overall Comment - TC-17:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+### TC-18 - Forgot Password
+- **Actor:** Student / Teacher
+- **Short Description:** Password recovery from the Login Page.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q58 | 1 | Click “Forgot Password” and submit an empty field | None | Display a validation message that the email is required | | | | |
+| Q59 | 2 | Submit a registered email | hanskurveyfilart@smcbi.edu.ph | Send the reset link and display a confirmation message | | | | |
+| Q60 | 3 | Open the reset link and set a new password | NewPass123! | Update the password and redirect to the Login Page | | | | |
+| Q61 | 4 | Sign in using the old password | Student123! | Reject the login | | | | |
+| Q62 | 5 | Sign in using the new password | NewPass123! | Sign in successfully | | | | |
+
+**Overall Comment - TC-18:**
+
+**Test Case Status:**  [ ] Completed / Submitted
+
+---
+
+# LOGIN & REGISTER - OVERALL ALPHA TEST SUMMARY
+
+**Tester Name:** ______________________
+**Testing Date:** ______________________
+**Testing Time:** ______________________
+
+| Test Case | Description | Status | Passed | Failed | Comments |
+| --- | --- | --- | ---: | ---: | ---: |
+| TC-1 | Login Page — Initial State | | | | |
+| TC-2 | Assistant Mode | | | | |
+| TC-3 | Select Login Method | | | | |
+| TC-4 | Email Login — Field Validation | | | | |
+| TC-5 | Email Login — Credential Validation | | | | |
+| TC-6 | Successful Login | | | | |
+| TC-7 | Student / Admin Role Login Validation | | | | |
+| TC-8 | Session Behaviour | | | | |
+| TC-9 | Logout and Protected Pages | | | | |
+| TC-10 | Barcode Login | | | | |
+| TC-11 | Create One — Open Registration | | | | |
+| TC-12 | Registration — Step 1 Barcode Validation | | | | |
+| TC-13 | Registration — Step 2 Role Selection | | | | |
+| TC-14 | Registration — Step 3 Account Details | | | | |
+| TC-15 | Registration — Step 4 Password Validation | | | | |
+| TC-16 | Registration — Step 5 Email Verification | | | | |
+| TC-17 | Resend Verification | | | | |
+| TC-18 | Forgot Password | | | | |
+| | **TOTAL (62 questions)** | | | | |
+
+Carried over with existing results: **32**.
+Awaiting a first run: **30** (Q1, Q2, Q3, Q4, Q5, Q6, Q8, Q13, Q17, Q21, Q22, Q23, Q25, Q26, Q27, Q33, Q34, Q38, Q39, Q40, Q41, Q42, Q43, Q44, Q45, Q47, Q48, Q49, Q54, Q56).
+
+**Defects Found**
+
+| No. | Q | Test Case | Description of the Problem | Severity | Action Taken | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | | | | | | |
+| 2 | | | | | | |
+| 3 | | | | | | |
+| 4 | | | | | | |
+| 5 | | | | | | |
+
+**Executed by:**
+-
+
+**Checked by:**
+-

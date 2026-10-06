@@ -4,7 +4,7 @@ const points = [18, 25, 21, 34, 29, 42, 31];
 
 export default function AlertTrendChart() {
     return (
-        <div className="rounded-[14px] border p-5" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <div className="rounded-[1.25rem] border p-5" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <SectionHeader title="Alert trend" description="Seven-day monitoring pattern." />
             <div className="mt-6 flex h-36 items-end gap-2">
                 {points.map((point, index) => (

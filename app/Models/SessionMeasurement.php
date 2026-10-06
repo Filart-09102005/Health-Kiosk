@@ -16,6 +16,7 @@ class SessionMeasurement extends Model
         'unit',
         'attempt',
         'status',
+        'input_source',
         'metadata',
         'measured_at',
     ];

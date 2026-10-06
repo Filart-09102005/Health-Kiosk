@@ -30,6 +30,7 @@ const phDateTime = new Intl.DateTimeFormat("en-PH", {
 export default function Sessions({ navigate }) {
     const { showToast } = useToast();
     const [sessionRecords, setSessionRecords] = useState([]);
+    const [metrics, setMetrics] = useState(null);
     const [page, setPage] = useState(1);
     const [selectedSession, setSelectedSession] = useState(null);
 
@@ -41,6 +42,7 @@ export default function Sessions({ navigate }) {
                 if (!alive) return;
 
                 setSessionRecords((response.data?.data || []).map(formatApiSession));
+                setMetrics(response.data?.metrics || null);
             })
             .catch((error) => {
                 if (!alive) return;
@@ -67,9 +69,11 @@ export default function Sessions({ navigate }) {
 
         return sessionRecords.slice(start, start + PAGE_SIZE);
     }, [page, sessionRecords]);
-    const completedCount = sessionRecords.filter((session) => session.status === "Completed").length;
-    const incompleteCount = sessionRecords.filter((session) => session.status !== "Completed").length;
-    const averageDuration = getAverageSessionDuration(sessionRecords);
+    
+    const totalCount = metrics?.total_today ?? 0;
+    const completedCount = metrics?.completed_today ?? 0;
+    const incompleteCount = metrics?.incomplete_today ?? 0;
+    const averageDuration = metrics?.avg_duration_today ?? "0 min";
 
     return (
         <AdminShell navigate={navigate} eyebrow="Kiosk Sessions" title="Session Tracking">
@@ -79,7 +83,7 @@ export default function Sessions({ navigate }) {
                 title="Kiosk Sessions"
                 description="Track every login session, kiosk flow, completed measurement set, logout, and timeout event."
                 stats={[
-                    { label: "Total Sessions Today", value: String(sessionRecords.length), caption: "Started kiosk sessions today", icon: Activity },
+                    { label: "Total Sessions Today", value: String(totalCount), caption: "Started kiosk sessions today", icon: Activity },
                     { label: "Completed Sessions", value: String(completedCount), caption: "Finished all required readings", icon: CheckCircle2 },
                     { label: "Incomplete Sessions", value: String(incompleteCount), caption: "Not yet completed or exited early", icon: TriangleAlert },
                     { label: "Average Session Duration", value: averageDuration, caption: "Average login to logout time", icon: TimerReset },
@@ -105,7 +109,7 @@ function SessionsTable({ sessions, page, totalPages, totalRecords, onPageChange,
     const endRecord = Math.min(page * PAGE_SIZE, totalRecords);
 
     return (
-        <section className="rounded-[14px] border p-5 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <section className="rounded-[1.25rem] border p-5 hk-admin-card" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h3 className="text-lg font-black">Kiosk session log</h3>

@@ -1,0 +1,187 @@
+/* Floating on-screen keyboard: a draggable, resizable panel positioned via
+   explicit left/top/width/height (set from JS - see FloatingKeyboard.jsx)
+   rather than docked to an edge, so it can be moved and sized freely. Colors
+   follow the same theme variables as the rest of the app (see
+   resources/css/app.css) so it matches light/dark mode automatically. */
+
+.kiosk-keyboard-wrapper {
+    position: fixed;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    border: 1px solid var(--color-border);
+    background: color-mix(in srgb, var(--color-card) 96%, transparent);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28), 0 4px 14px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    opacity: 0;
+    transform: scale(0.96);
+    transform-origin: bottom center;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.kiosk-keyboard-wrapper.is-visible {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
+.kiosk-keyboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex: 0 0 auto;
+    padding: 6px 8px 6px 10px;
+    border-bottom: 1px solid var(--color-border);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+
+.kiosk-keyboard-header:active {
+    cursor: grabbing;
+}
+
+.kiosk-keyboard-grip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+}
+
+.kiosk-keyboard-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.kiosk-keyboard-actions button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-muted);
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.kiosk-keyboard-actions button:hover {
+    background: color-mix(in srgb, var(--color-primary) 14%, var(--color-surface));
+    color: var(--color-primary);
+}
+
+.kiosk-keyboard-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 8px 10px 10px;
+    overflow: hidden;
+}
+
+/* Stretches simple-keyboard's rows/buttons to fill whatever height the
+   panel is resized to - the library's own stylesheet hardcodes button
+   heights, which would otherwise leave dead space (or clip rows) when the
+   panel is taller or shorter than its default size. */
+.kiosk-keyboard-body .simple-keyboard {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    width: 100% !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+.kiosk-keyboard-body .hg-rows {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+}
+
+.kiosk-keyboard .hg-row {
+    flex: 1 1 0;
+    min-height: 0;
+}
+
+.kiosk-keyboard .hg-button {
+    height: 100% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text, var(--auth-strong-text, #0f172a));
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: none;
+    transition: background 0.12s ease, transform 0.08s ease;
+}
+
+.kiosk-keyboard .hg-button:active {
+    background: color-mix(in srgb, var(--color-primary) 18%, var(--color-surface));
+    transform: scale(0.96);
+}
+
+.kiosk-keyboard .hg-button.hg-functionBtn {
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.kiosk-keyboard .hg-button.hg-button-space {
+    max-width: none;
+}
+
+.kiosk-keyboard-resize-handle {
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    width: 20px;
+    height: 20px;
+    cursor: nwse-resize;
+    touch-action: none;
+    opacity: 0.7;
+    border-radius: 4px;
+    background-image: repeating-linear-gradient(
+        135deg,
+        var(--color-muted) 0 1.5px,
+        transparent 1.5px 5px
+    );
+    background-position: bottom right;
+    background-size: 12px 12px;
+    background-repeat: no-repeat;
+}
+
+.kiosk-keyboard-resize-handle:hover {
+    opacity: 1;
+}
+
+/* react-simple-keyboard's own stylesheet hardcodes a light button face, so
+   .hg-button above already repaints it with the app's own theme variables
+   instead of relying on the library's theme prop (which only swaps class
+   names, not colors).
+
+   This used to be a *second*, harder-coded pass here - `color: #f1f5f9`
+   applied whenever the OS was in dark mode, regardless of which theme was
+   actually active. That's backwards for a light-styled theme (e.g.
+   Valentine): the OS being in dark mode doesn't mean the *keyboard's own
+   background* is dark, and forcing near-white text onto Valentine's light
+   pink key face made it unreadable. --color-text already resolves to the
+   correct opposite of --color-surface for every theme, including the
+   original Dark one, so nothing more is needed here. */
+
+@media (max-width: 480px) {
+    .kiosk-keyboard .hg-button {
+        font-size: 0.78rem;
+    }
+}

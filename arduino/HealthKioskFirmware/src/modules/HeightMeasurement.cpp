@@ -24,12 +24,13 @@ namespace Modules {
         _buffer.clear();
         _currentEMA = 0.0f;
         _stableCount = 0;
+        _countdownStart = 0;
         _startTime = millis();
         _result = Models::MeasurementResult();
     }
 
     void HeightMeasurement::update() {
-        if (_state == MeasureState::IDLE || _state == MeasureState::COMPLETE || _state == MeasureState::ERROR) return;
+        if (_state == MeasureState::IDLE || _state == MeasureState::COMPLETE || _state == MeasureState::ERROR || _state == MeasureState::FAILED) return;
 
         if (millis() - _startTime > Config::Profiles::HEIGHT_TIMEOUT_MS) {
             _result.error = ErrorCode::SENSOR_TIMEOUT;
@@ -40,122 +41,107 @@ namespace Modules {
         switch (_state) {
             case MeasureState::INITIALIZE:
                 if (_hal->isReady() || _hal->initialize()) {
-                    _state = MeasureState::WAIT_FOR_SENSOR;
+                    _state = MeasureState::WAITING;
                 } else {
                     _result.error = _hal->lastError();
                     _state = MeasureState::ERROR;
                 }
                 break;
 
-            case MeasureState::WAIT_FOR_SENSOR:
-                if (_hal->selfTest()) {
-                    _state = MeasureState::COLLECT_SAMPLES;
-                } else {
-                    _result.error = _hal->lastError();
-                    _state = MeasureState::ERROR;
-                }
-                break;
-
-            case MeasureState::COLLECT_SAMPLES: {
+            case MeasureState::WAITING: {
                 float h = 0;
                 if (_hal->acquire(h)) {
-                    if (_buffer.isEmpty()) _currentEMA = h;
-                    _currentEMA = Algorithms::Filters::computeEMA(h, _currentEMA, 0.4f); 
-                    _buffer.push(_currentEMA);
+                    _result.value = h;
+                    // If height > 50cm, assume someone is standing there
+                    if (h > 50.0f && h < 220.0f) {
+                        _state = MeasureState::VALIDATING;
+                        _stableCount = 0;
+                    }
+                }
+                break;
+            }
+
+            case MeasureState::VALIDATING: {
+                float h = 0;
+                if (_hal->acquire(h)) {
+                    _result.value = h;
+                    if (h < 50.0f || h > 220.0f) {
+                        _state = MeasureState::WAITING; // User moved away
+                        break;
+                    }
+                    // Basic stability check
+                    if (Utils::MathUtils::absolute(h - _currentEMA) < 2.0f) {
+                        _stableCount++;
+                        if (_stableCount > 10) {
+                            _state = MeasureState::READY;
+                        }
+                    } else {
+                        _stableCount = 0;
+                    }
+                    _currentEMA = h;
+                }
+                break;
+            }
+            
+            case MeasureState::READY:
+                _countdownStart = millis();
+                _state = MeasureState::COUNTDOWN;
+                break;
+                
+            case MeasureState::COUNTDOWN: {
+                float h = 0;
+                if (_hal->acquire(h)) {
+                    _result.value = h;
+                    if (h < 50.0f || h > 220.0f) {
+                        _state = MeasureState::WAITING; // User moved away
+                        return;
+                    }
+                }
+                if (millis() - _countdownStart > 2000) {
+                    _state = MeasureState::COLLECTING;
+                    _buffer.clear();
+                }
+                break;
+            }
+
+            case MeasureState::COLLECTING: {
+                float h = 0;
+                if (_hal->acquire(h)) {
+                    if (h < 50.0f || h > 220.0f) {
+                        _state = MeasureState::FAILED;
+                        _result.error = ErrorCode::SENSOR_NOT_STABLE;
+                        break;
+                    }
+                    _buffer.push(h);
+                    _result.value = h;
                     
                     if (_buffer.isFull()) {
-                        _state = MeasureState::FILTER;
-                    }
-                } else {
-                    ErrorCode err = _hal->lastError();
-                    if (err != ErrorCode::OK && err != ErrorCode::SENSOR_TIMEOUT) {
-                        _result.error = err;
-                        _state = MeasureState::ERROR;
+                        _state = MeasureState::PROCESSING;
                     }
                 }
                 break;
             }
-
-            case MeasureState::FILTER: {
-                size_t size = _buffer.capacity();
-                float data[Config::Profiles::HEIGHT_SAMPLE_COUNT];
-                float workBuffer[Config::Profiles::HEIGHT_SAMPLE_COUNT];
-                
-                for(size_t i=0; i<size; i++) data[i] = _buffer.peek(i);
-                
-                float median = Algorithms::Filters::computeMedian(data, size);
-                float mad = Algorithms::Filters::computeMAD(data, size, median, workBuffer);
-                
+            
+            case MeasureState::PROCESSING: {
                 float sum = 0;
-                int count = 0;
-                float mad_bound = 3.0f * mad;
-                if (mad_bound < 1.0f) mad_bound = 1.0f; 
+                float minVal = _buffer.peek(0);
+                float maxVal = _buffer.peek(0);
                 
-                for(size_t i=0; i<size; i++) {
+                for (size_t i = 0; i < _buffer.getCount(); i++) {
                     float val = _buffer.peek(i);
-                    if (Utils::MathUtils::absolute(val - median) <= mad_bound) {
-                        sum += val;
-                        count++;
-                    }
+                    sum += val;
+                    if (val < minVal) minVal = val;
+                    if (val > maxVal) maxVal = val;
                 }
                 
-                float avg = (count > 0) ? (sum / count) : median;
+                float avg = sum / _buffer.getCount();
+                
                 _result.value = avg;
-                _result.stabilityScore = mad;
-                _result.sampleCount = count;
-                
-                _state = MeasureState::STABILITY_CHECK;
+                _result.measurementTime = millis() - _startTime;
+                _result.timestamp = millis();
+                _state = MeasureState::COMPLETE;
                 break;
             }
-
-            case MeasureState::STABILITY_CHECK:
-                if (_result.stabilityScore <= Config::Profiles::HEIGHT_STABLE_THRESHOLD) {
-                    _stableCount++;
-                    if (_stableCount >= 5) {
-                        _state = MeasureState::CONFIDENCE_CHECK;
-                    } else {
-                        float dummy;
-                        _buffer.pop(dummy);
-                        _state = MeasureState::COLLECT_SAMPLES;
-                    }
-                } else {
-                    _stableCount = 0;
-                    float dummy;
-                    _buffer.pop(dummy);
-                    _state = MeasureState::COLLECT_SAMPLES;
-                }
-                break;
-
-            case MeasureState::CONFIDENCE_CHECK: {
-                float conf = Algorithms::SignalQuality::computeConfidence(_result.stabilityScore, 0.5f, 3.0f);
-                _result.confidence = conf * 100.0f;
-                
-                if (_result.confidence < 50.0f) {
-                    _result.error = ErrorCode::SENSOR_NOT_STABLE;
-                    _state = MeasureState::ERROR;
-                } else {
-                    _state = MeasureState::CALIBRATION;
-                }
-                break;
-            }
-
-            case MeasureState::CALIBRATION:
-                _result.value = Algorithms::Calibration::applyLinear(_result.value, 1.0f, 0.0f);
-                _state = MeasureState::VALIDATION;
-                break;
-
-            case MeasureState::VALIDATION:
-                if (!isfinite(_result.value) || 
-                    _result.value < Config::Profiles::HEIGHT_MIN_VALID || 
-                    _result.value > Config::Profiles::HEIGHT_MAX_VALID) {
-                    _result.error = ErrorCode::SENSOR_OUT_OF_RANGE;
-                    _state = MeasureState::ERROR;
-                } else {
-                    _result.measurementTime = millis() - _startTime;
-                    _result.timestamp = millis();
-                    _state = MeasureState::COMPLETE;
-                }
-                break;
 
             default:
                 break;

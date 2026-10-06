@@ -2,8 +2,19 @@
 
 namespace App\Services\Health;
 
+use App\Support\AdminSettings;
+
 class HealthEvaluationService
 {
+    private array $settings;
+
+    public function __construct()
+    {
+        // Saved values merged over the shipped defaults, so a settings row that
+        // omits a group still grades rather than indexing a missing key.
+        $this->settings = AdminSettings::all();
+    }
+
     public function summarize(array $latest): array
     {
         $missing = collect(['heart_rate', 'spo2', 'temperature', 'height', 'weight'])
@@ -24,7 +35,8 @@ class HealthEvaluationService
             $missing[] = 'bmi';
         }
 
-        $status = $this->status($latest, $bmi, $missing);
+        $measurementStatuses = $this->evaluateMeasurements($latest, $bmi);
+        $status = $this->overallStatus($measurementStatuses, $missing);
 
         return [
             'heart_rate' => $latest['heart_rate'] ?? null,
@@ -37,40 +49,84 @@ class HealthEvaluationService
             'health_status' => $status,
             'missing_measurements' => $missing,
             'advice' => $this->advice($status, $missing),
+            'measurement_statuses' => $measurementStatuses,
         ];
     }
 
     private function bmiCategory(float $bmi): string
     {
+        $cfg = $this->settings['bmi'];
         return match (true) {
-            $bmi < 18.5 => 'Underweight',
-            $bmi < 25 => 'Normal',
-            $bmi < 30 => 'Overweight',
+            $bmi <= $cfg['underweightMax'] => 'Underweight',
+            $bmi <= $cfg['normalMax'] => 'Normal',
+            $bmi <= $cfg['overweightMax'] => 'Overweight',
             default => 'Obese',
         };
     }
 
-    private function status(array $latest, ?float $bmi, array $missing): string
+    private function evaluateMeasurements(array $latest, ?float $bmi): array
+    {
+        $statuses = [];
+
+        if (isset($latest['temperature'])) {
+            $val = (float) $latest['temperature'];
+            $cfg = $this->settings['temperature'];
+            if ($val < $cfg['alertLow'] || $val > $cfg['alertHigh']) {
+                $statuses['temperature'] = 'Consult Clinic';
+            } elseif ($val < $cfg['normalLow'] || $val > $cfg['normalHigh']) {
+                $statuses['temperature'] = 'Watch';
+            } else {
+                $statuses['temperature'] = 'Normal';
+            }
+        }
+
+        if (isset($latest['heart_rate'])) {
+            $val = (float) $latest['heart_rate'];
+            $cfg = $this->settings['heartRate'];
+            if ($val < $cfg['alertLow'] || $val > $cfg['alertHigh']) {
+                $statuses['heart_rate'] = 'Consult Clinic';
+            } elseif ($val < $cfg['normalLow'] || $val > $cfg['normalHigh']) {
+                $statuses['heart_rate'] = 'Watch';
+            } else {
+                $statuses['heart_rate'] = 'Normal';
+            }
+        }
+
+        if (isset($latest['spo2'])) {
+            $val = (float) $latest['spo2'];
+            $cfg = $this->settings['spo2'];
+            if ($val < $cfg['alertLow']) {
+                $statuses['spo2'] = 'Consult Clinic';
+            } elseif ($val < $cfg['normalLow']) {
+                $statuses['spo2'] = 'Watch';
+            } else {
+                $statuses['spo2'] = 'Normal';
+            }
+        }
+
+        if ($bmi !== null) {
+            $cat = $this->bmiCategory($bmi);
+            if ($cat === 'Underweight' || $cat === 'Obese') {
+                $statuses['bmi'] = 'Watch';
+            } else {
+                $statuses['bmi'] = 'Normal';
+            }
+        }
+
+        return $statuses;
+    }
+
+    private function overallStatus(array $measurementStatuses, array $missing): string
     {
         if ($missing !== []) {
             return 'Incomplete';
         }
 
-        if (
-            ($latest['temperature'] ?? 0) >= 38 ||
-            ($latest['heart_rate'] ?? 0) >= 120 ||
-            ($latest['spo2'] ?? 100) < 94 ||
-            ($bmi !== null && ($bmi < 16 || $bmi >= 35))
-        ) {
-            return 'Alert';
+        if (in_array('Consult Clinic', $measurementStatuses, true)) {
+            return 'Consult Clinic';
         }
 
-        if (
-            ($latest['temperature'] ?? 0) >= 37.5 ||
-            ($latest['heart_rate'] ?? 0) >= 100 ||
-            ($latest['spo2'] ?? 100) < 96 ||
-            ($bmi !== null && ($bmi < 18.5 || $bmi >= 30))
-        ) {
+        if (in_array('Watch', $measurementStatuses, true)) {
             return 'Watch';
         }
 
@@ -84,7 +140,7 @@ class HealthEvaluationService
         }
 
         return match ($status) {
-            'Alert' => 'Please proceed to the clinic staff for immediate review.',
+            'Consult Clinic' => 'Please proceed to the clinic staff for immediate review.',
             'Watch' => 'Please rest, hydrate, and consider a clinic recheck if symptoms continue.',
             default => 'Vitals are within the expected range. Maintain healthy hydration and regular monitoring.',
         };

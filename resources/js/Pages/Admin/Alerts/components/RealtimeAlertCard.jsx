@@ -3,7 +3,7 @@ import AlertSeverityBadge from "./AlertSeverityBadge";
 
 export default function RealtimeAlertCard({ alert }) {
     return (
-        <article className="rounded-[12px] border p-3" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
+        <article className="rounded-[1rem] border p-3" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
             <div className="flex items-start justify-between gap-3">
                 <div className="flex gap-3">
                     <div className="mt-1"><StatusIndicator tone={alert.severity === "Critical" ? "var(--color-error)" : "var(--color-primary)"} pulse /></div>

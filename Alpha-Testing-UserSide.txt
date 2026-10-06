@@ -1,0 +1,264 @@
+# ALPHA TESTING - USER-SIDE
+
+**System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+**Test Type:** Alpha Testing (Internal)
+**Scope:** Student and teacher kiosk experience
+**Pre-Condition:** Login & Registration alpha testing completed and cleared.
+
+**Status:** FINALIZED - the question set is closed. Revisions from here on need a new version.
+
+**Tester Name:** ______________________  **Testing Date:** ______________  **Testing Time:** __________
+
+Questions are numbered **Q1-Q62 in final testing order**. Each section of the Alpha Testing keeps its
+own numbering, so a question is identified by its section and number together.
+
+> Mark the result for every step performed, and write anything unusual under **Comment**.
+> Use **Additional Test / Observation** for anything the predefined steps do not cover.
+> A step that was not actually run must be left blank.
+
+---
+
+### TC-1 - User Dashboard
+- **Actor:** Student / Teacher
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies that the dashboard opens a kiosk session and reflects the readings saved so far.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q1 | 1 | Sign in as a student | Valid credentials | Open a kiosk session and display its session number | | | | |
+| Q2 | 2 | View the measurement cards before measuring | None | Scroll to the Recent activity cards below the hero and confirm all five (Heart Rate & SpO2, Temperature, Height, Weight, BMI) read "--" and show as Idle | | | | |
+| Q3 | 3 | View the Measurement Progress panel | None | Display 0 of 5 readings captured | | | | |
+| Q4 | 4 | Click “Start Health Check” | None | Open the Health Check options screen | | | | |
+| Q5 | 5 | Save one reading and return to the dashboard | Any measurement | Display the saved value on its card and increase the progress count | | | | |
+| Q6 | 6 | Refresh the dashboard | None | Reload the same session without losing any saved reading | | | | |
+
+**Overall Comment - TC-1:**
+
+---
+
+### TC-2 - Health Measurement Process (Smart Mode)
+- **Actor:** Student / Teacher
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies the sensors available in Smart Mode. Only Temperature and Height are captured by sensor on this build; every measurement can be entered in Manual Mode.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q7 | 1 | Select "Temperature" and present the forehead to the sensor | Forehead on sensor | Capture and save the temperature in °C | | | | |
+| Q8 | 2 | Select "Height" and stand on the platform | Student standing | Capture the height in cm with the platform thickness deducted | | | | |
+| Q9 | 3 | View the BMI card after height and weight are saved | None | Compute the BMI and display its category | | | | |
+| Q10 | 4 | Click “Retake reading” on a completed check | New reading | Replace the previous value within the same session | | | | |
+| Q11 | 5 | Start a Smart Mode reading with the sensor unplugged | None | Report the sensor as unavailable instead of saving a blank reading | | | | |
+
+**Overall Comment - TC-2:**
+
+---
+
+### TC-3 - Health Measurement Process (Manual Mode)
+- **Actor:** Student / Teacher
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies manual entry and the validation applied to typed values.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q12 | 1 | Switch the mode toggle to “Manual Mode” | None | Display the manual value entry fields | | | | |
+| Q13 | 2 | Open a measurement in Manual Mode and follow the five steps in order | Step 1 of 5 | Move through Instructions, Positioning, Manual Entry, Result and Save in that order, showing the current step (for example "Step 1 of 5") throughout | | | | |
+| Q14 | 3 | Enter a non-numeric value | abc | Reject the entry and require a number | | | | |
+| Q15 | 4 | Enter a valid temperature and save | 36.8 | Accept and save the reading to the session | | | | |
+| Q16 | 5 | Enter an impossible temperature | 3.6 | Reject with a message giving the acceptable range (25–45 °C) | | | | |
+| Q17 | 6 | Enter a heart rate without SpO2 | 80 / blank | Reject and state that SpO2 is required with heart rate | | | | |
+| Q18 | 7 | Enter a valid heart rate and SpO2 | 80 / 99 | Accept and save both values | | | | |
+| Q19 | 8 | Switch back to Smart Mode midway | None | Change the mode without losing readings already saved | | | | |
+
+**Overall Comment - TC-3:**
+
+---
+
+### TC-4 - Measurement Status and Health Evaluation
+- **Actor:** Student / Teacher
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies that readings are graded against the thresholds configured by the administrator.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q20 | 1 | Record a normal temperature | 36.5 °C | Grade the reading as Normal and display it in green | | | | |
+| Q21 | 2 | Record a high temperature | 38.5 °C | Grade the reading as Alert and display it in red | | | | |
+| Q22 | 3 | Record a low temperature | 34.0 °C | Grade the reading as Alert and display it in red | | | | |
+| Q23 | 4 | Record an abnormal heart rate | 50 bpm | Grade the reading as Alert | | | | |
+| Q24 | 5 | Record a mildly low SpO2 | 93 % | Grade the reading as Watch / Needs Attention | | | | |
+| Q25 | 6 | View the overall status with one abnormal reading | Any abnormal value | Display the overall status as Alert rather than Normal | | | | |
+| Q26 | 7 | Compare the dashboard card with the results screen | Same reading | Display the same status in both places | | | | |
+
+**Overall Comment - TC-4:**
+
+---
+
+### TC-5 - Health Results and Summary
+- **Actor:** Student / Teacher
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies the summary shown after a health check. Reach it from the account menu, or automatically once the last reading is saved.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q27 | 1 | Complete all four health checks | All readings | Display the Health Summary with all five readings | | | | |
+| Q28 | 2 | View the Overall Status section | None | Display the overall status on its own, without a recommendation or advice line | | | | |
+| Q29 | 3 | Complete every measurement and watch what happens next | All four health checks | Proceed to the Health Summary automatically once the last reading is saved, showing "Health check complete" and the overall status | | | | |
+| Q30 | 4 | Click "Back to Dashboard" | None | Return to the User Dashboard with the readings intact | | | | |
+
+**Overall Comment - TC-5:**
+
+---
+
+### TC-6 - Health Reports and Receipt Printing
+- **Actor:** Student / Teacher
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies that the student can print a receipt of their health result.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q31 | 1 | Click “Print Receipt” on the Results Page | None | Send the health summary to the thermal printer | | | | |
+| Q32 | 2 | Observe the button while printing | None | Show a printing state and refuse a second press until the first has finished | | | | |
+| Q33 | 3 | Examine the printed receipt | None | Show the name, session number, readings, status and date | | | | |
+| Q34 | 4 | Switch the printer off and click “Print Receipt” | None | Display a printing error without losing the saved session | | | | |
+| Q35 | 5 | Reprint the same record from Health Records | Saved record | Produce the same receipt again | | | | |
+
+**Overall Comment - TC-6:**
+
+---
+
+### TC-7 - Health Records and History
+- **Actor:** Student / Teacher
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies that a user can review only their own past health records.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q36 | 1 | Click “Account Menu” then “Health Records” | None | Display the user’s past sessions, newest first | | | | |
+| Q37 | 2 | Click one health record | None | Display the full detail of that session, including the kiosk session number alongside the readings, school year and academic level | | | | |
+| Q38 | 3 | Compare a record with the results screen it came from | Same session | Display matching values in both places | | | | |
+| Q39 | 4 | Open Health Records on an account with no sessions | New account | Display an empty state instead of a blank panel | | | | |
+| Q40 | 5 | Sign in as a different student and open Health Records | Second account | Display only that student’s own records | | | | |
+
+**Overall Comment - TC-7:**
+
+---
+
+### TC-8 - Health Journey and School-Year Tracking
+- **Actor:** Student / Teacher
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies that readings are tracked over time with the academic level recorded at the time of measurement.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q41 | 1 | Open the Health Journey view | None | Display the user’s readings across time | | | | |
+| Q42 | 2 | Observe the academic level and school year on a record | 4th Year College, S.Y. 2026 – 2027 | Display the values recorded when the measurement was taken | | | | |
+| Q43 | 3 | Complete a new health check and reopen the journey | New reading | Add the reading to the timeline in the correct order | | | | |
+| Q44 | 4 | View a record taken under a different year level | Requires records from more than one school year or year level | Show each record under the level it was taken in. Not testable while every record belongs to the same level - note that instead of failing it | | | | |
+| Q45 | 5 | Open the journey when only one reading exists | Single record | Show that one entry with its date and value, and no empty or broken chart area | | | | |
+
+**Overall Comment - TC-8:**
+
+---
+
+### TC-9 - Notifications and Alerts
+- **Actor:** Student / Teacher
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies that abnormal readings are announced to the user, stay unread until opened, and survive a logout.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q46 | 1 | Open the notification bell with all readings normal | 36.5 °C, 80 bpm, 99 % | Display no abnormal-reading alerts | | | | |
+| Q47 | 2 | Record a high temperature and open the bell | 38.5 °C | Display a high body temperature alert naming the value | | | | |
+| Q48 | 3 | Record a low SpO2 and open the bell | 93 % | Display a low oxygen saturation alert | | | | |
+| Q49 | 4 | Open the full Notifications page | None | Display the same alerts as the bell | | | | |
+| Q50 | 5 | Record a normal reading after an abnormal one | 36.5 °C | Remove the previous abnormal alert for that measurement | | | | |
+
+**Overall Comment - TC-9:**
+
+---
+
+### TC-10 - User Profile and Account Settings
+- **Actor:** Student / Teacher
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies profile editing and password change from the user account menu.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q51 | 1 | Open “Profile” from the account menu | None | Display the user’s details, locked for editing | | | | |
+| Q52 | 2 | Click “Edit”, change a detail and save | Updated department | Save the change and display a success message | | | | |
+| Q53 | 3 | Clear a required field and save | Blank last name | Reject the change and name the required field | | | | |
+| Q54 | 4 | Open “Change Password” | None | Display the window with the password strength guide visible | | | | |
+| Q55 | 5 | Enter a wrong current password | wrongpass | Reject and state that the current password does not match | | | | |
+| Q56 | 6 | Enter the correct current and a valid new password twice | Current / NewPass123! | Update the password and confirm success | | | | |
+| Q57 | 7 | Sign out and sign in with the new password | NewPass123! | Sign in successfully | | | | |
+
+**Overall Comment - TC-10:**
+
+---
+
+### TC-11 - Other User-Side Functions
+- **Actor:** Student / Teacher
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies appearance, voice assistance, and kiosk usability.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q58 | 1 | Switch the theme to Dark Mode, then Light Mode | Dark / Light | Apply each theme immediately and keep the screen readable | | | | |
+| Q59 | 2 | Refresh after changing the theme | None | Keep the chosen theme | | | | |
+| Q60 | 3 | Enable Assistant Mode and start a health check | Assistant on | Announce the on-screen guidance by voice | | | | |
+| Q61 | 4 | Disable Assistant Mode | None | Stop the voice guidance immediately | | | | |
+| Q62 | 5 | Confirm the kiosk returns to the Login Page when the session expires | Leave the kiosk idle past the session limit, then press any control | Return to the Login Page rather than showing a broken or empty screen | | | | |
+
+**Overall Comment - TC-11:**
+
+---
+
+# USER-SIDE - OVERALL ALPHA TEST SUMMARY
+
+**Tester Name:** ______________________
+**Testing Date:** ______________________
+**Testing Time:** ______________________
+
+| Test Case | Description | Status | Passed | Failed | Comments |
+| --- | --- | --- | ---: | ---: | ---: |
+| TC-1 | User Dashboard | | | | |
+| TC-2 | Health Measurement Process (Smart Mode) | | | | |
+| TC-3 | Health Measurement Process (Manual Mode) | | | | |
+| TC-4 | Measurement Status and Health Evaluation | | | | |
+| TC-5 | Health Results and Summary | | | | |
+| TC-6 | Health Reports and Receipt Printing | | | | |
+| TC-7 | Health Records and History | | | | |
+| TC-8 | Health Journey and School-Year Tracking | | | | |
+| TC-9 | Notifications and Alerts | | | | |
+| TC-10 | User Profile and Account Settings | | | | |
+| TC-11 | Other User-Side Functions | | | | |
+| | **TOTAL (62 questions)** | | | | |
+
+**Defects Found**
+
+| No. | Q | Test Case | Description of the Problem | Severity | Action Taken | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | | | | | | |
+| 2 | | | | | | |
+| 3 | | | | | | |
+| 4 | | | | | | |
+| 5 | | | | | | |
+
+**Post-Condition:**
+
+
+**Executed by:**
+-
+
+**Checked by:**
+-

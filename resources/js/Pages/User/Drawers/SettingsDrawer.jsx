@@ -62,8 +62,8 @@ export default function SettingsDrawer({ open, onClose }) {
                 <button
                     type="button"
                     onClick={onClose}
-                    className="w-full rounded-2xl px-4 py-3 text-sm font-black text-white transition hk-primary-hover"
-                    style={{ backgroundColor: "var(--color-primary)" }}
+                    className="w-full rounded-2xl px-4 py-3 text-sm font-black transition hk-primary-hover"
+                    style={{ backgroundColor: "var(--color-primary)", color: "var(--color-primary-content)" }}
                 >
                     Save settings
                 </button>

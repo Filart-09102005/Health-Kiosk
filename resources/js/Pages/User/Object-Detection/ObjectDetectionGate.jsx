@@ -147,12 +147,12 @@ export default function ObjectDetectionGate({
             }
         };
 
-        poll();
-        const timer = window.setInterval(poll, POLL_INTERVAL_MS);
+        // poll();
+        // const timer = window.setInterval(poll, POLL_INTERVAL_MS);
 
         return () => {
             cancelled = true;
-            window.clearInterval(timer);
+            // window.clearInterval(timer);
         };
     }, [statusUrls]);
 

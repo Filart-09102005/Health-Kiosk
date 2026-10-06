@@ -1,0 +1,293 @@
+# ALPHA TESTING - ADMIN-SIDE
+
+**System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+**Test Type:** Alpha Testing (Internal)
+**Scope:** Administrator functions
+**Pre-Condition:** Login & Registration and User-Side alpha testing completed and cleared.
+
+**Status:** FINALIZED - the question set is closed. Revisions from here on need a new version.
+
+**Tester Name:** ______________________  **Testing Date:** ______________  **Testing Time:** __________
+
+Questions are numbered **Q1-Q74 in final testing order**. Each section of the Alpha Testing keeps its
+own numbering, so a question is identified by its section and number together.
+
+The test cases follow the admin sidebar from top to bottom, and every test case begins by
+navigating to its module, so the run never jumps between screens without saying so.
+
+> Mark the result for every step performed, and write anything unusual under **Comment**.
+> Use **Additional Test / Observation** for anything the predefined steps do not cover.
+> A step that was not actually run must be left blank.
+
+---
+
+### TC-1 - Admin Access Control
+- **Actor:** Admin / Student
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies that only an administrator can reach the admin modules. Start signed out.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q1 | 1 | Sign in using an admin account | Admin credentials | Open the Admin Dashboard with the sidebar modules listed down the left | | | | |
+| Q2 | 2 | Signed in as a student, open /admin/dashboard | Student account | Block access and display no admin data | | | | |
+| Q3 | 3 | Signed out, open /admin/students directly | None | Redirect to the Login Page without exposing data | | | | |
+| Q4 | 4 | Signed in as admin, click each module in the sidebar in turn | All modules | Open the matching admin page for every module | | | | |
+
+**Overall Comment - TC-1:**
+
+---
+
+### TC-2 - Admin Dashboard and Monitoring
+- **Actor:** Admin
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies that the dashboard summarises real kiosk activity. Start at Sidebar > Dashboard.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q5 | 1 | In the sidebar, click “Dashboard” | None | Display the overview cards with real totals from the database | | | | |
+| Q6 | 2 | Leave the dashboard, complete one kiosk health check as a student, then return to Sidebar > Dashboard and refresh | One new reading | Raise the totals by that reading and list it in the recent records panel | | | | |
+
+**Overall Comment - TC-2:**
+
+---
+
+### TC-3 - Health Records and Kiosk Sessions
+- **Actor:** Admin
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies that completed kiosk sessions are stored and viewable. Start at Sidebar > Health Records.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q7 | 1 | In the sidebar, click “Health Records” | None | Display saved records with student, readings, status and date | | | | |
+| Q8 | 2 | Open the row actions on one record and click “View records” | None | Open the record detail, matching what the student saw on their results screen | | | | |
+| Q9 | 3 | Close the detail | None | Return to the records list with the list unchanged | | | | |
+| Q10 | 4 | Back on the list, set a date range filter | Selected range | Display only the records inside the range | | | | |
+| Q11 | 5 | Export the filtered records to PDF and to Excel | None | Produce both files containing the records currently listed | | | | |
+| Q12 | 6 | In the sidebar, click “Kiosk Sessions” | None | Display each kiosk visit with its session number, student, status and start time | | | | |
+
+**Overall Comment - TC-3:**
+
+---
+
+### TC-4 - Data Analytics
+- **Actor:** Admin
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies that analytics are computed from real records and respond to the filters. Start at Sidebar > Data Analytics.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q13 | 1 | In the sidebar, click “Data Analytics” | None | Display summary figures and charts built from saved records | | | | |
+| Q14 | 2 | Set Gender to Male, apply, then set it to Female and apply | Male / Female | Update the counts so the two together equal the unfiltered total | | | | |
+| Q15 | 3 | Open the Department filter | None | List only the cohorts that exist in the database, named in full — for example College Students, BED Students, NTP, College Instructors, BED Instructors | | | | |
+| Q16 | 4 | Set Department to College Students and apply | College Students | Count only College students, and leave every other cohort out | | | | |
+| Q17 | 5 | Set a date range that contains no records and apply | A past range with no visits | Display 0 for every figure and show “No analytics data found for the selected filters” with a Clear Filters action, rather than ignoring the filter | | | | |
+| Q18 | 6 | Click “Apply Filters” and watch the panel | None | Show the applying state, then confirm and update the “Showing” count | | | | |
+| Q19 | 7 | Click “Reset” | None | Clear every filter and show the full totals again | | | | |
+| Q20 | 8 | Scroll to the academic comparison chart | None | Display one bar group per grade level, strand or course, with no student counted twice | | | | |
+
+**Overall Comment - TC-4:**
+
+---
+
+### TC-5 - Health Alerts
+- **Actor:** Admin
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies that abnormal readings raise alerts the clinic can act on. Start at Sidebar > Health Alerts.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q21 | 1 | Record an abnormal reading on the kiosk, then in the sidebar click “Health Alerts” | 38.5 °C | Display a matching alert with the correct severity and the value that caused it | | | | |
+| Q22 | 2 | With the abnormal reading being saved, watch the admin screen you are already on | Any admin page | Announce the new alert wherever the administrator is, without needing to be on the Health Alerts page | | | | |
+| Q23 | 3 | Filter by severity, then by measurement | Critical / Temperature | Display only the alerts matching the filter | | | | |
+| Q24 | 4 | Open a pending alert and resolve it, adding a note | Resolution note | Move the alert from Pending to Resolved and record the note against it | | | | |
+| Q25 | 5 | Switch the status filter to Resolved | None | List the alert just resolved and keep it out of the pending queue | | | | |
+| Q26 | 6 | Click “Resolve All” and confirm | None | Resolve every pending alert only after the confirmation is accepted | | | | |
+| Q27 | 7 | Turn alert monitoring off in Sidebar > Settings, then record another abnormal reading | Alerts disabled | Raise no new alert while the setting is off | | | | |
+
+**Overall Comment - TC-5:**
+
+---
+
+### TC-6 - Reports and Export
+- **Actor:** Admin
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies report generation and export to PDF and Excel. Start at Sidebar > Reports.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q28 | 1 | In the sidebar, click “Reports” without generating anything | None | Display “No reports generated yet” with no results table | | | | |
+| Q29 | 2 | Select a date range and click “Generate Report” | Range covering existing records | Show progress starting at 0 % and moving forward only | | | | |
+| Q30 | 3 | Wait for generation to finish | None | Reach 100 % only when the report is ready, then list the report rows | | | | |
+| Q31 | 4 | Check the record count on each report row | None | Match the records that fall inside the selected range and filters | | | | |
+| Q32 | 5 | Click “PDF” on the Measurement Analytics row | None | Open the formatted PDF in a new tab and confirm the export when it is finished | | | | |
+| Q33 | 6 | Click “Excel” on the same row | None | Download a spreadsheet holding the same records | | | | |
+| Q34 | 7 | Click “PDF” on a report row showing 0 records | None | State that there is nothing to export instead of claiming a file was produced | | | | |
+
+**Overall Comment - TC-6:**
+
+---
+
+### TC-7 - User Management — Create and Read
+- **Actor:** Admin
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies that an administrator can add an account and find it again. Start at Sidebar > User Management > Students.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q35 | 1 | In the sidebar, open “User Management” then “Students”, and click “Add New Student” | None | Open the account creation form with the role already fixed to STUDENT and no role dropdown to choose | | | | |
+| Q36 | 2 | Open the Department dropdown | None | Offer College Students and BED Students only, with no staff department listed | | | | |
+| Q37 | 3 | Click “Add New Student” with the first name, birthday or gender left blank | Any blank required field | Refuse to create the account and name each field that is still required | | | | |
+| Q38 | 4 | Complete every field | Name, school email, College / BSIT / 4th Year, birthday, gender, barcode | Accept the entries and work the age out from the birthday | | | | |
+| Q39 | 5 | Click “Add New Student” | None | Create the account, close the form, and add the row to the table | | | | |
+| Q40 | 6 | Re-open the form after creating | None | Display a completely blank form with nothing carried over | | | | |
+| Q41 | 7 | Enter a value then click “Cancel” | Any entry | Ask for confirmation before discarding the entry | | | | |
+| Q42 | 8 | Search the table by name and by barcode | Hans / C-230204 | Display only the matching rows | | | | |
+| Q43 | 9 | Search using a term that matches nothing | zzzzzz | Display an empty state | | | | |
+| Q44 | 10 | In the sidebar, open “User Management” then “Teachers”, and click “Add New Teacher” | None | Open the form with the role already fixed to PERSONNEL, and a Department list of College Instructors, BED Instructors and NTP only | | | | |
+
+**Overall Comment - TC-7:**
+
+---
+
+### TC-8 - User Management — Update and Delete
+- **Actor:** Admin
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies editing and removal of accounts. Start at Sidebar > User Management > Students.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q45 | 1 | Click “Edit” on a student and change a detail | Year Level to 3rd Year | Save the change and update the row | | | | |
+| Q46 | 2 | Create a student leaving Barcode blank, then open that account | No barcode entered | Show a barcode that was generated for the account, since the kiosk needs one to scan | | | | |
+| Q47 | 3 | Edit an unrelated field on that account, save, then re-check the barcode | Any other field | Keep the same barcode and the same printed code after the edit | | | | |
+| Q48 | 4 | Edit a College student and switch the department to BED | Department to BED Students | Offer Grade Level and Strand, and clear Year Level and Program | | | | |
+| Q49 | 5 | Click “Delete” on a test account and confirm | None | Remove the row and block that account from signing in | | | | |
+| Q50 | 6 | Click “Undo” immediately after deleting | None | Restore the row and cancel the deletion | | | | |
+| Q51 | 7 | Repeat edit and delete under Sidebar > User Management > Teachers | Teacher details | Perform the same operations successfully for a teacher account | | | | |
+
+**Overall Comment - TC-8:**
+
+---
+
+### TC-9 - Activity Logs
+- **Actor:** Admin
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies the audit trail of administrator actions. Start at Sidebar > Activity Logs.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q52 | 1 | In the sidebar, click “Activity Logs” | None | Display the audit trail with the newest entry first | | | | |
+| Q53 | 2 | Create a user, then return to Sidebar > Activity Logs | New account | Record the action with the administrator who did it and the time | | | | |
+| Q54 | 3 | Delete a test account and refresh the logs | None | Record the deletion, naming the affected account | | | | |
+
+**Overall Comment - TC-9:**
+
+---
+
+### TC-10 - System Settings and Health Thresholds
+- **Actor:** Admin
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies that threshold and kiosk settings save and take effect. Start at Sidebar > Settings.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q55 | 1 | In the sidebar, click “Settings” | None | Display Health Thresholds, Measurement Availability, Alert Settings and Kiosk Preferences | | | | |
+| Q56 | 2 | Change the temperature range and click “Save health thresholds” | 35 – 37.2 °C | Save the values and keep them after a reload | | | | |
+| Q57 | 3 | Narrow the range so an existing record now falls outside it, then open that record | Narrowed range | Grade the same reading as Alert, notify that student, and raise the alert for the clinic | | | | |
+| Q58 | 4 | Save the Kiosk Preferences section only | Platform offset 3 cm | Save that section and leave the other sections unchanged | | | | |
+| Q59 | 5 | Take a Smart Mode height reading | Student standing on the platform | Save the height as the raw distance minus the platform offset | | | | |
+| Q60 | 6 | Click “Restore Defaults” in one section | None | Ask for confirmation naming that section before restoring | | | | |
+| Q61 | 7 | Turn Smart Mode off for one sensor, then reload the kiosk | Temperature | Offer Manual Mode only for that check | | | | |
+| Q62 | 8 | Attempt to turn off Manual Mode | None | Keep Manual Mode available at all times | | | | |
+
+**Overall Comment - TC-10:**
+
+---
+
+### TC-11 - Cloud Sync and Companion Mobile Application
+- **Actor:** Admin / Student
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies that accounts and records reach the cloud and that deletion revokes mobile access. Accounts are created at Sidebar > User Management > Students; the manual sync lives in the admin header account menu, not in the sidebar.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q63 | 1 | In the sidebar, open “User Management” then “Students”, and create a student | New student | Create the account and upload it to the cloud on its own in the background — nothing has to be pressed for a new account to reach the cloud | | | | |
+| Q64 | 2 | Sign in to the companion mobile app as that student | School email and default password | Sign in successfully and load the student profile | | | | |
+| Q65 | 3 | Complete a kiosk health check for that student, then refresh the mobile app | One new reading | Display the reading in the student's history | | | | |
+| Q66 | 4 | In the admin header, open the account menu and click “Sync Users & Records” | None | Report what was uploaded, or state clearly that nothing was pending | | | | |
+| Q67 | 5 | Delete that student, then try to sign in to the mobile app again | Deleted account | Refuse the sign-in and remove the student's cloud rows | | | | |
+| Q68 | 6 | Disconnect the internet and create a student | New student | Create the account locally and report the sync failure on screen rather than only in the background | | | | |
+
+**Overall Comment - TC-11:**
+
+---
+
+### TC-12 - Admin Profile and Password
+- **Actor:** Admin
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies the administrator's own account management. Start at Sidebar > Profile.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q69 | 1 | In the sidebar, click “Profile” | None | Display the administrator account details | | | | |
+| Q70 | 2 | Open the Change Password panel | None | Display the password strength guide before anything is typed | | | | |
+| Q71 | 3 | Type a new password | Admin123! | Tick each requirement as it is met | | | | |
+| Q72 | 4 | Enter a wrong current password and update | wrongpass | Reject the change and state that the current password does not match | | | | |
+| Q73 | 5 | Enter the correct current password and a matching new password | Current / Admin123! | Update the password successfully | | | | |
+| Q74 | 6 | Sign out and sign in with the new password | Admin123! | Sign in successfully | | | | |
+
+**Overall Comment - TC-12:**
+
+---
+
+# ADMIN-SIDE - OVERALL ALPHA TEST SUMMARY
+
+**Tester Name:** ______________________
+**Testing Date:** ______________________
+**Testing Time:** ______________________
+
+| Test Case | Description | Status | Passed | Failed | Comments |
+| --- | --- | --- | ---: | ---: | ---: |
+| TC-1 | Admin Access Control | | | | |
+| TC-2 | Admin Dashboard and Monitoring | | | | |
+| TC-3 | Health Records and Kiosk Sessions | | | | |
+| TC-4 | Data Analytics | | | | |
+| TC-5 | Health Alerts | | | | |
+| TC-6 | Reports and Export | | | | |
+| TC-7 | User Management — Create and Read | | | | |
+| TC-8 | User Management — Update and Delete | | | | |
+| TC-9 | Activity Logs | | | | |
+| TC-10 | System Settings and Health Thresholds | | | | |
+| TC-11 | Cloud Sync and Companion Mobile Application | | | | |
+| TC-12 | Admin Profile and Password | | | | |
+| | **TOTAL (74 questions)** | | | | |
+
+**Defects Found**
+
+| No. | Q | Test Case | Description of the Problem | Severity | Action Taken | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | | | | | | |
+| 2 | | | | | | |
+| 3 | | | | | | |
+| 4 | | | | | | |
+| 5 | | | | | | |
+
+**Post-Condition:**
+
+
+**Executed by:**
+-
+
+**Checked by:**
+-

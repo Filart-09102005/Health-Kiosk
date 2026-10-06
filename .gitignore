@@ -25,3 +25,26 @@ __pycache__/
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Local end-to-end driver scripts (not part of the repo yet).
+# To be refactored into a permanent E2E suite after hardware validation.
+/testing/local
+
+# Holds the real KIOSK_BRIDGE_TOKEN once an operator sets one up on the
+# kiosk machine - scripts/config.example.json is the tracked template.
+/scripts/config.json
+
+# Local tooling, scratch files, and database exports.
+# Keep these on the development machine; they may contain local credentials
+# or personal/test data and are not required to run the application.
+/.claude/
+*.bak
+/DATABASE.sql
+/delete_supabase_orphan.php
+/migrate_status.txt
+/test_smtp.php
+/timing_tmp.php
+/update_modal.js
+/update_pass.php
+/wipe_users_tmp.php
+/resources/js/Pages/User/Drawers/hofsofo.txt

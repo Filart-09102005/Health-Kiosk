@@ -5,6 +5,7 @@ import os
 import queue
 import signal
 import sys
+import uuid
 import threading
 import time
 from enum import Enum, auto
@@ -15,7 +16,28 @@ from serial.tools import list_ports
 
 BRIDGE_VERSION = "2026-07-05-json-v3"
 SUPPORTED_PROTOCOLS = {"2.0"}
-CONFIG_FILE = "config.json"
+CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+
+# Mirrors arduino/HealthKioskFirmware/src/config/ErrorCodes.h
+ERROR_CODE_MESSAGES = {
+    1001: "The measurement took too long to complete. Please try again and hold still.",
+    1002: "The sensor could not be reached. Please notify kiosk staff.",
+    1003: "We lost a steady reading. Your finger (or the part being measured) may have moved, "
+          "or the signal was too weak. Please hold still and try again.",
+    1004: "The reading was outside the expected range. Please try again.",
+    1005: "This sensor needs to be recalibrated before it can take a reading. Please notify kiosk staff.",
+    2001: "An internal command error occurred. Please try again.",
+    2002: "An internal data error occurred. Please try again.",
+    9001: "The device restarted unexpectedly during the measurement. Please try again.",
+}
+
+
+def error_code_to_message(raw_code):
+    try:
+        code = int(raw_code)
+    except (TypeError, ValueError):
+        return "An unknown error occurred. Please try again."
+    return ERROR_CODE_MESSAGES.get(code, f"An unknown error occurred (code {code}). Please try again.")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,7 +60,17 @@ class HealthKioskBridge:
         self.baud = config.get("baud", 115200)
         self.live_url = config.get("url", "http://127.0.0.1:8000/api/kiosk/live-vitals")
         self.cmd_url = config.get("command_url", "http://127.0.0.1:8000/api/kiosk/command")
-        
+        # The live-vitals/command endpoints used to accept any request. They
+        # now require this shared secret (see KIOSK_BRIDGE_TOKEN in the
+        # Laravel app's .env) since the bridge has no user session to
+        # authenticate with otherwise. Without it every request here gets a
+        # 401 - set it via config.json ("bridge_token") or --bridge-token.
+        self.bridge_token = config.get("bridge_token") or ""
+        self.auth_headers = {"X-Kiosk-Bridge-Token": self.bridge_token} if self.bridge_token else {}
+        if not self.bridge_token:
+            logger.error("No bridge_token configured (scripts/config.json or --bridge-token): "
+                         "Laravel will reject every request with 401 and measurements will fail.")
+
         self.state = BridgeState.STARTING
         self.serial_conn = None
         
@@ -56,6 +88,9 @@ class HealthKioskBridge:
         }
         
         self.last_sequence = -1
+        self.last_laravel_payload = None
+        self.last_payload_time = 0
+        self.current_session_id = str(uuid.uuid4())
         
         self.http_thread = threading.Thread(target=self._http_worker, daemon=False)
         self.http_thread.start()
@@ -68,38 +103,60 @@ class HealthKioskBridge:
             if p_type == "measurement":
                 sensor = payload.get("sensor", "")
                 status = payload.get("status", "")
-                is_ready = (status == "SUCCESS")
                 
-                out = {"ready": is_ready}
+                out = {}
                 if sensor == "TEMPERATURE":
-                    out["mode"] = "TEMPERATURE"
-                    out["temperature"] = payload.get("value")
+                    out["sensor"] = "TEMPERATURE"
                 elif sensor == "WEIGHT":
-                    out["mode"] = "WEIGHT"
-                    out["weight"] = payload.get("value")
+                    out["sensor"] = "WEIGHT"
                 elif sensor == "HEIGHT":
-                    out["mode"] = "HEIGHT"
-                    out["height"] = payload.get("value")
+                    out["sensor"] = "HEIGHT"
                 elif sensor == "HEART":
-                    out["mode"] = "OXIMETER"
-                    out["heart_rate"] = payload.get("value")
-                    out["spo2"] = payload.get("secondaryValue")
+                    out["sensor"] = "HEART"
+
+                out["session_id"] = getattr(self, "current_session_id", str(uuid.uuid4()))
+                out["version"] = 1
+                
+                if status == "SUCCESS":
+                    out["machine_state"] = "COMPLETE"
+                    out["final_result"] = {
+                        "primary": payload.get("value"),
+                        "secondary": payload.get("secondaryValue")
+                    }
+                elif status == "ERROR":
+                    out["machine_state"] = "FAILED"
+                    raw_code = payload.get("errorCode")
+                    out["error"] = error_code_to_message(raw_code)
+                    out["error_code"] = raw_code  # keep the numeric code for logs/support
+                else:
+                    out["machine_state"] = status # e.g. WAITING, COLLECTING, DETECTING
+                    out["live_data"] = {
+                        "primary": payload.get("value"),
+                        "secondary": payload.get("secondaryValue"),
+                        "debug_ir": payload.get("debug_ir")
+                    }
                     
-                if not is_ready:
-                    out["status"] = "ERROR"
-                    out["error_code"] = payload.get("errorCode")
+                if out.get("sensor") == "HEART" and out.get("live_data") and out["live_data"].get("debug_ir") is not None:
+                    logger.info(f"Oximeter DEBUG_IR: {out['live_data']['debug_ir']}")
                     
                 return out
                 
             elif p_type == "info":
                 info_type = payload.get("infoType")
                 if info_type == "BOOT":
-                    return {"reset": True, "mode": "IDLE"}
+                    return {"reset": True, "machine_state": "IDLE"}
                 elif info_type == "PONG":
-                    return {"mode": "IDLE"}
+                    return None # Do not overwrite the JSON cache with IDLE on heartbeat
                     
             elif p_type == "error":
-                return {"reset": True, "mode": "IDLE", "error": payload.get("message")}
+                # Only reset on hard errors from the bridge/system, not measurement failures
+                return {
+                    "machine_state": "FAILED", 
+                    "error": payload.get("message"),
+                    "sensor": "UNKNOWN",
+                    "session_id": getattr(self, "current_session_id", str(uuid.uuid4())),
+                    "version": 1
+                }
                 
             return None
         except Exception as e:
@@ -119,7 +176,7 @@ class HealthKioskBridge:
                 if self.shutdown_event.is_set() and attempt > 0:
                     break # Fast exit on shutdown
                 try:
-                    response = requests.post(self.live_url, json=payload, timeout=5)
+                    response = requests.post(self.live_url, json=payload, headers=self.auth_headers, timeout=5)
                     response.raise_for_status()
                     self.stats["last_http_post"] = time.time()
                     logger.info(f"HTTP Post Success: {payload}")
@@ -193,26 +250,39 @@ class HealthKioskBridge:
                         time.sleep(5)
                         
                 elif self.state == BridgeState.VERIFY_PROTOCOL:
-                    self.serial_conn.write(b"GET_VERSION\n")
-                    self.serial_conn.flush()
-                    response = self.serial_conn.readline().decode('utf-8', errors='ignore').strip()
-                    if response:
+                    # Opening the port resets an Arduino Mega (DTR), and the firmware then runs
+                    # its bootloader + sensor self-test (several seconds) before answering.
+                    # Keep asking and skip boot chatter instead of giving up (giving up closes
+                    # the port, which resets the board again and loops forever).
+                    verified = False
+                    deadline = time.time() + 20.0
+                    next_ask = 0.0
+                    while time.time() < deadline and not verified:
+                        if time.time() >= next_ask:
+                            self.serial_conn.write(b"GET_VERSION\n")
+                            self.serial_conn.flush()
+                            next_ask = time.time() + 2.0
+                        response = self.serial_conn.readline().decode('utf-8', errors='ignore').strip()
+                        if not response:
+                            continue
                         last_serial_rx = time.time()
                         try:
                             packet = json.loads(response)
-                            if packet.get("protocol") in SUPPORTED_PROTOCOLS and packet.get("type") == "info" and packet.get("payload", {}).get("infoType") == "VERSION":
-                                self.stats["firmware_version"] = packet.get("firmware", "unknown")
-                                self.stats["protocol_version"] = packet.get("protocol", "unknown")
-                                logger.info(f"Protocol verified. Firmware v{self.stats['firmware_version']}")
-                                self.state = BridgeState.READY
-                            else:
-                                logger.error(f"Protocol mismatch or invalid handshake: {response}")
-                                self.state = BridgeState.RECOVER
                         except json.JSONDecodeError:
-                            logger.error(f"Invalid JSON during handshake: {response}")
-                            self.state = BridgeState.RECOVER
+                            logger.debug(f"Ignoring non-JSON during handshake: {response}")
+                            continue
+                        if packet.get("protocol") in SUPPORTED_PROTOCOLS and packet.get("type") == "info" and packet.get("payload", {}).get("infoType") == "VERSION":
+                            self.stats["firmware_version"] = packet.get("firmware", "unknown")
+                            self.stats["protocol_version"] = packet.get("protocol", "unknown")
+                            logger.info(f"Protocol verified. Firmware v{self.stats['firmware_version']}")
+                            verified = True
+                        else:
+                            logger.info(f"Boot/handshake chatter: {response}")
+                    if verified:
+                        self.last_sequence = -1
+                        self.state = BridgeState.READY
                     else:
-                        logger.error("No response to GET_VERSION timeout.")
+                        logger.error("No response to GET_VERSION within 20s (board hung or wrong firmware?).")
                         self.state = BridgeState.RECOVER
                         
                 elif self.state == BridgeState.READY:
@@ -234,11 +304,13 @@ class HealthKioskBridge:
                     if now - last_command_poll >= 1.0:
                         last_command_poll = now
                         try:
-                            cmd_data = requests.get(self.cmd_url, timeout=3).json()
+                            cmd_data = requests.get(self.cmd_url, headers=self.auth_headers, timeout=3).json()
                             cmd = cmd_data.get("command")
                             cmd_id = cmd_data.get("id")
                             if cmd and cmd_id != last_command_id:
                                 logger.info(f"Sending command to Arduino: {cmd}")
+                                if cmd.startswith("START"):
+                                    self.current_session_id = str(cmd_id)
                                 self.serial_conn.write(f"{cmd}\n".encode('utf-8'))
                                 self.serial_conn.flush()
                                 last_command_id = cmd_id
@@ -254,11 +326,23 @@ class HealthKioskBridge:
                             try:
                                 packet = json.loads(line)
                                 if "protocol" not in packet or "type" not in packet or "payload" not in packet:
-                                    logger.warning(f"Malformed packet missing required fields: {line}")
+                                    if "sensor" in packet and "status" in packet:
+                                        # Boot self-test line: the board just (re)started.
+                                        logger.warning(f"Board self-test line (firmware rebooted?): {line}")
+                                        self.last_sequence = -1
+                                    else:
+                                        logger.warning(f"Malformed packet missing required fields: {line}")
                                     continue
-                                    
+
                                 seq = packet.get("sequence", -1)
+                                is_boot = packet.get("type") == "info" and packet.get("payload", {}).get("infoType") == "BOOT"
+                                if is_boot:
+                                    logger.warning("Firmware BOOT packet received - board restarted. Resetting sequence.")
+                                    self.last_sequence = -1
                                 if seq != -1:
+                                    if seq < self.last_sequence and seq <= 3:
+                                        logger.warning(f"Sequence restarted ({self.last_sequence} -> {seq}); assuming board reboot.")
+                                        self.last_sequence = -1
                                     if seq <= self.last_sequence:
                                         logger.warning(f"Duplicate/Old packet detected (seq {seq} <= {self.last_sequence}). Dropping.")
                                         continue
@@ -278,15 +362,25 @@ class HealthKioskBridge:
                                     
                                 laravel_payload = self.translate_payload_to_laravel(packet)
                                 if laravel_payload:
-                                    try:
-                                        self.http_queue.put_nowait(laravel_payload)
-                                    except queue.Full:
+                                    is_state_change = False
+                                    if self.last_laravel_payload:
+                                        if laravel_payload.get("machine_state") != self.last_laravel_payload.get("machine_state"):
+                                            is_state_change = True
+                                    else:
+                                        is_state_change = True
+                                        
+                                    if is_state_change or (time.time() - self.last_payload_time >= 1.0):
+                                        self.last_payload_time = time.time()
+                                        self.last_laravel_payload = laravel_payload
                                         try:
-                                            self.http_queue.get_nowait()
-                                            logger.warning("Queue overflow! Dropped oldest payload.")
-                                        except queue.Empty:
-                                            pass
-                                        self.http_queue.put_nowait(laravel_payload)
+                                            self.http_queue.put_nowait(laravel_payload)
+                                        except queue.Full:
+                                            try:
+                                                self.http_queue.get_nowait()
+                                                logger.warning("Queue overflow! Dropped oldest payload.")
+                                            except queue.Empty:
+                                                pass
+                                            self.http_queue.put_nowait(laravel_payload)
                                         
                             except json.JSONDecodeError:
                                 logger.warning(f"Failed to parse JSON: {line}")
@@ -309,7 +403,8 @@ def load_config(args):
         "port": args.port,
         "baud": args.baud,
         "url": args.url,
-        "command_url": args.command_url
+        "command_url": args.command_url,
+        "bridge_token": args.bridge_token
     }
     if os.path.exists(CONFIG_FILE):
         try:
@@ -336,6 +431,8 @@ if __name__ == "__main__":
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--url", default="http://127.0.0.1:8000/api/kiosk/live-vitals")
     parser.add_argument("--command-url", default="http://127.0.0.1:8000/api/kiosk/command")
+    parser.add_argument("--bridge-token", dest="bridge_token", default=None,
+                         help="Shared secret matching KIOSK_BRIDGE_TOKEN in the Laravel app's .env")
     args = parser.parse_args()
     
     config = load_config(args)

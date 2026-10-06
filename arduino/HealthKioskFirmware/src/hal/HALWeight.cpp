@@ -57,5 +57,25 @@ namespace HAL {
         return false;
     }
 
+    void HALWeight::tare() {
+        long rawValue = 0;
+        long sum = 0;
+        int count = 0;
+        
+        unsigned long start = millis();
+        // Wait 5 seconds to get a stable zero average
+        while (millis() - start < 5000) {
+            if (driver.readRaw(rawValue)) {
+                sum += rawValue;
+                count++;
+            }
+            delay(10);
+        }
+        
+        if (count > 0) {
+            _offset = sum / count;
+        }
+    }
+
 } // namespace HAL
 } // namespace HealthKiosk

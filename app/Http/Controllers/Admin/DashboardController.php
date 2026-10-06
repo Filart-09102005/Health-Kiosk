@@ -22,7 +22,7 @@ class DashboardController extends Controller
         $counts = [
             'total_users' => User::count(),
             'students' => User::where('role', 'student')->count(),
-            'teachers' => User::where('role', 'teacher')->count(),
+            'teachers' => User::whereIn('role', ['teacher', 'personnel', 'staff', 'faculty'])->count(),
             'health_records' => HealthRecord::whereHas('user', fn ($query) => $query->where('role', '!=', 'admin'))->count(),
             'sessions_today' => KioskSession::whereHas('user', fn ($query) => $query->where('role', '!=', 'admin'))->whereDate('started_at', $today)->count(),
             'completed_sessions' => KioskSession::whereHas('user', fn ($query) => $query->where('role', '!=', 'admin'))->where('status', 'completed')->count(),
@@ -51,7 +51,7 @@ class DashboardController extends Controller
                 'status' => ucfirst(str_replace('_', ' ', $session->status ?: 'pending')),
             ]);
 
-        ActivityLog::record('admin_dashboard_viewed', $request->user(), $request, 'Admin viewed dashboard.');
+
 
         return response()->json([
             'counts' => $counts,
@@ -75,13 +75,13 @@ class DashboardController extends Controller
                     'description' => 'Registered teacher accounts',
                 ],
                 [
-                    'key' => 'health-records',
-                    'label' => 'Health Records',
-                    'value' => $counts['health_records'],
+                    'key' => 'total-users',
+                    'label' => 'Total Users',
+                    'value' => $counts['students'] + $counts['teachers'],
                     'change' => 0,
                     'trend' => 'neutral',
-                    'icon' => 'checks',
-                    'description' => 'Kiosk health records saved',
+                    'icon' => 'students',
+                    'description' => 'Students + teachers = total users',
                 ],
                 [
                     'key' => 'active-alerts',

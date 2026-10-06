@@ -4,7 +4,7 @@ const values = [34, 42, 39, 58, 64, 71, 68, 82];
 
 export default function MeasurementTrendChart() {
     return (
-        <div className="rounded-[14px] border p-5" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <div className="rounded-[1.25rem] border p-5" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <SectionHeader title="Measurement trend" description="Daily reportable kiosk measurements." />
             <div className="mt-6 flex h-36 items-end gap-2">
                 {values.map((value, index) => (

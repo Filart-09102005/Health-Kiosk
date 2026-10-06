@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { HeartPulse, ScanBarcode, ShieldCheck, Sparkles } from "lucide-react";
 import ThemeToggle from "../../Global/ThemeToggle";
+import Appearance from "../../User/Drawers/Appearance";
 
 export default function AuthLayout({
     children,
@@ -11,15 +13,21 @@ export default function AuthLayout({
     variant = "login",
 }) {
     const loginPanel = variant === "login";
+    // The quick toggle only cycles System/Light/Dark - the full picker with
+    // all the named themes lives in this same Appearance drawer used
+    // everywhere else, so it's opened here instead of built twice.
+    const [appearanceOpen, setAppearanceOpen] = useState(false);
 
     return (
         <main className="auth-screen h-screen overflow-hidden px-5 py-6">
             <div className="fixed right-6 top-6 z-30">
-                <ThemeToggle label="Light Mode" />
+                <ThemeToggle onClick={() => setAppearanceOpen(true)} />
             </div>
 
+            <Appearance open={appearanceOpen} onClose={() => setAppearanceOpen(false)} />
+
             <section className="relative z-10 mx-auto grid h-[calc(100vh-3rem)] w-full max-w-7xl items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-                <div className="flex min-h-[640px] flex-col justify-between py-10 lg:pl-10">
+                <div className="auth-brand-panel flex min-h-[640px] flex-col justify-between py-10 lg:pl-10">
                     <BrandLockup caption={loginPanel ? "Student Health Monitoring" : "Health Monitoring System"} />
 
                     <div className="mx-auto w-full max-w-md text-center">

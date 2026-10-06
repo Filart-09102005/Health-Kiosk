@@ -25,4 +25,9 @@ class UserPolicy
     {
         return $user->isAdmin() && ! $user->is($model);
     }
+
+    public function create(User $user): bool
+    {
+        return $user->isAdmin();
+    }
 }

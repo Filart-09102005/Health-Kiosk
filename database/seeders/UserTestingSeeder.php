@@ -205,6 +205,7 @@ class UserTestingSeeder extends Seeder
         // Hans Filart (Multiple alerts, some resolved, one pending)
         $hans = User::where('email', 'hanskurveyfilart@smcbi.edu.ph')->first();
         if ($hans) {
+            $hans->update(['birthday' => '2005-09-10']);
             DB::table('alerts')->where('user_id', $hans->id)->delete();
             DB::table('health_records')->where('user_id', $hans->id)->delete();
             DB::table('kiosk_sessions')->where('user_id', $hans->id)->delete();

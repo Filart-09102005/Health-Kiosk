@@ -1,6 +1,5 @@
 /**
  * @file TemperatureMeasurement.cpp
- * @brief Implementation of TemperatureMeasurement.
  */
 
 #include "TemperatureMeasurement.h"
@@ -10,6 +9,7 @@
 #include "../algorithms/Calibration.h"
 #include "../config/SensorProfiles.h"
 #include "../config/ErrorCodes.h"
+#include "../config/CalibrationData.h"
 #include "../utils/MathUtils.h"
 #include <math.h>
 #include <Arduino.h>
@@ -17,21 +17,22 @@
 namespace HealthKiosk {
 namespace Modules {
 
-    TemperatureMeasurement::TemperatureMeasurement(HAL::HALTemperature* hal) 
-        : _hal(hal), _state(MeasureState::IDLE), _currentEMA(0.0f), _stableCount(0) {
+    TemperatureMeasurement::TemperatureMeasurement(HAL::HALTemperature* hal)
+        : _hal(hal), _state(MeasureState::IDLE), _currentEMA(0.0f), _stableSince(0) {
     }
 
     void TemperatureMeasurement::start() {
         _state = MeasureState::INITIALIZE;
         _buffer.clear();
         _currentEMA = 0.0f;
-        _stableCount = 0;
+        _stableSince = 0;
+        _countdownStart = 0;
         _startTime = millis();
         _result = Models::MeasurementResult();
     }
 
     void TemperatureMeasurement::update() {
-        if (_state == MeasureState::IDLE || _state == MeasureState::COMPLETE || _state == MeasureState::ERROR) return;
+        if (_state == MeasureState::IDLE || _state == MeasureState::COMPLETE || _state == MeasureState::ERROR || _state == MeasureState::FAILED) return;
 
         if (millis() - _startTime > Config::Profiles::TEMP_TIMEOUT_MS) {
             _result.error = ErrorCode::SENSOR_TIMEOUT;
@@ -42,31 +43,92 @@ namespace Modules {
         switch (_state) {
             case MeasureState::INITIALIZE:
                 if (_hal->isReady() || _hal->initialize()) {
-                    _state = MeasureState::WAIT_FOR_SENSOR;
+                    _state = MeasureState::WAITING;
                 } else {
                     _result.error = _hal->lastError();
                     _state = MeasureState::ERROR;
                 }
                 break;
 
-            case MeasureState::WAIT_FOR_SENSOR:
-                if (_hal->selfTest()) {
-                    _state = MeasureState::COLLECT_SAMPLES;
-                } else {
-                    _result.error = _hal->lastError();
-                    _state = MeasureState::ERROR;
-                }
-                break;
-
-            case MeasureState::COLLECT_SAMPLES: {
+            case MeasureState::WAITING: {
                 float obj = 0, amb = 0;
                 if (_hal->acquire(obj, amb)) {
+                    // Range-gating below always uses the RAW sensor value (obj) — only the
+                    // reported/displayed value gets the calibration offset, so a live/early
+                    // capture already matches what PROCESSING would eventually compute.
+                    _result.value = obj + Config::Calibration::DEFAULT_TEMP_OFFSET;
+                    // Approximation of "Distance" based on thermal gradient since no hardware distance sensor is present.
+                    // If object temp is significantly higher than ambient, assume person is close.
+                    if (obj > Config::Calibration::TEMP_DETECT_MIN_C && obj < Config::Calibration::TEMP_DETECT_MAX_C) {
+                        _state = MeasureState::VALIDATING;
+                        _stableSince = 0;
+                    }
+                }
+                break;
+            }
+
+            case MeasureState::VALIDATING: {
+                float obj = 0, amb = 0;
+                if (_hal->acquire(obj, amb)) {
+                    _result.value = obj + Config::Calibration::DEFAULT_TEMP_OFFSET;
+
+                    if (obj < Config::Calibration::TEMP_DETECT_MIN_C || obj > Config::Calibration::TEMP_DETECT_MAX_C) {
+                        _state = MeasureState::WAITING;
+                        _stableSince = 0;
+                        break;
+                    }
+
+                    // Hold-steady window, timed against the clock (not loop iterations)
+                    // so it stays a consistent ~TEMP_STABILITY_MS regardless of CPU load.
+                    if (Utils::MathUtils::absolute(obj - _currentEMA) < Config::Profiles::TEMP_STABLE_THRESHOLD) {
+                        if (_stableSince == 0) _stableSince = millis();
+                        if (millis() - _stableSince >= Config::Profiles::TEMP_STABILITY_MS) {
+                            _state = MeasureState::READY;
+                        }
+                    } else {
+                        _stableSince = 0;
+                    }
+                    _currentEMA = obj;
+                }
+                break;
+            }
+
+            case MeasureState::READY:
+                _countdownStart = millis();
+                _state = MeasureState::COUNTDOWN;
+                break;
+
+            case MeasureState::COUNTDOWN: {
+                float obj = 0, amb = 0;
+                if (_hal->acquire(obj, amb)) {
+                    _result.value = obj + Config::Calibration::DEFAULT_TEMP_OFFSET;
+                    if (obj < Config::Calibration::TEMP_DETECT_MIN_C || obj > Config::Calibration::TEMP_DETECT_MAX_C) {
+                        _state = MeasureState::WAITING; // User moved away
+                        return;
+                    }
+                }
+                if (millis() - _countdownStart > Config::Profiles::TEMP_COUNTDOWN_MS) {
+                    _state = MeasureState::COLLECTING;
+                    _buffer.clear();
+                }
+                break;
+            }
+
+            case MeasureState::COLLECTING: {
+                float obj = 0, amb = 0;
+                if (_hal->acquire(obj, amb)) {
+                    if (obj < Config::Calibration::TEMP_DETECT_MIN_C || obj > Config::Calibration::TEMP_DETECT_MAX_C) {
+                        _state = MeasureState::FAILED;
+                        _result.error = ErrorCode::SENSOR_NOT_STABLE;
+                        break;
+                    }
                     if (_buffer.isEmpty()) _currentEMA = obj;
                     _currentEMA = Algorithms::Filters::computeEMA(obj, _currentEMA, 0.3f);
-                    _buffer.push(_currentEMA);
+                    _buffer.push(_currentEMA); // buffer stays RAW — PROCESSING below adds the offset once, on the median
+                    _result.value = _currentEMA + Config::Calibration::DEFAULT_TEMP_OFFSET;
                     
                     if (_buffer.isFull()) {
-                        _state = MeasureState::FILTER;
+                        _state = MeasureState::PROCESSING;
                     }
                 } else {
                     ErrorCode err = _hal->lastError();
@@ -78,86 +140,29 @@ namespace Modules {
                 break;
             }
 
-            case MeasureState::FILTER: {
+            case MeasureState::PROCESSING: {
                 size_t size = _buffer.capacity();
                 float data[Config::Profiles::TEMP_SAMPLE_COUNT];
-                float workBuffer[Config::Profiles::TEMP_SAMPLE_COUNT];
-                
                 for(size_t i=0; i<size; i++) data[i] = _buffer.peek(i);
                 
                 float median = Algorithms::Filters::computeMedian(data, size);
-                float mad = Algorithms::Filters::computeMAD(data, size, median, workBuffer);
                 
-                float sum = 0;
-                int count = 0;
-                float mad_bound = 3.0f * mad;
-                if (mad_bound < 0.05f) mad_bound = 0.05f; 
-                
-                for(size_t i=0; i<size; i++) {
-                    float val = _buffer.peek(i);
-                    if (Utils::MathUtils::absolute(val - median) <= mad_bound) {
-                        sum += val;
-                        count++;
-                    }
-                }
-                
-                float avg = (count > 0) ? (sum / count) : median;
-                _result.value = avg;
-                _result.stabilityScore = mad;
-                _result.sampleCount = count;
-                
-                _state = MeasureState::STABILITY_CHECK;
-                break;
-            }
-
-            case MeasureState::STABILITY_CHECK:
-                if (_result.stabilityScore <= Config::Profiles::TEMP_STABLE_THRESHOLD) {
-                    _stableCount++;
-                    if (_stableCount >= 5) {
-                        _state = MeasureState::CONFIDENCE_CHECK;
-                    } else {
-                        float dummy;
-                        _buffer.pop(dummy);
-                        _state = MeasureState::COLLECT_SAMPLES;
-                    }
-                } else {
-                    _stableCount = 0;
-                    float dummy;
-                    _buffer.pop(dummy);
-                    _state = MeasureState::COLLECT_SAMPLES;
-                }
-                break;
-
-            case MeasureState::CONFIDENCE_CHECK: {
-                float conf = Algorithms::SignalQuality::computeConfidence(_result.stabilityScore, 0.02f, 0.5f);
-                _result.confidence = conf * 100.0f;
-                
-                if (_result.confidence < 50.0f) {
-                    _result.error = ErrorCode::SENSOR_NOT_STABLE;
-                    _state = MeasureState::ERROR;
-                } else {
-                    _state = MeasureState::CALIBRATION;
-                }
-                break;
-            }
-
-            case MeasureState::CALIBRATION:
-                _result.value = Algorithms::Calibration::applyLinear(_result.value, 1.0f, 0.0f);
-                _state = MeasureState::VALIDATION;
-                break;
-
-            case MeasureState::VALIDATION:
-                if (!isfinite(_result.value) || 
-                    _result.value < Config::Profiles::TEMP_MIN_VALID || 
-                    _result.value > Config::Profiles::TEMP_MAX_VALID) {
+                // Reject out of range
+                if (median < Config::Calibration::TEMP_DETECT_MIN_C || median > Config::Calibration::TEMP_DETECT_MAX_C) {
+                    _state = MeasureState::FAILED;
                     _result.error = ErrorCode::SENSOR_OUT_OF_RANGE;
-                    _state = MeasureState::ERROR;
-                } else {
-                    _result.measurementTime = millis() - _startTime;
-                    _result.timestamp = millis();
-                    _state = MeasureState::COMPLETE;
+                    break;
                 }
+                
+                // Apply Calibration Offset
+                median += Config::Calibration::DEFAULT_TEMP_OFFSET;
+                
+                _result.value = median;
+                _result.measurementTime = millis() - _startTime;
+                _result.timestamp = millis();
+                _state = MeasureState::COMPLETE;
                 break;
+            }
 
             default:
                 break;

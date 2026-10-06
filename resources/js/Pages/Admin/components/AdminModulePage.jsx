@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import TablePagination from "../../../Global/TablePagination";
 
 const statusColor = (status) => {
     const normalized = String(status || "").toLowerCase();
@@ -63,27 +64,38 @@ export default function AdminModulePage({
             <motion.section
                 initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 0.08, duration: 0.42, ease: "easeOut" }}
+                transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 0.04, duration: 0.34, ease: [0.16, 1, 0.3, 1] }}
                 transformTemplate={(_, generated) => `${generated} translateZ(0)`}
-                className="transform-gpu rounded-[14px] border p-5 shadow-xl"
+                className="relative transform-gpu overflow-hidden rounded-[1.5rem] border p-6 shadow-sm"
                 style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", willChange: "transform, opacity" }}
             >
-                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                {/* Soft accent wash so the page banner reads as a header rather
+                    than another flat card in the stack. */}
+                <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -right-16 -top-24 h-56 w-56 rounded-full"
+                    style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--color-primary) 13%, transparent), transparent 70%)" }}
+                />
+
+                <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-start gap-4">
                         {Icon ? (
                             <div
-                                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px]"
-                                style={{ backgroundColor: "var(--color-surface)", color: "var(--color-text)" }}
+                                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl"
+                                style={{
+                                    backgroundColor: "color-mix(in srgb, var(--color-primary) 11%, transparent)",
+                                    color: "var(--color-primary)",
+                                }}
                             >
-                                    <Icon size={23} />
+                                <Icon size={24} />
                             </div>
                         ) : null}
-                        <div>
-                            <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--color-muted)" }}>
+                        <div className="min-w-0">
+                            <p className="text-[0.65rem] font-black uppercase tracking-[0.2em]" style={{ color: "var(--color-primary)" }}>
                                 {eyebrow}
                             </p>
-                            <h2 className="mt-2 text-3xl font-black">{title}</h2>
-                            <p className="mt-2 max-w-2xl text-sm leading-6" style={{ color: "var(--color-muted)" }}>
+                            <h2 className="mt-1.5 text-3xl font-black tracking-tight">{title}</h2>
+                            <p className="mt-2 max-w-2xl text-sm font-medium leading-6" style={{ color: "var(--color-muted)" }}>
                                 {description}
                             </p>
                         </div>
@@ -120,9 +132,12 @@ export default function AdminModulePage({
                     variants={{
                         hidden: {},
                         show: {
+                            // Was delayChildren 0.52 with content at 0.92s — a
+                            // near-second wait on every navigation, which reads
+                            // as sluggish rather than considered.
                             transition: shouldReduceMotion
                                 ? { staggerChildren: 0 }
-                                : { delayChildren: 0.52, staggerChildren: 0.06 },
+                                : { delayChildren: 0.12, staggerChildren: 0.05 },
                         },
                     }}
                 >
@@ -134,36 +149,41 @@ export default function AdminModulePage({
                                 key={stat.label}
                                 layout={false}
                                 variants={{
-                                    hidden: shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 },
+                                    hidden: shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 },
                                     show: {
                                         opacity: 1,
                                         y: 0,
                                         transition: shouldReduceMotion
                                             ? { duration: 0.01 }
-                                            : { duration: 0.48, ease: "easeOut" },
+                                            : { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
                                     },
                                     exit: shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 },
                                 }}
                                 transformTemplate={(_, generated) => `${generated} translateZ(0)`}
-                                className="transform-gpu rounded-[14px] border p-5 shadow-sm"
+                                className="hk-stat-card group transform-gpu rounded-[1.25rem] border p-5"
                                 style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", willChange: "transform, opacity" }}
                             >
-                                <div className="flex items-center justify-between gap-3">
-                                    <div>
-                                        <p className="text-sm font-bold" style={{ color: "var(--color-muted)" }}>{stat.label}</p>
-                                        <p className="mt-2 text-3xl font-black">{stat.value}</p>
-                                    </div>
+                                <div className="flex items-start justify-between gap-3">
+                                    <p className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--color-muted)" }}>
+                                        {stat.label}
+                                    </p>
                                     {StatIcon ? (
                                         <div
-                                            className="flex h-10 w-10 items-center justify-center rounded-[10px]"
-                                            style={{ backgroundColor: "var(--color-surface)", color: "var(--color-text)" }}
+                                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors"
+                                            style={{
+                                                backgroundColor: "color-mix(in srgb, var(--color-primary) 10%, transparent)",
+                                                color: "var(--color-primary)",
+                                            }}
                                         >
-                                            <StatIcon size={22} />
+                                            <StatIcon size={18} />
                                         </div>
                                     ) : null}
                                 </div>
+
+                                <p className="mt-3 text-4xl font-black tabular-nums tracking-tight">{stat.value}</p>
+
                                 {stat.caption ? (
-                                    <p className="mt-4 text-xs font-bold" style={{ color: "var(--color-muted)" }}>{stat.caption}</p>
+                                    <p className="mt-2 text-xs font-semibold" style={{ color: "var(--color-muted)" }}>{stat.caption}</p>
                                 ) : null}
                             </motion.article>
                         );
@@ -175,14 +195,14 @@ export default function AdminModulePage({
                 <motion.div
                     initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={shouldReduceMotion ? { duration: 0.01 } : { delay: stats.length ? 0.92 : 0.24, duration: 0.34, ease: "easeOut" }}
+                    transition={shouldReduceMotion ? { duration: 0.01 } : { delay: stats.length ? 0.3 : 0.14, duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
                 >
                     {children}
                 </motion.div>
             ) : null}
 
             {columns.length && rows.length ? (
-                <section className="rounded-[14px] border p-5 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+                <section className="rounded-[1.25rem] border p-5 hk-admin-card" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
                     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <h3 className="text-lg font-black">Records</h3>
@@ -245,33 +265,14 @@ export default function AdminModulePage({
                     </div>
 
                     {hasPagedTable ? (
-                        <div className="mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: "var(--color-border)" }}>
-                            <p className="text-xs font-bold" style={{ color: "var(--color-muted)" }}>
-                                Showing {(currentPage - 1) * tablePageSize + 1}-{Math.min(currentPage * tablePageSize, rows.length)} of {rows.length} records
-                            </p>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    disabled={currentPage === 1}
-                                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                                    className="rounded-lg border px-3 py-2 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-45 hk-admin-nav-hover"
-                                    style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
-                                >
-                                    Previous
-                                </button>
-                                <span className="px-2 text-xs font-black" style={{ color: "var(--color-muted)" }}>
-                                    Page {currentPage} of {totalPages}
-                                </span>
-                                <button
-                                    type="button"
-                                    disabled={currentPage === totalPages}
-                                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                                    className="rounded-lg border px-3 py-2 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-45 hk-admin-nav-hover"
-                                    style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
-                                >
-                                    Next
-                                </button>
-                            </div>
+                        <div className="mt-4 border-t pt-4" style={{ borderColor: "var(--color-border)" }}>
+                            <TablePagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                totalRecords={rows.length}
+                                pageSize={tablePageSize}
+                                onPageChange={setCurrentPage}
+                            />
                         </div>
                     ) : null}
                 </section>

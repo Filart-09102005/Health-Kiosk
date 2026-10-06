@@ -24,7 +24,14 @@ export async function printHealthReceipt(record = {}) {
     const request = axios
         .post("/api/receipt/print", record)
         .then((response) => {
-            notify("success", "Receipt printed successfully.", response.data?.message || "Health receipt sent to printer.");
+            // The server can only confirm the job reached the print queue, so the
+            // toast says that rather than claiming paper came out.
+            const offline = response.data?.printer_online === false;
+            notify(
+                offline ? "warning" : "success",
+                offline ? "Printer offline" : "Receipt sent to printer",
+                response.data?.message || "Health receipt sent to the thermal printer.",
+            );
             return { ok: true };
         })
         .catch((error) => {

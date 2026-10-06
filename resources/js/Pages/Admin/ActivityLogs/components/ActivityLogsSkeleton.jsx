@@ -5,10 +5,10 @@ const columns = ["Actor", "Action", "Area", "Status", "Time", "Details"];
 export default function ActivityLogsSkeleton() {
     return (
         <div className="mt-5 space-y-5" aria-busy="true" aria-label="Loading activity logs page">
-            <section className="rounded-[14px] border p-5 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+            <section className="rounded-[1.25rem] border p-5 hk-admin-card" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-start gap-4">
-                        <SkeletonBlock className="h-12 w-12 shrink-0 rounded-[12px]" />
+                        <SkeletonBlock className="h-12 w-12 shrink-0 rounded-[1rem]" />
                         <div className="min-w-0">
                             <SkeletonBlock className="h-3 w-36" />
                             <SkeletonBlock className="mt-3 h-9 w-56 max-w-full" />
@@ -18,7 +18,7 @@ export default function ActivityLogsSkeleton() {
                 </div>
             </section>
 
-            <section className="rounded-[14px] border p-5 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+            <section className="rounded-[1.25rem] border p-5 hk-admin-card" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
                 <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <SkeletonBlock className="h-6 w-28" />

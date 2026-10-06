@@ -1,9 +1,14 @@
-import { Activity, Bell, Clock, HeartPulse, RotateCcw, Save, Settings as SettingsIcon, SlidersHorizontal, Thermometer, Weight } from "lucide-react";
+import { motion } from "framer-motion";
+import { Activity, Bell, Cpu, HeartPulse, Info, RotateCcw, Save, Settings as SettingsIcon, SlidersHorizontal, Thermometer, Weight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { authService, getErrorMessage } from "../../Auth/services/authService";
 import { useToast } from "../../Global/Toast";
+import ConfirmDialog from "../../Global/ConfirmDialog";
 import AdminShell from "../components/AdminShell";
 import AdminModulePage from "../components/AdminModulePage";
+import CustomSelectField from "../../../Global/CustomSelectField";
+import MeasurementAvailabilitySection from "./components/MeasurementAvailabilitySection";
+import { KEYBOARD_SETTING_CHANGED_EVENT } from "../../../Global/FloatingKeyboard/keyboardSettingEvent";
 import {
     ALERTS_ENABLED_KEY,
     getAlertSensitivityProfile,
@@ -12,27 +17,38 @@ import {
     saveAlertSensitivity,
 } from "../Alerts/utils/alertSensitivity";
 
+// Mirror of AdminSettings::defaults() in PHP - change both together.
+// Temperature and heart rate are two-state by design: the alert bounds sit on
+// the normal bounds, so no Watch grade is reachable for them.
 const defaultThresholds = {
-    temperature: { alertLow: 35, normalLow: 36.1, normalHigh: 37.2, alertHigh: 37.5 },
-    heartRate: { alertLow: 60, normalLow: 65, normalHigh: 90, alertHigh: 100 },
-    spo2: { alertLow: 95, normalLow: 97 },
+    temperature: { alertLow: 35, normalLow: 35, normalHigh: 37.2, alertHigh: 37.2 },
+    heartRate: { alertLow: 60, normalLow: 60, normalHigh: 100, alertHigh: 100 },
+    spo2: { alertLow: 91, normalLow: 95 },
     bmi: { underweightMax: 18.4, normalMax: 24.9, overweightMax: 29.9 },
     alertsEnabled: true,
     alertSensitivity: "Standard",
-    kioskMaintenanceHours: 2,
+    platformOffsetCm: 2.0,
+    kioskKeyboardEnabledAdmin: true,
+    kioskKeyboardEnabledUser: true,
 };
 
-const MAINTENANCE_KEY = "healthKioskMaintenanceUntil";
+// Which keys belong to which section's save button.
+const SECTIONS = {
+    thresholds: { key: "thresholds", label: "Health thresholds", keys: ["temperature", "heartRate", "spo2", "bmi"] },
+    alerts: { key: "alerts", label: "Alert settings", keys: ["alertsEnabled", "alertSensitivity"] },
+    kiosk: { key: "kiosk", label: "Kiosk preferences", keys: ["platformOffsetCm", "kioskKeyboardEnabledAdmin", "kioskKeyboardEnabledUser"] },
+};
 
 export default function Settings({ navigate }) {
     const { showToast } = useToast();
+    const [savingSection, setSavingSection] = useState(null);
+    // Section awaiting confirmation before its values are reset.
+    const [pendingRestore, setPendingRestore] = useState(null);
     const [settings, setSettings] = useState(() => ({
         ...defaultThresholds,
         alertsEnabled: window.localStorage.getItem(ALERTS_ENABLED_KEY) !== "false",
         alertSensitivity: getStoredAlertSensitivity(),
     }));
-    const [now, setNow] = useState(Date.now());
-    const [maintenanceUntil, setMaintenanceUntil] = useState(() => Number(window.localStorage.getItem(MAINTENANCE_KEY) || 0));
 
     useEffect(() => {
         let alive = true;
@@ -58,12 +74,6 @@ export default function Settings({ navigate }) {
         };
     }, [showToast]);
 
-    useEffect(() => {
-        const timer = window.setInterval(() => setNow(Date.now()), 1000);
-
-        return () => window.clearInterval(timer);
-    }, []);
-
     const updateGroup = (group, key, value) => {
         setSettings((current) => ({
             ...current,
@@ -86,41 +96,31 @@ export default function Settings({ navigate }) {
         setSettings((current) => ({ ...current, [key]: value }));
     };
 
-    const restoreDefaults = () => {
-        saveAlertsEnabled(defaultThresholds.alertsEnabled);
-        saveAlertSensitivity(defaultThresholds.alertSensitivity);
-        setSettings({
-            ...defaultThresholds,
-            alertsEnabled: defaultThresholds.alertsEnabled,
-            alertSensitivity: defaultThresholds.alertSensitivity,
-        });
-    };
+    // Each section saves only its own keys. The server merges a partial payload
+    // over the settings already in force, so saving one section cannot disturb
+    // another - which is what makes per-section buttons safe.
+    const pick = (keys, source) => keys.reduce((acc, key) => ({ ...acc, [key]: source[key] }), {});
 
-    const startMaintenance = () => {
-        const hours = Math.max(0.1, Number(settings.kioskMaintenanceHours) || 0);
-        const until = Date.now() + hours * 60 * 60 * 1000;
+    const persist = (sectionKey, payload, label) => {
+        setSavingSection(sectionKey);
 
-        window.localStorage.setItem(MAINTENANCE_KEY, String(until));
-        window.dispatchEvent(new Event("health-kiosk-maintenance-change"));
-        setMaintenanceUntil(until);
-        setNow(Date.now());
-    };
-
-    const cancelMaintenance = () => {
-        window.localStorage.removeItem(MAINTENANCE_KEY);
-        window.dispatchEvent(new Event("health-kiosk-maintenance-change"));
-        setMaintenanceUntil(0);
-        setNow(Date.now());
-    };
-
-    const saveSettings = () => {
-        authService.updateAdminSettings(settings)
+        return authService.updateAdminSettings(payload)
             .then(() => {
-                showToast({
-                    type: "success",
-                    title: "Settings saved",
-                    message: "Admin settings were saved to the database.",
-                });
+                showToast({ type: "success", title: `${label} saved`, message: "The change is now in force." });
+
+                // Lets every open tab/kiosk screen react right away instead of
+                // only picking this up on their next reload.
+                const hasAdminFlag = Object.prototype.hasOwnProperty.call(payload, "kioskKeyboardEnabledAdmin");
+                const hasUserFlag = Object.prototype.hasOwnProperty.call(payload, "kioskKeyboardEnabledUser");
+
+                if (hasAdminFlag || hasUserFlag) {
+                    window.dispatchEvent(new CustomEvent(KEYBOARD_SETTING_CHANGED_EVENT, {
+                        detail: {
+                            ...(hasAdminFlag ? { admin: payload.kioskKeyboardEnabledAdmin } : {}),
+                            ...(hasUserFlag ? { user: payload.kioskKeyboardEnabledUser } : {}),
+                        },
+                    }));
+                }
             })
             .catch((error) => {
                 showToast({
@@ -132,10 +132,30 @@ export default function Settings({ navigate }) {
                 if (error?.response?.status === 401 || error?.response?.status === 403) {
                     navigate("/login");
                 }
-            });
+            })
+            .finally(() => setSavingSection(null));
     };
 
-    const maintenanceActive = maintenanceUntil > now;
+    const saveSection = (section) => persist(section.key, pick(section.keys, settings), section.label);
+
+    const confirmRestore = () => {
+        const section = pendingRestore;
+        if (!section) return undefined;
+
+        setPendingRestore(null);
+
+        const restored = pick(section.keys, defaultThresholds);
+
+        // These two are mirrored in localStorage for the alert widgets, so the
+        // local copy has to move with them.
+        if (section.keys.includes("alertsEnabled")) saveAlertsEnabled(defaultThresholds.alertsEnabled);
+        if (section.keys.includes("alertSensitivity")) saveAlertSensitivity(defaultThresholds.alertSensitivity);
+
+        setSettings((current) => ({ ...current, ...restored }));
+
+        return persist(section.key, restored, section.label);
+    };
+
     const sensitivityProfile = getAlertSensitivityProfile(settings.alertSensitivity);
 
     return (
@@ -153,7 +173,9 @@ export default function Settings({ navigate }) {
                         title="Health Thresholds"
                         description="Admin can customize the values used to classify Normal, Needs Attention, and Alert records."
                     >
-                        <div className="grid gap-5 xl:grid-cols-2">
+                        <ThresholdGuide />
+
+                        <div className="mt-5 grid gap-5 xl:grid-cols-2">
                             <ThresholdPanel
                                 icon={Thermometer}
                                 title="Temperature Threshold"
@@ -207,6 +229,23 @@ export default function Settings({ navigate }) {
                                 </ThresholdRuleList>
                             </ThresholdPanel>
                         </div>
+
+                        <SectionActions
+                            section={SECTIONS.thresholds}
+                            onSave={saveSection}
+                            onRestore={setPendingRestore}
+                            saving={savingSection === SECTIONS.thresholds.key}
+                        />
+                    </SettingsSection>
+
+                    {/* Saves on toggle through its own endpoint, so it needs no
+                        button of its own. */}
+                    <SettingsSection
+                        icon={Cpu}
+                        title="Measurement Availability"
+                        description="Turn Smart Mode off for a sensor that is under maintenance or being calibrated. Manual Mode always stays available."
+                    >
+                        <MeasurementAvailabilitySection />
                     </SettingsSection>
 
                     <SettingsSection
@@ -215,7 +254,7 @@ export default function Settings({ navigate }) {
                         description="Control whether abnormal readings appear in alert monitoring."
                     >
                         <div className="grid gap-5 lg:grid-cols-2">
-                            <article className="flex min-h-[190px] rounded-[14px] border p-5" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
+                            <article className="flex min-h-[190px] rounded-[1.25rem] border p-5" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
                                 <div className="flex items-center justify-between gap-4">
                                     <div>
                                         <p className="font-black">Enable Alerts</p>
@@ -240,20 +279,18 @@ export default function Settings({ navigate }) {
                                 </div>
                             </article>
 
-                            <article className="rounded-[14px] border p-5" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
-                                <label className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--color-muted)" }}>
-                                    Alert Sensitivity
-                                    <select
-                                        value={settings.alertSensitivity}
-                                        onChange={(event) => updateValue("alertSensitivity", event.target.value)}
-                                        className="mt-3 h-12 w-full rounded-xl border px-4 text-sm font-black outline-none"
-                                        style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-text)" }}
-                                    >
-                                        <option>Low</option>
-                                        <option>Standard</option>
-                                        <option>High</option>
-                                    </select>
-                                </label>
+                            <article className="rounded-[1.25rem] border p-5" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
+                                {/* Was the last native <select> in the admin. */}
+                                <CustomSelectField
+                                    label="Alert Sensitivity"
+                                    value={settings.alertSensitivity}
+                                    onChange={(value) => updateValue("alertSensitivity", value)}
+                                    options={[
+                                        { value: "Low", label: "Low" },
+                                        { value: "Standard", label: "Standard" },
+                                        { value: "High", label: "High" },
+                                    ]}
+                                />
                                 <p className="mt-3 text-xs font-semibold leading-5" style={{ color: "var(--color-muted)" }}>
                                     {sensitivityProfile.description}
                                 </p>
@@ -273,202 +310,375 @@ export default function Settings({ navigate }) {
                                 </div>
                             </article>
                         </div>
+
+                        <SectionActions
+                            section={SECTIONS.alerts}
+                            onSave={saveSection}
+                            onRestore={setPendingRestore}
+                            saving={savingSection === SECTIONS.alerts.key}
+                        />
                     </SettingsSection>
 
                     <SettingsSection
                         icon={SlidersHorizontal}
-                        title="Kiosk Maintenance Lock"
-                        description="Temporarily restrict user-side kiosk access while admin performs maintenance. Admin pages remain accessible."
+                        title="Kiosk Preferences"
+                        description="Configure physical kiosk offsets."
                     >
                         <div className="grid gap-5 lg:grid-cols-2">
-                            <article className="rounded-[14px] border p-5" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
+                            <article className="rounded-[1.25rem] border p-5" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
                                 <ThresholdInput
-                                    label="Maintenance Duration"
-                                    value={settings.kioskMaintenanceHours}
-                                    onChange={(value) => updateValue("kioskMaintenanceHours", value)}
-                                    helper="Hours the user-side kiosk will be unavailable. Example: 2 means users cannot use the kiosk for 2 hours."
+                                    label="Platform Height Deduction (cm)"
+                                    value={settings.platformOffsetCm}
+                                    onChange={(value) => updateValue("platformOffsetCm", value)}
+                                    helper="The physical thickness of the floor platform used for height checks. This value is subtracted from the raw LiDAR reading to compute the final standing height."
                                 />
-                                <div className="mt-5 flex flex-wrap gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={startMaintenance}
-                                        className="inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-black text-white transition hk-primary-hover"
-                                        style={{ backgroundColor: "var(--color-primary)" }}
-                                    >
-                                        <Clock size={17} />
-                                        Start Maintenance
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={cancelMaintenance}
-                                        disabled={!maintenanceActive}
-                                        className="inline-flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-45 hk-admin-nav-hover"
-                                        style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
-                                    >
-                                        Cancel Maintenance
-                                    </button>
-                                </div>
                             </article>
 
-                            <article className="rounded-[14px] border p-5" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
-                                <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--color-muted)" }}>
-                                    Current user-side restriction
-                                </p>
-                                <p className="mt-3 text-3xl font-black" style={{ color: maintenanceActive ? "var(--color-primary)" : "var(--color-success)" }}>
-                                    {maintenanceActive ? formatCountdown(maintenanceUntil - now) : "Available"}
-                                </p>
-                                <p className="mt-3 text-sm font-semibold leading-6" style={{ color: "var(--color-muted)" }}>
-                                    {maintenanceActive
-                                        ? "Users cannot access the kiosk until the countdown finishes. Admin can cancel this anytime."
-                                        : "The user-side kiosk is currently available."}
-                                </p>
-                            </article>
+                            <ToggleCard
+                                title="Floating Keyboard — Admin Side"
+                                description="Applies to the admin console (dashboard, users, reports, this settings screen). Turn off on a back-office desk that already has a real keyboard."
+                                enabled={settings.kioskKeyboardEnabledAdmin}
+                                onToggle={() => updateValue("kioskKeyboardEnabledAdmin", !settings.kioskKeyboardEnabledAdmin)}
+                            />
+
+                            <ToggleCard
+                                title="Floating Keyboard — User Side"
+                                description="Applies to the kiosk screens (login, register, measurements). Turn on for a touchscreen station with no physical keyboard attached."
+                                enabled={settings.kioskKeyboardEnabledUser}
+                                onToggle={() => updateValue("kioskKeyboardEnabledUser", !settings.kioskKeyboardEnabledUser)}
+                            />
                         </div>
+
+                        <SectionActions
+                            section={SECTIONS.kiosk}
+                            onSave={saveSection}
+                            onRestore={setPendingRestore}
+                            saving={savingSection === SECTIONS.kiosk.key}
+                        />
                     </SettingsSection>
-
-                    <section className="flex flex-col gap-5 rounded-[14px] border p-5 lg:flex-row lg:items-center lg:justify-between" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
-                        <div className="min-w-0">
-                            <p className="font-black">Settings apply after saving</p>
-                            <p className="mt-1 max-w-3xl text-sm font-semibold leading-6" style={{ color: "var(--color-muted)" }}>
-                                Updates affect health status, alert monitoring, reports, and kiosk maintenance behavior.
-                            </p>
-                        </div>
-                        <div className="flex shrink-0 flex-wrap items-center gap-3">
-                            <button
-                                type="button"
-                                onClick={restoreDefaults}
-                                className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-4 text-sm font-black transition hk-admin-nav-hover"
-                                style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
-                            >
-                                <RotateCcw size={17} />
-                                Restore Defaults
-                            </button>
-                            <button
-                                type="button"
-                                onClick={saveSettings}
-                                className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 text-sm font-black text-white transition hk-primary-hover"
-                                style={{ backgroundColor: "var(--color-primary)" }}
-                            >
-                                <Save size={17} />
-                                Save Settings
-                            </button>
-                        </div>
-                    </section>
                 </div>
             </AdminModulePage>
+
+            <ConfirmDialog
+                open={pendingRestore !== null}
+                title={`Restore ${(pendingRestore?.label || "these settings").toLowerCase()} to defaults?`}
+                message={
+                    pendingRestore
+                        ? `This replaces the current ${pendingRestore.label.toLowerCase()} with the shipped defaults and saves immediately. Readings are graded against these values, so the change takes effect straight away. Other sections are not affected.`
+                        : ""
+                }
+                confirmLabel="Restore Defaults"
+                cancelLabel="Cancel"
+                loading={savingSection !== null}
+                onConfirm={confirmRestore}
+                onCancel={() => setPendingRestore(null)}
+            />
         </AdminShell>
+    );
+}
+
+const SECTION_EASE = [0.16, 1, 0.3, 1];
+
+/**
+ * Explains how the three bands relate before the admin starts editing numbers.
+ * Without it the panels below are just pairs of inputs with no stated meaning —
+ * which is fine once you know the model and opaque until then.
+ */
+function ThresholdGuide() {
+    const bands = [
+        { tone: "alert", label: "Alert", detail: "Outside the safe band. Raises a health alert for clinic review." },
+        { tone: "normal", label: "Normal", detail: "Inside the expected range. No action needed." },
+        { tone: "watch", label: "Needs attention", detail: "Between normal and alert. Flagged but not escalated." },
+    ];
+
+    return (
+        <div
+            className="rounded-[1.25rem] border p-5"
+            style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
+        >
+            <div className="flex items-start gap-3">
+                <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 12%, transparent)", color: "var(--color-primary)" }}
+                >
+                    <Info size={17} />
+                </span>
+                <div className="min-w-0">
+                    <p className="text-sm font-black" style={{ color: "var(--color-text)" }}>How thresholds work</p>
+                    <p className="mt-1 text-xs font-medium leading-5" style={{ color: "var(--color-muted)" }}>
+                        Each measurement is sorted into one of three bands the moment it is saved. Set the
+                        boundaries below — every reading outside the normal range becomes an alert on the
+                        Health Alerts screen.
+                    </p>
+                </div>
+            </div>
+
+            {/* Visual band strip, so the ordering is obvious before reading. */}
+            <div className="mt-4 flex h-2 overflow-hidden rounded-full">
+                <span className="flex-1" style={{ backgroundColor: statusColor("alert") }} />
+                <span className="flex-[2]" style={{ backgroundColor: statusColor("normal") }} />
+                <span className="flex-1" style={{ backgroundColor: statusColor("alert") }} />
+            </div>
+
+            <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
+                {bands.map((band) => (
+                    <div key={band.label} className="flex items-start gap-2">
+                        <span
+                            aria-hidden="true"
+                            className="mt-1 h-2 w-2 shrink-0 rounded-full"
+                            style={{ backgroundColor: statusColor(band.tone) }}
+                        />
+                        <div className="min-w-0">
+                            <p className="text-xs font-black" style={{ color: statusColor(band.tone) }}>{band.label}</p>
+                            <p className="mt-0.5 text-[0.7rem] font-medium leading-4" style={{ color: "var(--color-muted)" }}>
+                                {band.detail}
+                            </p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+/** Save / restore pair belonging to one settings section. */
+function SectionActions({ section, onSave, onRestore, saving }) {
+    return (
+        <div
+            className="mt-6 flex flex-wrap items-center justify-end gap-3 border-t pt-5"
+            style={{ borderColor: "var(--color-border)" }}
+        >
+            <button
+                type="button"
+                onClick={() => onRestore(section)}
+                disabled={saving}
+                className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-4 text-sm font-black transition hk-admin-nav-hover disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
+            >
+                <RotateCcw size={17} />
+                Restore Defaults
+            </button>
+            <button
+                type="button"
+                onClick={() => onSave(section)}
+                disabled={saving}
+                className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 text-sm font-black transition hk-primary-hover disabled:cursor-not-allowed disabled:opacity-70"
+                style={{ backgroundColor: "var(--color-primary)", color: "var(--color-primary-content)" }}
+            >
+                <Save size={17} />
+                {saving ? "Saving..." : `Save ${section.label}`}
+            </button>
+        </div>
     );
 }
 
 function SettingsSection({ icon: Icon, title, description, children }) {
     return (
-        <section className="rounded-[14px] border p-6" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
-            <div className="flex items-start gap-4 border-b pb-5" style={{ borderColor: "var(--color-border)" }}>
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: "var(--color-surface)", color: "var(--color-primary)" }}>
+        <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.42, ease: SECTION_EASE }}
+            className="relative overflow-hidden rounded-[1.5rem] border p-6 hk-admin-card"
+            style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
+        >
+            {/* Quiet accent wash so each section reads as its own surface
+                rather than one more identical panel in a long column. */}
+            <span
+                aria-hidden="true"
+                className="pointer-events-none absolute -right-14 -top-20 h-44 w-44 rounded-full"
+                style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 70%)" }}
+            />
+
+            <div className="relative flex items-start gap-4 border-b pb-5" style={{ borderColor: "var(--color-border)" }}>
+                <div
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
+                    style={{
+                        backgroundColor: "color-mix(in srgb, var(--color-primary) 11%, transparent)",
+                        color: "var(--color-primary)",
+                    }}
+                >
                     <Icon size={22} />
                 </div>
-                <div>
-                    <h3 className="text-xl font-black">{title}</h3>
-                    <p className="mt-1 text-sm font-semibold leading-6" style={{ color: "var(--color-muted)" }}>{description}</p>
+                <div className="min-w-0">
+                    <h3 className="text-xl font-black tracking-tight">{title}</h3>
+                    <p className="mt-1 text-sm font-medium leading-6" style={{ color: "var(--color-muted)" }}>{description}</p>
                 </div>
             </div>
-            <div className="mt-6">{children}</div>
-        </section>
+            <div className="relative mt-6">{children}</div>
+        </motion.section>
     );
 }
 
 function ThresholdPanel({ icon: Icon, title, description, accent, children }) {
+    const tone = accentColor(accent);
+
     return (
-        <article className="flex h-full flex-col rounded-[14px] border p-5" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
-            <div className="flex items-start gap-4">
-                <Icon size={24} style={{ color: accentColor(accent) }} />
+        <motion.article
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.36, ease: SECTION_EASE }}
+            whileHover={{ y: -2 }}
+            className="relative flex h-full flex-col overflow-hidden rounded-[1.25rem] border p-5 transition-shadow"
+            style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
+        >
+            {/* Top edge in the panel's own accent — the fastest way to tell
+                these apart at a glance. */}
+            <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1" style={{ backgroundColor: tone }} />
+
+            <div className="flex items-start gap-3.5">
+                <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: `color-mix(in srgb, ${tone} 13%, transparent)`, color: tone }}
+                >
+                    <Icon size={20} />
+                </div>
                 <div className="min-w-0">
-                    <h4 className="text-lg font-black">{title}</h4>
-                    <p className="mt-1 text-sm font-semibold leading-6" style={{ color: "var(--color-muted)" }}>{description}</p>
+                    <h4 className="text-base font-black tracking-tight">{title}</h4>
+                    <p className="mt-1 text-sm font-medium leading-6" style={{ color: "var(--color-muted)" }}>{description}</p>
                 </div>
             </div>
             <div className="mt-6 flex flex-1 flex-col justify-end">{children}</div>
-        </article>
+        </motion.article>
     );
 }
 
+/**
+ * Rules now stack as one continuous list with hairline dividers instead of
+ * three separate bordered cards. Each rule reads on a single line — status,
+ * plain-English condition, then the input — so a panel can be scanned top to
+ * bottom rather than parsed card by card.
+ */
 function ThresholdRuleList({ children }) {
-    return <div className="space-y-3">{children}</div>;
+    return (
+        <div
+            className="divide-y overflow-hidden rounded-[1rem] border"
+            style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}
+        >
+            {children}
+        </div>
+    );
 }
 
 function ThresholdRuleInput({ status, operator, label, value, onChange, unit, tone = "watch" }) {
+    const color = statusColor(tone);
+
     return (
-        <div className="rounded-[12px] border p-4" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <StatusPill label={status} tone={tone} />
-                <span className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--color-muted)" }}>
-                    {label} {operator} {value} {unit}
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3.5" style={{ borderColor: "var(--color-border)" }}>
+            <span className="flex min-w-0 flex-1 items-center gap-2.5">
+                <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                <span className="truncate text-xs font-black uppercase tracking-[0.1em]" style={{ color }}>
+                    {status}
                 </span>
-            </div>
-            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
-                <span className="flex h-11 min-w-11 items-center justify-center rounded-xl border px-3 text-sm font-black" style={{ borderColor: "var(--color-border)", color: statusColor(tone) }}>
+                <span className="truncate text-xs font-semibold" style={{ color: "var(--color-muted)" }}>
+                    {label.toLowerCase()}
+                </span>
+            </span>
+
+            <span className="flex shrink-0 items-center gap-2">
+                <span
+                    className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black"
+                    style={{ backgroundColor: `color-mix(in srgb, ${color} 12%, transparent)`, color }}
+                >
                     {operator}
                 </span>
                 <input
                     type="number"
                     value={value}
+                    placeholder="0"
+                    aria-label={`${status} threshold: ${label} ${operator}`}
                     onChange={(event) => onChange(event.target.value)}
-                    className="h-11 w-full rounded-xl border px-4 text-sm font-black outline-none"
+                    className="h-10 w-24 rounded-xl border px-3 text-sm font-black tabular-nums outline-none transition focus:ring-2"
                     style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-text)" }}
                 />
-                <span className="text-sm font-black" style={{ color: "var(--color-muted)" }}>{unit}</span>
-            </div>
+                <span className="w-8 text-xs font-black" style={{ color: "var(--color-muted)" }}>{unit}</span>
+            </span>
         </div>
     );
 }
 
 function ThresholdRangeInput({ status, from, to, onFromChange, onToChange, unit }) {
+    const color = statusColor("normal");
+
     return (
-        <div className="rounded-[12px] border p-4" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <StatusPill label={status} tone="normal" />
-                <span className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--color-muted)" }}>
-                    {from} to {to} {unit}
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3.5" style={{ borderColor: "var(--color-border)" }}>
+            <span className="flex min-w-0 flex-1 items-center gap-2.5">
+                <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                <span className="truncate text-xs font-black uppercase tracking-[0.1em]" style={{ color }}>
+                    {status}
                 </span>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] sm:items-center">
-                <NumberField label="From" value={from} onChange={onFromChange} />
-                <span className="hidden text-xs font-black uppercase tracking-[0.14em] sm:block" style={{ color: "var(--color-muted)" }}>to</span>
-                <NumberField label="To" value={to} onChange={onToChange} />
-                <span className="text-sm font-black" style={{ color: "var(--color-muted)" }}>{unit}</span>
-            </div>
+                <span className="truncate text-xs font-semibold" style={{ color: "var(--color-muted)" }}>
+                    between
+                </span>
+            </span>
+
+            <span className="flex shrink-0 items-center gap-2">
+                <NumberField value={from} onChange={onFromChange} ariaLabel={`${status} range from`} />
+                <span className="text-xs font-black" style={{ color: "var(--color-muted)" }}>to</span>
+                <NumberField value={to} onChange={onToChange} ariaLabel={`${status} range to`} />
+                <span className="w-8 text-xs font-black" style={{ color: "var(--color-muted)" }}>{unit}</span>
+            </span>
         </div>
     );
 }
 
-function NumberField({ label, value, onChange }) {
+function NumberField({ value, onChange, ariaLabel }) {
     return (
-        <label className="block">
-            <span className="text-[0.65rem] font-black uppercase tracking-[0.14em]" style={{ color: "var(--color-muted)" }}>{label}</span>
-            <input
-                type="number"
-                value={value}
-                onChange={(event) => onChange(event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border px-4 text-sm font-black outline-none"
-                style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-text)" }}
-            />
-        </label>
+        <input
+            type="number"
+            value={value}
+            placeholder="0"
+            aria-label={ariaLabel}
+            onChange={(event) => onChange(event.target.value)}
+            className="h-10 w-20 rounded-xl border px-3 text-sm font-black tabular-nums outline-none transition focus:ring-2"
+            style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-text)" }}
+        />
     );
 }
 
 function ThresholdHint({ text }) {
     return (
-        <p className="rounded-[12px] border px-4 py-3 text-xs font-bold leading-5" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-muted)" }}>
+        <p
+            className="mt-3 flex items-start gap-2 rounded-[1rem] px-4 py-3 text-xs font-semibold leading-5"
+            style={{ backgroundColor: "var(--color-card)", color: "var(--color-muted)" }}
+        >
+            <Info size={14} className="mt-0.5 shrink-0" style={{ color: "var(--color-primary)" }} />
             {text}
         </p>
     );
 }
 
-function StatusPill({ label, tone }) {
+/** The same on/off switch card used for both keyboard toggles (and matches
+ * the "Enable Alerts" toggle above) - only the label, copy, and the value it
+ * reads/flips differ. */
+function ToggleCard({ title, description, enabled, onToggle }) {
     return (
-        <span className="rounded-full px-3 py-1 text-xs font-black" style={{ backgroundColor: `color-mix(in srgb, ${statusColor(tone)} 14%, transparent)`, color: statusColor(tone) }}>
-            {label}
-        </span>
+        <article className="flex min-h-[190px] rounded-[1.25rem] border p-5" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
+            <div className="flex items-center justify-between gap-4">
+                <div>
+                    <p className="font-black">{title}</p>
+                    <p className="mt-1 text-sm font-semibold leading-6" style={{ color: "var(--color-muted)" }}>
+                        {description}
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    onClick={onToggle}
+                    className="relative h-8 w-14 shrink-0 rounded-full border transition"
+                    style={{
+                        backgroundColor: enabled ? "var(--color-primary)" : "var(--color-border)",
+                        borderColor: "var(--color-border)",
+                    }}
+                    aria-label={enabled ? `Turn off ${title}` : `Turn on ${title}`}
+                >
+                    <span
+                        className="absolute top-1 h-6 w-6 rounded-full bg-white transition"
+                        style={{ left: enabled ? "1.75rem" : "0.25rem" }}
+                    />
+                </button>
+            </div>
+        </article>
     );
 }
 
@@ -500,13 +710,4 @@ function accentColor(accent) {
     if (accent === "spo2") return "var(--color-success)";
     if (accent === "bmi") return "#a78bfa";
     return "var(--color-primary)";
-}
-
-function formatCountdown(milliseconds) {
-    const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }

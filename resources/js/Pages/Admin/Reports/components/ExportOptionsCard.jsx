@@ -5,8 +5,8 @@ import SectionHeader from "./SectionHeader";
 
 export default function ExportOptionsCard() {
     return (
-        <section className="rounded-[14px] border p-5 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
-            <SectionHeader eyebrow="Export" title="Export options" description="Prepare demo outputs for PDF, Excel, and print preview." />
+        <section className="rounded-[1.25rem] border p-5 hk-admin-card" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+            <SectionHeader eyebrow="Export" title="Export options" description="Prepare outputs for PDF, Excel, and print preview." />
             <div className="mt-4 grid gap-3">
                 <ExportPDFButton />
                 <ExportExcelButton />

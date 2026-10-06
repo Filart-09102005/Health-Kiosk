@@ -1,0 +1,298 @@
+# ALPHA TESTING - COMPANION MOBILE APP
+
+**System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+**Test Type:** Alpha Testing (Internal)
+**Scope:** Android companion application (SMCBI VitalSync)
+**Build under test:** app-arm64-v8a-release.apk, Expo SDK 54, package com.hansieee.smcbihealthkioskmobile
+**Pre-Condition:** Login & Registration, User-Side and Admin-Side alpha testing completed and cleared.
+
+**Status:** FINALIZED - the question set is closed. Revisions from here on need a new version.
+
+**Tester Name:** ______________________  **Testing Date:** ______________  **Testing Time:** __________
+
+Questions are numbered **Q1-Q62 in final testing order**. Each section of the Alpha Testing keeps its
+own numbering, so a question is identified by its section and number together.
+
+Admin-side coverage of the companion app lives in **Admin-Side TC-11 (Q63-Q68)** - sign-in, the
+reading appearing, the manual sync, deletion revoking access and offline creation - and is
+deliberately not repeated here. This document covers behaviour inside the app.
+
+The test cases follow the app from top to bottom, and every test case begins by navigating to its
+screen, so the run never jumps between screens without saying so.
+
+> Mark the result for every step performed, and write anything unusual under **Comment**.
+> Use **Additional Test / Observation** for anything the predefined steps do not cover.
+> A step that was not actually run must be left blank.
+
+---
+
+## Known and already logged - do not raise these as new defects
+
+| Item | Detail |
+| --- | --- |
+| Notification says ALERT for a Watch record | Fixed in the Edge Function on 2026-08-18, but it only takes effect once `send-measurement-push` is redeployed. The kiosk itself already reports Watch as Watch. |
+| Deleting a student leaves the `public.users` row | 42501 / HTTP 403. `GRANT DELETE ON public.users TO service_role` is the fix; confirm it has been applied before testing deletion. |
+| Older records show "NOT REVIEWED" | Records synced before `measurement_statuses` existed carry no verdict. Unknown is not the same as healthy, so this is correct. It is not permanent - a re-sync backfills the verdict. |
+| Flagged count lower than the old "Warning Records" | The old count treated Watch and Incomplete as warnings against hardcoded thresholds. It now reads the clinic's verdicts. Lower is the fix working. |
+| Push does not work in Expo Go | Removed from Expo Go on Android in SDK 53. Test push on the APK only. |
+
+---
+
+### TC-1 - Sign-in and account lockout
+- **Actor:** Student
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies authentication, the enumeration-safe error message and the escalating lockout ladder. Start signed out. The lockout persists to device storage, so clear app data between runs to reset it.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q1 | 1 | Launch the app while signed out | Fresh install | Display the login screen with the logo, Email, Password, Sign In and “SMCBI Health Systems” | | | | |
+| Q2 | 2 | Tap Sign In with both fields empty | None | Display “Missing Fields — Please enter your email and password” and make no network call | | | | |
+| Q3 | 3 | Enter an invalid email and any password, then tap Sign In | notanemail | Display “Check your email — That does not look like a valid email address”, and do not count the attempt | | | | |
+| Q4 | 4 | Try a non-existent email with any password, then a real email with a wrong password | nobody@smcbi.edu.ph, then a real account | Refuse both with exactly the same wording — “Sign in failed / Incorrect email or password.” A difference between the two would tell an outsider which accounts exist | | | | |
+| Q5 | 5 | Look at the password field after a failed attempt | None | Clear the password field | | | | |
+| Q6 | 6 | Fail sign-in a fourth time, then a fifth | 5 failures in total | Warn “1 attempt remaining before sign-in is paused” on the fourth, then lock on the fifth with “Too many attempts” and a button reading “Locked · 30s” | | | | |
+| Q7 | 7 | While locked, look at the Sign In button, then force-quit from recents and reopen | During the countdown | Show the countdown on the button, do nothing when it is tapped, and after reopening still be locked with the countdown resumed at the correct remaining time | | | | |
+| Q8 | 8 | Wait for the countdown to reach zero | None | Return the button to “Sign In” and reset the attempts to five | | | | |
+| Q9 | 9 | Fail five more times after that first lockout | Second round | Lock for 60 seconds, not 30 — the ladder runs 30, 60, 300, 900 | | | | |
+| Q10 | 10 | Sign in with correct credentials | A real account | Show the loading state, open Home, and clear the lockout counter completely | | | | |
+
+**Overall Comment - TC-1:**
+
+---
+
+### TC-2 - Session persistence
+- **Actor:** Student
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies that the session survives a restart. Start signed in, then close the app from recents.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q11 | 1 | Force-quit the app by swiping from recents, then reopen | None | Open on Home, still signed in, with no login screen | | | | |
+
+**Overall Comment - TC-2:**
+
+---
+
+### TC-3 - Home screen
+- **Actor:** Student
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies the latest summary, the live poll and the empty state. Start at the Home tab, signed in with at least one health record.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q12 | 1 | Tap the Home tab | Signed in | Display Home, showing a skeleton briefly and then the content | | | | |
+| Q13 | 2 | Inspect the header | None | Display the avatar with initials, the greeting, the full name and the theme toggle | | | | |
+| Q14 | 3 | Inspect the Latest Health Summary card and its metric tiles | An account with records | Display “Health Status”, the date of the record and a status pill, above six tiles: Height in cm, Weight in kg, BMI, Heart Rate in bpm, SpO2 in %, Temperature in °C | | | | |
+| Q15 | 4 | Check a metric that has no reading | A record missing a value | Display “--” rather than 0 or a blank | | | | |
+| Q16 | 5 | Take a kiosk measurement with Home open and visible | Kiosk plus the app in the foreground | Show the new reading within about five seconds, with no skeleton flash and no spinner | | | | |
+| Q17 | 6 | Sign in on an account with no records at all | An empty account | Display “No latest summary yet” with a Refresh Data button | | | | |
+
+**Overall Comment - TC-3:**
+
+---
+
+### TC-4 - Records screen
+- **Actor:** Student
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies the timeline, the grouping, the verdicts and the stat tiles. Start at the Records tab, signed in with records across more than one month.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q18 | 1 | Tap the Records tab | Signed in | Display Records, showing a skeleton and then the content | | | | |
+| Q19 | 2 | Inspect the hero card | None | Display “LATEST RESULT” with NORMAL, WATCH, ALERT or NOT REVIEWED, a coloured accent bar, the total number of checks and the last-checked date | | | | |
+| Q20 | 3 | Compare the hero verdict against the same record in the kiosk admin panel | A known record | Match the clinic's verdict exactly; the app must never work out a verdict of its own | | | | |
+| Q21 | 4 | Inspect the three stat tiles | None | Display This month, Flagged and Reviewed, all numeric | | | | |
+| Q22 | 5 | Tap the “Group by” picker | None | Open a bottom sheet offering Monthly, Weekly, School Year and All, one per row, each with a count | | | | |
+| Q23 | 6 | Select “School Year” | None | Close the sheet, relabel the groups as SY 2026–2027, and show the selection on the trigger | | | | |
+| Q24 | 7 | Inspect one record row | An expanded group | Display the verdict dot, the date and time, the status badge and six readouts: Temperature, Heart Rate, SpO2, Height, Weight and BMI | | | | |
+
+**Overall Comment - TC-4:**
+
+---
+
+### TC-5 - Reading detail
+- **Actor:** Student
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies the reading detail screen and its back behaviour. Start on Records with a group expanded.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q25 | 1 | Tap “View details” on a record | An expanded group | Open the detail screen for that record | | | | |
+| Q26 | 2 | Press the Android back button | On the detail screen | Return to Records with the same group still expanded | | | | |
+
+**Overall Comment - TC-5:**
+
+---
+
+### TC-6 - Insights: overall status and donuts
+- **Actor:** Student
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies the donuts, their interaction and the honesty of their denominators. Start at the Insights tab, signed in with reviewed records.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q27 | 1 | Tap the Insights tab | Signed in | Display Insights, showing a skeleton and then the content | | | | |
+| Q28 | 2 | Inspect the header | None | Display the avatar, “HEALTH PROGRESS”, the name and the theme toggle on the right | | | | |
+| Q29 | 3 | Inspect Overall Status | None | Display “LATEST CHECK” with a coloured pill reading NORMAL, WATCH, ALERT or NOT REVIEWED | | | | |
+| Q30 | 4 | Inspect the Overall Status donut legend | None | List only NORMAL, WATCH and ALERT, with no “not reviewed” slice, since an unreviewed record is a gap in the data rather than an outcome | | | | |
+| Q31 | 5 | Tap a legend row instead of the ring | None | Behave exactly as tapping the ring does | | | | |
+| Q32 | 6 | Inspect “What Gets Flagged” | An account with flags | Display the distribution of flags by metric with percentages, and name the most common | | | | |
+
+**Overall Comment - TC-6:**
+
+---
+
+### TC-7 - Insights: period picker
+- **Actor:** Student
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies the period sheet, its layout, its counts and its default state. Start on the Insights tab.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q33 | 1 | Tap the “Showing” picker and inspect the layout | None | Open the “Choose a period” sheet with This Week full width at the top, then January to December, one per row and each full width | | | | |
+| Q34 | 2 | Inspect the counts on each row | None | Show the number of checks on each row, dimming months with none and marking them with a dash | | | | |
+| Q35 | 3 | Select a month, dismiss the sheet, then reopen it | For example August | Show that month active and This Week inactive, and open already scrolled to the active row so it does not have to be hunted for | | | | |
+
+**Overall Comment - TC-7:**
+
+---
+
+### TC-8 - Insights: trend charts and insufficient data
+- **Actor:** Student
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies the charts, tap-to-inspect and every low-data state. Start on the Insights tab. This is the area the app is most likely to surprise a tester.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q36 | 1 | Scroll to “Vitals Over Time” | On Insights | Display three stacked full-width charts: Heart Rate, Body Temperature and Oxygen (SpO2) | | | | |
+| Q37 | 2 | Scroll to “Height, Weight & BMI” | None | Display three more stacked charts | | | | |
+| Q38 | 3 | Inspect one chart that has data | A period with two or more days of readings | Show the value axis down the left, a caption naming the axis, and a change badge | | | | |
+| Q39 | 4 | Check for overlapping content on any chart | None | Keep the axis labels, plot, caption and footer separate and readable | | | | |
+| Q40 | 5 | Tap a point on the line | A chart with data | Show a detail panel above the chart with the value, the full date and the clinic's verdict, and enlarge the point | | | | |
+| Q41 | 6 | Tap a different point | Detail panel open | Switch the panel to the new reading | | | | |
+| Q42 | 7 | Select a period with no readings at all | An empty month | State “No readings this period” and name the month, with no axis and no lone dot | | | | |
+| Q43 | 8 | Select a period with more readings than the chart can fit | Ten or more separate days | Caption the chart with how many of the total are being shown | | | | |
+
+**Overall Comment - TC-8:**
+
+---
+
+### TC-9 - Profile and sign-out
+- **Actor:** Student
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies the profile fields, the department filtering and signing out. Start at the Profile tab.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q44 | 1 | Tap the Profile tab | Signed in | Display Profile, showing a skeleton and then the content | | | | |
+| Q45 | 2 | Inspect the header | None | Display a large avatar, the full name, a role pill and an Active or Inactive pill | | | | |
+| Q46 | 3 | Inspect Personal Details | None | Display the ID, email, age and gender, hiding empty fields rather than showing blank rows | | | | |
+| Q47 | 4 | Inspect Academic Information on a Basic Education student | A student whose department is BED | Show Grade Level and Strand, and hide Year Level and Course | | | | |
+| Q48 | 5 | Inspect Academic Information on a College student | A student whose department is COLLEGE | Show Year Level and Course, and hide Grade Level and Strand | | | | |
+| Q49 | 6 | Tap Logout | None | Ask for confirmation with a Sign out and a Stay option | | | | |
+| Q50 | 7 | Tap “Stay” | Confirmation open | Close the dialog and remain signed in | | | | |
+| Q51 | 8 | Tap Logout, then “Sign out” | None | Return to the login screen within about one to two seconds | | | | |
+
+**Overall Comment - TC-9:**
+
+---
+
+### TC-10 - Offline behaviour and error handling
+- **Actor:** Student
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies that the app tells a failed request apart from an account with no data. Start on Insights with the data loaded.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q52 | 1 | Open Insights with the data loaded, then turn on airplane mode | Airplane mode on | Keep the existing content on screen | | | | |
+| Q53 | 2 | Pull to refresh while offline | Airplane mode on | Show a skeleton and then an error card reading “Couldn't load your insights” with a Try Again button, never looking like an empty account | | | | |
+| Q54 | 3 | Tap “Try Again” while still offline | Airplane mode on | Show the skeleton and then the error card again, without crashing | | | | |
+| Q55 | 4 | Turn off airplane mode, then tap “Try Again” | Back online | Load the data and remove the error card | | | | |
+| Q56 | 5 | Force-quit, then cold-start the app fully offline | Airplane mode on | Open signed in, since the session is held on the device, and show the error state rather than the login screen | | | | |
+
+**Overall Comment - TC-10:**
+
+---
+
+### TC-11 - Push notifications
+- **Actor:** Student
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies delivery in each app state. Use the APK, not Expo Go, with notification permission granted and send-measurement-push redeployed. Close the app by swiping from recents — Force stop makes Android block delivery by design.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q57 | 1 | Complete a kiosk measurement with the app open | A Normal result | Deliver a notification reading “Measurement Complete • Status: NORMAL” | | | | |
+| Q58 | 2 | Repeat with the screen locked | None | Show the notification on the lock screen | | | | |
+| Q59 | 3 | Tap a notification while the app is closed | None | Open the app on the Records tab | | | | |
+
+**Overall Comment - TC-11:**
+
+---
+
+### TC-12 - Navigation, theme and motion
+- **Actor:** Student
+- **Testing Date:**
+- **Testing Time:**
+- **Short Description:** Verifies tab navigation, theming and reduce-motion. Start signed in on any tab.
+
+| Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q60 | 1 | Inspect the bottom navigation | Signed in | Show four tabs: Home, Records, Insights and Profile — three means an old build | | | | |
+| Q61 | 2 | Tap each tab in turn | None | Slide the indicator between tabs and label the active one | | | | |
+| Q62 | 3 | Tap the theme toggle on Home | None | Switch the whole app in one smooth cross-fade, with no white or black flash | | | | |
+
+**Overall Comment - TC-12:**
+
+---
+
+# COMPANION APP - OVERALL ALPHA TEST SUMMARY
+
+**Tester Name:** ______________________
+**Testing Date:** ______________________
+**Testing Time:** ______________________
+
+| Test Case | Description | Status | Passed | Failed | Comments |
+| --- | --- | --- | ---: | ---: | ---: |
+| TC-1 | Sign-in and account lockout | | | | |
+| TC-2 | Session persistence | | | | |
+| TC-3 | Home screen | | | | |
+| TC-4 | Records screen | | | | |
+| TC-5 | Reading detail | | | | |
+| TC-6 | Insights: overall status and donuts | | | | |
+| TC-7 | Insights: period picker | | | | |
+| TC-8 | Insights: trend charts and insufficient data | | | | |
+| TC-9 | Profile and sign-out | | | | |
+| TC-10 | Offline behaviour and error handling | | | | |
+| TC-11 | Push notifications | | | | |
+| TC-12 | Navigation, theme and motion | | | | |
+| | **TOTAL (62 questions)** | | | | |
+
+**Defects Found**
+
+| No. | Q | Test Case | Description of the Problem | Severity | Action Taken | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | | | | | | |
+| 2 | | | | | | |
+| 3 | | | | | | |
+| 4 | | | | | | |
+| 5 | | | | | | |
+
+**Post-Condition:**
+
+
+**Executed by:**
+-
+
+**Checked by:**
+-

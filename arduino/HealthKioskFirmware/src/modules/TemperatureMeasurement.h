@@ -20,14 +20,17 @@ namespace Modules {
     class TemperatureMeasurement {
     private:
         HAL::HALTemperature* _hal;
+        unsigned long _startTime;
+        unsigned long _lastSampleTime;
+        
         MeasureState _state;
         Models::MeasurementResult _result;
         
-        unsigned long _startTime;
         Utils::CircularBuffer<float, Config::Profiles::TEMP_SAMPLE_COUNT> _buffer;
         
         float _currentEMA;
-        unsigned int _stableCount;
+        unsigned long _stableSince;
+        unsigned long _countdownStart;
 
     public:
         TemperatureMeasurement(HAL::HALTemperature* hal);

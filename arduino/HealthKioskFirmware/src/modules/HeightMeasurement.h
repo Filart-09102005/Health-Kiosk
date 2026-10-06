@@ -16,14 +16,17 @@ namespace Modules {
     class HeightMeasurement {
     private:
         HAL::HALHeight* _hal;
+        unsigned long _startTime;
+        unsigned long _lastSampleTime;
+        
         MeasureState _state;
         Models::MeasurementResult _result;
         
-        unsigned long _startTime;
         Utils::CircularBuffer<float, Config::Profiles::HEIGHT_SAMPLE_COUNT> _buffer;
         
         float _currentEMA;
         unsigned int _stableCount;
+        unsigned long _countdownStart;
 
     public:
         HeightMeasurement(HAL::HALHeight* hal);

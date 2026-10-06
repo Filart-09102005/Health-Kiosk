@@ -2,7 +2,7 @@ import SectionHeader from "./SectionHeader";
 
 export default function AlertResponseChart() {
     return (
-        <div className="rounded-[14px] border p-5" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <div className="rounded-[1.25rem] border p-5" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <SectionHeader title="Response target" description="Clinic response SLA performance." />
             <div className="mt-5 flex items-center justify-center">
                 <div className="relative flex h-36 w-36 items-center justify-center rounded-full" style={{ background: "conic-gradient(var(--color-success) 0 78%, var(--color-surface) 78% 100%)" }}>

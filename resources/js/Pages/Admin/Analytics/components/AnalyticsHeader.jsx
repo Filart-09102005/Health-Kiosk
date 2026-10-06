@@ -9,7 +9,7 @@ export default function AnalyticsHeader() {
             </nav>
             <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex items-start gap-4">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl text-white" style={{ backgroundColor: "var(--color-primary)" }}><BarChart3 size={22} /></span>
+                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl" style={{ backgroundColor: "var(--color-primary)", color: "var(--color-primary-content)" }}><BarChart3 size={22} /></span>
                     <div>
                         <h2 className="text-xl font-black sm:text-2xl">Data Analytics</h2>
                         <p className="mt-1 max-w-2xl text-sm leading-6" style={{ color: "var(--color-muted)" }}>

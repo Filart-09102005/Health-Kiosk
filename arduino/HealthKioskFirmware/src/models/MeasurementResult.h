@@ -36,8 +36,8 @@ namespace Models {
         
         QualityFlags flags;
         
-        // For multi-value sensors like Heart Rate + SpO2
-        float secondaryValue = 0.0f; 
+        // For multi-value sensors
+        float secondaryValue = 0.0f;
 
         bool isValid() const {
             return error == ErrorCode::OK;

@@ -30,6 +30,29 @@ class KioskSessionController extends Controller
             $query->where('status', $status);
         }
 
-        return KioskSessionResource::collection($query->paginate(min($request->integer('per_page', 15), 100)));
+        $today = now()->startOfDay();
+
+        $metrics = [
+            'total_today' => KioskSession::whereHas('user', fn ($userQuery) => $userQuery->where('role', '!=', 'admin'))
+                ->whereDate('started_at', $today)->count(),
+            'completed_today' => KioskSession::whereHas('user', fn ($userQuery) => $userQuery->where('role', '!=', 'admin'))
+                ->whereDate('started_at', $today)->where('status', 'completed')->count(),
+            'incomplete_today' => KioskSession::whereHas('user', fn ($userQuery) => $userQuery->where('role', '!=', 'admin'))
+                ->whereDate('started_at', $today)->where('status', '!=', 'completed')->count(),
+        ];
+
+        $completedSessionsToday = KioskSession::whereHas('user', fn ($userQuery) => $userQuery->where('role', '!=', 'admin'))
+            ->whereDate('started_at', $today)
+            ->where('status', 'completed')
+            ->whereNotNull('ended_at')
+            ->get();
+
+        $totalMinutes = $completedSessionsToday->sum(fn ($session) => $session->started_at->diffInMinutes($session->ended_at));
+        $metrics['avg_duration_today'] = $completedSessionsToday->count() > 0 
+            ? round($totalMinutes / $completedSessionsToday->count()) . ' min'
+            : '0 min';
+
+        return KioskSessionResource::collection($query->paginate(min($request->integer('per_page', 15), 100)))
+            ->additional(['metrics' => $metrics]);
     }
 }

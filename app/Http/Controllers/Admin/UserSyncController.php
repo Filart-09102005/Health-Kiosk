@@ -20,6 +20,18 @@ class UserSyncController extends Controller
         ]);
 
         try {
+            // Pressing this button means "make the cloud match what is here", so
+            // it re-pushes everything rather than trusting the local flags. Left
+            // to those flags, rows deleted in the Supabase dashboard were skipped
+            // and the admin was told the sync had completed with nothing to do.
+            $usersMarked = SupabaseUserSyncService::markAllPending();
+            $recordsMarked = SupabaseHealthRecordSyncService::markAllPending();
+
+            Log::info('Manual sync marked rows for re-upload.', [
+                'users' => $usersMarked,
+                'health_records' => $recordsMarked,
+            ]);
+
             $userResult = $userSyncService->syncUsers();
             $healthRecordResult = $healthRecordSyncService->syncHealthRecords();
 
@@ -64,6 +76,9 @@ class UserSyncController extends Controller
         return response()->json([
             'success' => $failedCount === 0,
             'message' => $failedCount === 0 ? 'Cloud sync completed successfully.' : 'Cloud sync completed with issues.',
+            // Everything is re-sent, so the client can say what the cloud now
+            // holds instead of only what changed.
+            'full_resync' => true,
             'synced_count' => $syncedCount,
             'failed_count' => $failedCount,
             'errors' => array_slice($errors, 0, 5),
@@ -71,6 +86,7 @@ class UserSyncController extends Controller
                 'synced_count' => $userResult['synced_count'] ?? 0,
                 'failed_count' => $userResult['failed_count'] ?? 0,
                 'errors' => $userResult['errors'] ?? [],
+                'synced_names' => $userResult['synced_names'] ?? [],
             ],
             'health_records' => [
                 'synced_count' => $healthRecordResult['synced_count'] ?? 0,

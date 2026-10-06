@@ -407,17 +407,6 @@ function AlertModal({ alert, onAcknowledge, onDismiss, onGoToAlerts, onViewHealt
                         </p>
                     )}
 
-                    {/* Acknowledge — full width primary */}
-                    <button
-                        type="button"
-                        id={`alert-acknowledge-${alert.id}`}
-                        onClick={onAcknowledge}
-                        className="mb-2 flex w-full items-center justify-center gap-2 py-2.5 text-sm font-black text-white transition hk-primary-hover"
-                        style={{ backgroundColor: "var(--color-primary)", borderRadius: "8px" }}
-                    >
-                        <CheckCircle2 size={15} />
-                        Acknowledge Alert
-                    </button>
 
                     {/* Go to Alerts + Health Record — 2-col */}
                     <div className="mb-2 grid grid-cols-2 gap-2">
@@ -549,6 +538,7 @@ export default function GlobalAlertModal({ navigate }) {
 
         try {
             await authService.acknowledgeAlert(currentAlert.id);
+            window.dispatchEvent(new Event('refresh-alert-count'));
         } catch {
             // Even if the request fails, remove from UI so we don't loop
         } finally {

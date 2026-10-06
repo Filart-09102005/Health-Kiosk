@@ -34,12 +34,12 @@ namespace SerialComm {
 
     CommandType CommandParser::parseString(const char* cmdString) {
         if (strcmp(cmdString, "PING") == 0) return CommandType::CMD_PING;
+        if (strcmp(cmdString, "STOP") == 0) return CommandType::CMD_STOP;
         if (strcmp(cmdString, "SELF_TEST") == 0) return CommandType::SELF_TEST;
         if (strcmp(cmdString, "GET_DIAGNOSTICS") == 0) return CommandType::GET_DIAGNOSTICS;
         if (strcmp(cmdString, "START_TEMPERATURE") == 0) return CommandType::START_TEMPERATURE;
         if (strcmp(cmdString, "START_WEIGHT") == 0) return CommandType::START_WEIGHT;
         if (strcmp(cmdString, "START_HEIGHT") == 0) return CommandType::START_HEIGHT;
-        if (strcmp(cmdString, "START_HEART") == 0) return CommandType::START_HEART;
         if (strcmp(cmdString, "START_ALL") == 0) return CommandType::START_ALL;
         if (strcmp(cmdString, "ENTER_CALIBRATION") == 0) return CommandType::ENTER_CALIBRATION;
         if (strcmp(cmdString, "GET_VERSION") == 0) return CommandType::GET_VERSION;

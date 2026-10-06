@@ -10,6 +10,7 @@ export default function VerifyEmail({ navigate }) {
     const params = new URLSearchParams(window.location.search);
     const verified = params.get("verified") === "1";
     const sent = params.get("sent") === "1";
+    const expired = params.get("expired") === "1";
     const [email, setEmail] = useState(params.get("email") || "");
     const [resending, setResending] = useState(false);
 
@@ -53,7 +54,7 @@ export default function VerifyEmail({ navigate }) {
             </div>
 
             <section className="mx-auto mt-10 max-w-4xl rounded-[2rem] border p-8 text-center shadow-2xl md:p-12" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
-                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.75rem] text-white" style={{ backgroundColor: verified ? "var(--color-success)" : "var(--color-primary)" }}>
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.75rem]" style={{ backgroundColor: verified ? "var(--color-success)" : "var(--color-primary)", color: verified ? "var(--color-success-content)" : "var(--color-primary-content)" }}>
                     {verified ? <CheckCircle2 size={38} /> : <MailCheck size={38} />}
                 </div>
 
@@ -61,22 +62,24 @@ export default function VerifyEmail({ navigate }) {
                     Health Kiosk Verification
                 </p>
                 <h1 className="mt-3 text-4xl font-black">
-                    {verified ? "Email verified successfully" : "Check your email"}
+                    {verified ? "Email verified successfully" : expired ? "Verification Link Expired" : "Check your email"}
                 </h1>
                 <p className="mx-auto mt-4 max-w-2xl leading-7" style={{ color: "var(--color-muted)" }}>
                     {verified
                         ? "Your account is active. You will be redirected to login in a few seconds."
-                        : sent
-                          ? "We queued your verification email. Open the link in your inbox before logging in."
-                          : "Use the verification link sent to your email address to activate your account."}
+                        : expired 
+                          ? "The verification link you clicked has expired or is invalid. Please enter your email below to request a new one."
+                          : sent
+                            ? "We queued your verification email. Open the link in your inbox before logging in."
+                            : "Use the verification link sent to your email address to activate your account."}
                 </p>
 
                 <div className="mt-8 flex flex-wrap justify-center gap-3">
                     <button
                         type="button"
                         onClick={() => navigate("/login")}
-                        className="rounded-2xl px-5 py-3 font-bold text-white transition hover:-translate-y-0.5"
-                        style={{ backgroundColor: "var(--color-primary)" }}
+                        className="rounded-2xl px-5 py-3 font-bold transition hover:-translate-y-0.5"
+                        style={{ backgroundColor: "var(--color-primary)", color: "var(--color-primary-content)" }}
                     >
                         Go to Login
                     </button>
@@ -106,8 +109,8 @@ export default function VerifyEmail({ navigate }) {
                         />
                         <button
                             type="submit"
-                            className="rounded-2xl px-5 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5"
-                            style={{ backgroundColor: "var(--color-success)" }}
+                            className="rounded-2xl px-5 py-3 text-sm font-bold transition hover:-translate-y-0.5"
+                            style={{ backgroundColor: "var(--color-success)", color: "var(--color-success-content)" }}
                         >
                             Resend Link
                         </button>

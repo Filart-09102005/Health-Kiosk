@@ -21,10 +21,20 @@ namespace Calibration {
     constexpr float DEFAULT_WEIGHT_OFFSET = 0.0f;
     
     // Default MLX90614 Temperature offset (if needed for human body core estimation)
-    constexpr float DEFAULT_TEMP_OFFSET = 1.5f; 
+    constexpr float DEFAULT_TEMP_OFFSET = 2.0f;
+
+    // Detection/acceptance window for a raw MLX90614 object-temperature
+    // reading. Deliberately wide — the firmware no longer decides what's
+    // "medically plausible"; it just has to reject total sensor noise
+    // (e.g. a stray negative reading) while accepting anything a person
+    // could realistically point it at, including a high fever. The admin
+    // Settings > Health Thresholds panel (backend AdminSettings) is what
+    // actually classifies a saved reading as Normal/Watch/Alert.
+    constexpr float TEMP_DETECT_MIN_C = 0.0f;
+    constexpr float TEMP_DETECT_MAX_C = 100.0f;
     
     // Height baseline (distance from sensor to floor in cm)
-    constexpr float SENSOR_HEIGHT_FROM_FLOOR_CM = 200.0f;
+    constexpr float SENSOR_HEIGHT_FROM_FLOOR_CM = 214.0f;
 
 } // namespace Calibration
 } // namespace Config

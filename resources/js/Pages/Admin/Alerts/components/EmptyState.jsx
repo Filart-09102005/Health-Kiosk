@@ -6,10 +6,10 @@ export default function EmptyState({ title = "No alerts found", description = "T
         <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex min-h-[22rem] flex-col items-center justify-center rounded-[14px] border p-8 text-center shadow-xl"
+            className="flex min-h-[22rem] flex-col items-center justify-center rounded-[1.25rem] border p-8 text-center shadow-xl"
             style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
         >
-            <div className="flex h-14 w-14 items-center justify-center rounded-[14px] border" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
+            <div className="flex h-14 w-14 items-center justify-center rounded-[1.25rem] border" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
                 <Inbox size={22} />
             </div>
             <h3 className="mt-4 text-xl font-black">{title}</h3>

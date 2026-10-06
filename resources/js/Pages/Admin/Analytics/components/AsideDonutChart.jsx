@@ -7,7 +7,7 @@ function AsideChartTooltip({ active, payload }) {
     const item = payload[0].payload;
 
     return (
-        <div className="rounded-[12px] border px-3 py-2 shadow-xl" style={{ ...chartTooltipStyle }}>
+        <div className="rounded-[1rem] border px-3 py-2 shadow-xl" style={{ ...chartTooltipStyle }}>
             <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-[4px]" style={{ backgroundColor: item.color }} />
                 <p className="text-xs font-black">{item.label}</p>

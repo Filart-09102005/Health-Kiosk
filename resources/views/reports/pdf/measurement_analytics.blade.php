@@ -49,7 +49,7 @@
                         </span>
                     </td>
                     <td>
-                        <span style="background-color: {{ $record->health_status === 'Alert' ? '#ef4444' : ($record->health_status === 'Watch' ? '#f59e0b' : '#10b981') }}; color: #ffffff; padding: 3px 6px; font-weight: bold; border-radius: 4px; font-size: 10px; text-transform: uppercase;">
+                        <span style="background-color: {{ $record->health_status === 'Consult Clinic' ? '#ef4444' : ($record->health_status === 'Watch' ? '#f59e0b' : '#10b981') }}; color: #ffffff; padding: 3px 6px; font-weight: bold; border-radius: 4px; font-size: 10px; text-transform: uppercase;">
                             {{ $record->health_status }}
                         </span>
                     </td>

@@ -7,6 +7,20 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Single-kiosk assumption: live-vitals and command state each live in one
+ * shared file (STORAGE_PATH / COMMAND_PATH below), not scoped per kiosk or
+ * per session. That is deliberate and safe for the current one-kiosk
+ * deployment this system is built for - the Python serial bridge on that one
+ * machine is the only writer of sensor data, and the browser polling it is
+ * always looking at "the kiosk", singular.
+ *
+ * It is NOT safe to point a second physical kiosk at this same backend: both
+ * would read and overwrite each other's live readings and commands through
+ * this same pair of files. If the school ever adds a second kiosk, this
+ * needs a per-kiosk key (e.g. a kiosk id in the storage path) before that
+ * can work - out of scope for now, noted here so it isn't missed later.
+ */
 class KioskLiveVitalsController extends Controller
 {
     private const STORAGE_PATH = 'kiosk/live-vitals.json';
@@ -22,66 +36,52 @@ class KioskLiveVitalsController extends Controller
         $fresh = $this->isFresh($payload['updated_at'] ?? null);
 
         return $this->noStoreResponse([
-            'heart_rate' => $fresh ? $payload['heart_rate'] ?? null : null,
-            'spo2' => $fresh ? $payload['spo2'] ?? null : null,
-            'weight' => $fresh ? $payload['weight'] ?? null : null,
-            'ready' => $fresh ? (bool) ($payload['ready'] ?? false) : false,
-            'mode' => $fresh ? $payload['mode'] ?? 'IDLE' : 'IDLE',
-            'status' => $fresh ? $payload['status'] ?? null : null,
-            'debug_ir' => $fresh ? $payload['debug_ir'] ?? null : null,
+            'sensor' => $fresh ? $payload['sensor'] ?? null : null,
+            'machine_state' => $fresh ? $payload['machine_state'] ?? 'IDLE' : 'IDLE',
+            'session_id' => $fresh ? $payload['session_id'] ?? null : null,
+            'live_data' => $fresh ? $payload['live_data'] ?? null : null,
+            'final_result' => $fresh ? $payload['final_result'] ?? null : null,
+            'error' => $fresh ? $payload['error'] ?? null : null,
+
+            // Link health, for the admin Devices view. Reported even when the
+            // payload is stale — "we last heard from the kiosk at X" is the
+            // whole point of that screen, and nulling it would hide the fact
+            // that the firmware has gone quiet.
+            'fresh' => $fresh,
+            'updated_at' => $payload['updated_at'] ?? null,
+            'stale_after_seconds' => self::STALE_AFTER_SECONDS,
         ]);
     }
 
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'heart_rate' => ['nullable', 'numeric', 'min:0', 'max:260'],
-            'spo2' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'weight' => ['nullable', 'numeric', 'min:0', 'max:500'],
-            'ready' => ['nullable', 'boolean'],
-            'mode' => ['nullable', 'string', 'max:40'],
-            'status' => ['nullable', 'string', 'max:80'],
-            'debug_ir' => ['nullable', 'numeric', 'min:0'],
+            'sensor' => ['nullable', 'string', 'max:40'],
+            'machine_state' => ['nullable', 'string', 'max:40'],
+            'live_data' => ['nullable', 'array'],
+            'live_data.primary' => ['nullable', 'numeric'],
+            'live_data.secondary' => ['nullable', 'numeric'],
+            'live_data.debug_ir' => ['nullable', 'numeric'],
+            'final_result' => ['nullable', 'array'],
+            'final_result.primary' => ['nullable', 'numeric'],
+            'final_result.secondary' => ['nullable', 'numeric'],
+            'error' => ['nullable'],
+            'session_id' => ['nullable', 'string', 'max:255'],
             'reset' => ['nullable', 'boolean'],
         ]);
 
         if ($request->boolean('reset')) {
             $payload = [
-                'heart_rate' => null,
-                'spo2' => null,
-                'weight' => null,
-                'ready' => false,
-                'mode' => 'IDLE',
-                'status' => null,
-                'debug_ir' => null,
+                'sensor' => null,
+                'machine_state' => $validated['machine_state'] ?? 'IDLE',
+                'session_id' => null,
+                'live_data' => null,
+                'final_result' => null,
+                'error' => null,
                 'updated_at' => now()->toISOString(),
             ];
-
             Storage::disk('local')->put(self::STORAGE_PATH, json_encode($payload, JSON_PRETTY_PRINT));
-
-            return $this->noStoreResponse([
-                'heart_rate' => null,
-                'spo2' => null,
-                'weight' => null,
-                'ready' => false,
-                'mode' => 'IDLE',
-                'status' => null,
-                'debug_ir' => null,
-            ], 201);
-        }
-
-        if (
-            ! array_key_exists('heart_rate', $validated)
-            && ! array_key_exists('spo2', $validated)
-            && ! array_key_exists('weight', $validated)
-            && ! array_key_exists('ready', $validated)
-            && ! array_key_exists('mode', $validated)
-            && ! array_key_exists('status', $validated)
-            && ! array_key_exists('debug_ir', $validated)
-        ) {
-            return $this->noStoreResponse([
-                'message' => 'At least one live vital value or status field is required.',
-            ], 422);
+            return $this->noStoreResponse($payload, 201);
         }
 
         $current = Storage::disk('local')->exists(self::STORAGE_PATH)
@@ -92,39 +92,42 @@ class KioskLiveVitalsController extends Controller
             $current = [];
         }
 
+        $platformOffset = (float) \App\Support\AdminSettings::all()['platformOffsetCm'];
+
+        // Apply platform offset to HEIGHT sensor primary value
+        $liveData = $validated['live_data'] ?? ($current['live_data'] ?? null);
+        $finalResult = $validated['final_result'] ?? ($current['final_result'] ?? null);
+        
+        $sensor = $validated['sensor'] ?? ($current['sensor'] ?? null);
+        
+        if ($sensor === 'HEIGHT') {
+            if (isset($liveData['primary']) && is_numeric($liveData['primary'])) {
+                $liveData['primary'] = round((float) $liveData['primary'] - $platformOffset, 2);
+            }
+            if (isset($finalResult['primary']) && is_numeric($finalResult['primary'])) {
+                $finalResult['primary'] = round((float) $finalResult['primary'] - $platformOffset, 2);
+            }
+        }
+
         $payload = [
-            'heart_rate' => array_key_exists('heart_rate', $validated)
-                ? ($validated['heart_rate'] === null ? null : round((float) $validated['heart_rate'], 0))
-                : ($current['heart_rate'] ?? null),
-            'spo2' => array_key_exists('spo2', $validated)
-                ? ($validated['spo2'] === null ? null : round((float) $validated['spo2'], 0))
-                : ($current['spo2'] ?? null),
-            'weight' => array_key_exists('weight', $validated)
-                ? ($validated['weight'] === null ? null : round((float) $validated['weight'], 2))
-                : ($current['weight'] ?? null),
-            'ready' => array_key_exists('ready', $validated)
-                ? (bool) $validated['ready']
-                : (bool) ($current['ready'] ?? false),
-            'mode' => $validated['mode'] ?? ($current['mode'] ?? 'IDLE'),
-            'status' => array_key_exists('status', $validated)
-                ? $validated['status']
-                : ($current['status'] ?? null),
-            'debug_ir' => array_key_exists('debug_ir', $validated)
-                ? round((float) $validated['debug_ir'], 0)
-                : ($current['debug_ir'] ?? null),
+            'sensor' => $sensor,
+            'machine_state' => $validated['machine_state'] ?? ($current['machine_state'] ?? 'IDLE'),
+            'session_id' => $validated['session_id'] ?? ($current['session_id'] ?? null),
+            'live_data' => $liveData,
+            'final_result' => $finalResult,
+            'error' => $validated['error'] ?? ($current['error'] ?? null),
             'updated_at' => now()->toISOString(),
         ];
 
         Storage::disk('local')->put(self::STORAGE_PATH, json_encode($payload, JSON_PRETTY_PRINT));
 
         return $this->noStoreResponse([
-            'heart_rate' => $payload['heart_rate'],
-            'spo2' => $payload['spo2'],
-            'weight' => $payload['weight'],
-            'ready' => $payload['ready'],
-            'mode' => $payload['mode'],
-            'status' => $payload['status'],
-            'debug_ir' => $payload['debug_ir'],
+            'sensor' => $payload['sensor'],
+            'machine_state' => $payload['machine_state'],
+            'session_id' => $payload['session_id'],
+            'live_data' => $payload['live_data'],
+            'final_result' => $payload['final_result'],
+            'error' => $payload['error']
         ], 201);
     }
 
@@ -143,7 +146,7 @@ class KioskLiveVitalsController extends Controller
     public function setCommand(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'command' => ['required', 'string', 'in:START_OXIMETER,START_WEIGHT,STOP'],
+            'command' => ['required', 'string', 'in:START_HEART,START_OXIMETER,START_WEIGHT,START_HEIGHT,START_TEMPERATURE,START_ALL,STOP'],
         ]);
 
         $payload = [

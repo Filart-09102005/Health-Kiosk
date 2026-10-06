@@ -3,7 +3,15 @@ import { X } from "lucide-react";
 import { createPortal } from "react-dom";
 import useModalLayer from "./useModalLayer";
 
-export default function DrawerShell({ open, onClose, title, description, children, footer, closeOnOverlay = true, closeLabel = "Close" }) {
+/**
+ * @param {boolean} [loading]  Skeletonises the title and description while the
+ *                             drawer's content loads, so the header settles at
+ *                             the same moment as the body instead of standing
+ *                             finished above a loading panel. The close button
+ *                             stays live throughout — a drawer must always be
+ *                             escapable, loaded or not.
+ */
+export default function DrawerShell({ open, onClose, title, description, children, footer, closeOnOverlay = true, closeLabel = "Close", loading = false, widePortrait = false }) {
     useModalLayer(open);
 
     const drawer = (
@@ -23,7 +31,7 @@ export default function DrawerShell({ open, onClose, title, description, childre
                     />
 
                     <motion.aside
-                        className="relative z-[9010] flex h-full w-full flex-col border-l shadow-2xl md:w-[50vw]"
+                        className={`relative z-[9010] flex h-full w-full flex-col border-l shadow-2xl md:w-[50vw] ${widePortrait ? "hk-drawer-wide-portrait" : ""}`}
                         style={{
                             backgroundColor: "var(--color-card)",
                             borderColor: "var(--color-border)",
@@ -35,28 +43,64 @@ export default function DrawerShell({ open, onClose, title, description, childre
                         transition={{ type: "spring", stiffness: 260, damping: 30 }}
                     >
                         <div className="flex items-start justify-between gap-4 border-b p-6" style={{ borderColor: "var(--color-border)" }}>
-                            <div>
-                                <h2 className="text-2xl font-black">{title}</h2>
-                                {description ? (
-                                    <p className="mt-2 text-sm leading-6" style={{ color: "var(--color-muted)" }}>
-                                        {description}
-                                    </p>
-                                ) : null}
+                            <div className="min-w-0 flex-1">
+                                {loading ? (
+                                    <div aria-busy="true" aria-label="Loading">
+                                        {/* Sized to the real text so nothing shifts
+                                            when the content arrives. */}
+                                        <div
+                                            className="h-7 w-52 max-w-full animate-pulse rounded-lg"
+                                            style={{ backgroundColor: "color-mix(in srgb, var(--color-muted) 20%, transparent)" }}
+                                        />
+                                        {description ? (
+                                            <div className="mt-3 space-y-2">
+                                                <div
+                                                    className="h-3 w-full max-w-sm animate-pulse rounded-full"
+                                                    style={{ backgroundColor: "color-mix(in srgb, var(--color-muted) 14%, transparent)" }}
+                                                />
+                                                <div
+                                                    className="h-3 w-2/3 max-w-[16rem] animate-pulse rounded-full"
+                                                    style={{ backgroundColor: "color-mix(in srgb, var(--color-muted) 14%, transparent)" }}
+                                                />
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                ) : (
+                                    <>
+                                        <h2 className="text-2xl font-black">{title}</h2>
+                                        {description ? (
+                                            <p className="mt-2 text-sm leading-6" style={{ color: "var(--color-muted)" }}>
+                                                {description}
+                                            </p>
+                                        ) : null}
+                                    </>
+                                )}
                             </div>
 
+                            {/* Skeletonised alongside the title, but still a real
+                                button: the drawer has no Escape handler and may
+                                disable overlay-click, so a placeholder that could
+                                not be pressed would trap the person until the
+                                request came back. */}
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-black transition hk-soft-hover"
-                                style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
+                                className={`flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-black transition ${loading ? "animate-pulse" : "hk-soft-hover"}`}
+                                style={{
+                                    backgroundColor: loading
+                                        ? "color-mix(in srgb, var(--color-muted) 16%, transparent)"
+                                        : "var(--color-surface)",
+                                    borderColor: loading ? "transparent" : "var(--color-border)",
+                                    color: loading ? "transparent" : "inherit",
+                                }}
                                 aria-label={closeLabel}
                             >
-                                <X size={18} />
+                                <X size={18} style={loading ? { opacity: 0 } : undefined} aria-hidden={loading} />
                                 <span className="hidden sm:inline">{closeLabel}</span>
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6">{children}</div>
+                        <div className="flex-1 overflow-y-auto p-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{children}</div>
 
                         {footer ? (
                             <div className="border-t p-5" style={{ borderColor: "var(--color-border)" }}>

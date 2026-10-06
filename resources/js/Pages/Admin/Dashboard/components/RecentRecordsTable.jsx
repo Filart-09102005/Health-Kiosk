@@ -18,7 +18,7 @@ const statusLabel = (status) => {
 
 export default function RecentRecordsTable({ records = [] }) {
     return (
-        <section className="mt-5 rounded-[14px] border p-5 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <section className="mt-5 rounded-[1.25rem] border p-5 hk-admin-card" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 className="text-xl font-black">Recent health records</h2>
@@ -63,8 +63,8 @@ export default function RecentRecordsTable({ records = [] }) {
                                     <button
                                         type="button"
                                         onClick={() => printHealthReceipt(record)}
-                                        className="flex items-center gap-2 rounded-[12px] px-3 py-2 text-xs font-black text-white transition hk-primary-hover"
-                                        style={{ backgroundColor: "var(--color-primary)" }}
+                                        className="flex items-center gap-2 rounded-[1rem] px-3 py-2 text-xs font-black transition hk-primary-hover"
+                                        style={{ backgroundColor: "var(--color-primary)", color: "var(--color-primary-content)" }}
                                     >
                                         <Printer size={15} />
                                         Print

@@ -3,10 +3,10 @@ import ReportStatusBadge from "./ReportStatusBadge";
 
 export default function ReportSummaryCard({ report }) {
     return (
-        <div className="rounded-[14px] border p-4" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <div className="rounded-[1.25rem] border p-4" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <div className="flex items-start justify-between gap-4">
                 <div className="flex gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-[12px] border" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
+                    <div className="flex h-11 w-11 items-center justify-center rounded-[1rem] border" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
                         <FileText size={18} style={{ color: "var(--color-primary)" }} />
                     </div>
                     <div>

@@ -20,7 +20,6 @@ namespace Config {
 
     // Enable/Disable specific sensors for testing
     constexpr bool ENABLE_TEMPERATURE = true;
-    constexpr bool ENABLE_HEART_RATE  = true;
     constexpr bool ENABLE_WEIGHT      = true;
     constexpr bool ENABLE_HEIGHT      = true;
 

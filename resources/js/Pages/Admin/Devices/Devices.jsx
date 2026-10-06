@@ -32,162 +32,94 @@ import { createPortal } from "react-dom";
 import AdminShell from "../components/AdminShell";
 import AdminModulePage from "../components/AdminModulePage";
 import useModalLayer from "../../../Global/useModalLayer";
+import { deriveDevices, fetchKioskTelemetry, formatLastSeen, SENSOR_KEYS } from "./services/deviceTelemetryService";
 
 const statusOrder = ["Online", "Offline", "Warning", "No Telemetry", "Calibrating", "Maintenance Mode"];
 
-const baseDevices = [
+// Static hardware inventory: what is physically installed in the kiosk. This
+// is legitimately fixed — it describes the build, not its condition. Every
+// health value (status, last seen, readings, errors) is derived at runtime
+// from real firmware telemetry in deviceTelemetryService.
+//
+// Fields the firmware does not report are shown as "Not reported" rather than
+// filled with plausible-looking numbers.
+const DEVICE_REGISTRY = [
     {
         id: "mega-board",
         name: "Mega Board",
         type: "Arduino Mega 2560 main controller board",
         deviceType: "Microcontroller",
         icon: Cpu,
-        status: "No Telemetry",
-        health: "Not Configured",
-        lastActive: "No heartbeat received",
-        source: "Mega Board serial heartbeat is not connected yet.",
-        action: "Check USB cable, COM port, Python service, and firmware upload.",
+        isController: true,
         heartbeat: "Every 5 seconds",
         heartbeatSeconds: 5,
-        timeoutSeconds: 15,
-        firmware: "Not detected",
-        serialPort: "COM port not configured",
-        connectionStatus: "No serial heartbeat",
-        totalReadings: 0,
-        totalErrors: 0,
-        healthScore: 0,
-        uptime: "Unavailable",
-        calibration: "Not configured",
-        telemetry: [{ label: "Board State", value: "No telemetry", unit: "" }],
-        logs: ["No heartbeat received", "Serial bridge not configured", "Firmware status unavailable"],
+        timeoutSeconds: 75,
+    },
+    {
+        id: "heart-rate-sensor",
+        name: "Heart Rate & SpO2 Sensor",
+        type: "MAX30102 pulse oximeter",
+        deviceType: "Sensor",
+        icon: HeartPulse,
+        sensorKey: SENSOR_KEYS.HEART_RATE,
+        serialPort: "Mega Board I2C",
+        primaryUnit: "bpm",
+        secondaryUnit: "%",
+        heartbeat: "While measuring",
+        heartbeatSeconds: 5,
+        timeoutSeconds: 75,
+    },
+    {
+        id: "temperature-sensor",
+        name: "Temperature Sensor",
+        type: "Infrared body temperature sensor",
+        deviceType: "Sensor",
+        icon: Thermometer,
+        sensorKey: SENSOR_KEYS.TEMPERATURE,
+        serialPort: "Mega Board A0",
+        primaryUnit: "\u00b0C",
+        heartbeat: "While measuring",
+        heartbeatSeconds: 5,
+        timeoutSeconds: 75,
+    },
+    {
+        id: "height-sensor",
+        name: "Height Sensor",
+        type: "Ultrasonic distance sensor",
+        deviceType: "Sensor",
+        icon: Ruler,
+        sensorKey: SENSOR_KEYS.HEIGHT,
+        serialPort: "Mega Board D7/D8",
+        primaryUnit: "cm",
+        heartbeat: "While measuring",
+        heartbeatSeconds: 5,
+        timeoutSeconds: 75,
+    },
+    {
+        id: "weight-sensor",
+        name: "Weight Sensor",
+        type: "HX711 load-cell platform",
+        deviceType: "Sensor",
+        icon: Scale,
+        sensorKey: SENSOR_KEYS.WEIGHT,
+        serialPort: "Mega Board D4/D5",
+        primaryUnit: "kg",
+        heartbeat: "While measuring",
+        heartbeatSeconds: 5,
+        timeoutSeconds: 75,
     },
     {
         id: "barcode-scanner",
         name: "Barcode Scanner",
         type: "Student and teacher barcode scanner",
-        deviceType: "Input Scanner",
+        deviceType: "Input Device",
         icon: Barcode,
-        status: "No Telemetry",
-        health: "Not Configured",
-        lastActive: "No scan event received",
-        source: "Barcode scanner service is not reporting scan events.",
-        action: "Check scanner connection, USB port, and barcode reader service.",
-        heartbeat: "Every scan event",
-        heartbeatSeconds: null,
-        timeoutSeconds: 60,
-        firmware: "USB HID scanner",
         serialPort: "USB keyboard wedge",
-        connectionStatus: "No scan telemetry",
-        totalReadings: 0,
-        totalErrors: 0,
-        healthScore: 0,
-        uptime: "Unavailable",
-        calibration: "Not required",
-        telemetry: [{ label: "Last Scan", value: "No scan event", unit: "" }],
-        logs: ["No scan event received", "Barcode reader service not reporting", "Waiting for scanner input"],
-    },
-    {
-        id: "temperature",
-        name: "Temperature Sensor",
-        type: "Infrared body temperature module",
-        deviceType: "Vital Sensor",
-        icon: Thermometer,
-        status: "Online",
-        health: "Good",
-        lastActive: "Latest telemetry received",
-        source: "Temperature readings are being received.",
-        action: "Functioning normally.",
-        heartbeat: "Every reading",
-        heartbeatSeconds: null,
-        timeoutSeconds: 20,
-        firmware: "IR-Temp 1.2.0",
-        serialPort: "Mega Board A0",
-        connectionStatus: "Receiving readings",
-        totalReadings: 342,
-        totalErrors: 2,
-        healthScore: 97,
-        uptime: "99.2%",
-        calibration: "Valid",
-        telemetry: [{ label: "Current Reading", value: "36.60", unit: "C" }],
-        logs: ["Temperature Reading Received", "Reading accepted at 36.60 C", "Calibration check passed"],
-    },
-    {
-        id: "heart-spo2",
-        name: "Heart Rate & SpO2 Sensor",
-        type: "MAX30102 pulse oximeter module",
-        deviceType: "Vital Sensor",
-        icon: HeartPulse,
-        status: "Online",
-        health: "Good",
-        lastActive: "Latest telemetry received",
-        source: "Pulse and oxygen data are stable.",
-        action: "Functioning normally.",
-        heartbeat: "Every reading",
-        heartbeatSeconds: null,
-        timeoutSeconds: 20,
-        firmware: "MAX30102 2.1.4",
-        serialPort: "Mega Board I2C",
-        connectionStatus: "Receiving readings",
-        totalReadings: 318,
-        totalErrors: 4,
-        healthScore: 95,
-        uptime: "98.8%",
-        calibration: "Valid",
-        telemetry: [
-            { label: "Current BPM", value: "78", unit: "bpm" },
-            { label: "Current Oxygen Level", value: "98", unit: "%" },
-        ],
-        logs: ["Heart Rate Reading Received", "SpO2 Reading Received", "Signal quality stable"],
-    },
-    {
-        id: "height",
-        name: "Height Sensor",
-        type: "Ultrasonic distance measurement module",
-        deviceType: "Measurement Sensor",
-        icon: Ruler,
-        status: "Warning",
-        health: "Needs Check",
-        lastActive: "Recent telemetry received",
-        source: "Recent readings show retry variance.",
-        action: "Recheck sensor alignment and calibration.",
-        heartbeat: "Every reading",
-        heartbeatSeconds: null,
-        timeoutSeconds: 20,
-        firmware: "HC-SR04 1.0.8",
-        serialPort: "Mega Board D7/D8",
-        connectionStatus: "Receiving with variance",
-        totalReadings: 296,
-        totalErrors: 18,
-        healthScore: 84,
-        uptime: "94.7%",
-        calibration: "Needs check",
-        telemetry: [{ label: "Current Height", value: "165.00", unit: "cm" }],
-        logs: ["Height Measurement Completed", "Retry variance detected", "Calibration recommended"],
-    },
-    {
-        id: "weight",
-        name: "Weight Sensor",
-        type: "Load cell and HX711 scale module",
-        deviceType: "Measurement Sensor",
-        icon: Scale,
-        status: "Offline",
-        health: "Not Functioning",
-        lastActive: "Last telemetry unavailable",
-        source: "No recent weight signal received.",
-        action: "Inspect load-cell wiring and HX711 module.",
-        heartbeat: "Every reading",
-        heartbeatSeconds: null,
-        timeoutSeconds: 20,
-        firmware: "HX711 1.1.0",
-        serialPort: "Mega Board D4/D5",
-        connectionStatus: "Heartbeat timeout exceeded",
-        totalReadings: 174,
-        totalErrors: 41,
-        healthScore: 42,
-        uptime: "71.4%",
-        calibration: "Required",
-        telemetry: [{ label: "Current Weight", value: "No signal", unit: "" }],
-        logs: ["Weight telemetry timeout", "HX711 signal unavailable", "Load-cell wiring inspection required"],
+        heartbeat: "On scan",
+        heartbeatSeconds: 0,
+        timeoutSeconds: 0,
+        notReportedReason:
+            "USB HID scanner. Input goes straight to the browser, so the kiosk firmware cannot report its state.",
     },
     {
         id: "presence",
@@ -195,24 +127,12 @@ const baseDevices = [
         type: "Camera-based user detection service",
         deviceType: "Presence Service",
         icon: Activity,
-        status: "Online",
-        health: "Good",
-        lastActive: "Latest heartbeat received",
-        source: "Current state: READY",
-        action: "Functioning normally.",
-        heartbeat: "Every 5 seconds",
-        heartbeatSeconds: 5,
-        timeoutSeconds: 15,
-        firmware: "Browser FaceDetector service",
         serialPort: "Front camera",
-        connectionStatus: "READY",
-        totalReadings: 124,
-        totalErrors: 1,
-        healthScore: 98,
-        uptime: "99.7%",
-        calibration: "Not required",
-        telemetry: [{ label: "Current State", value: "READY", unit: "" }],
-        logs: ["User Detected", "User Left Kiosk", "Presence service heartbeat received"],
+        heartbeat: "Browser side",
+        heartbeatSeconds: 0,
+        timeoutSeconds: 0,
+        notReportedReason:
+            "Runs in the browser, not on the kiosk board, so it does not appear in firmware telemetry.",
     },
     {
         id: "mini-pc",
@@ -220,45 +140,12 @@ const baseDevices = [
         type: "Laravel application and database host",
         deviceType: "Application Host",
         icon: Server,
-        status: "Online",
-        health: "Good",
-        lastActive: "Latest heartbeat received",
-        source: "Application and database responded successfully.",
-        action: "Functioning normally.",
-        heartbeat: "Every 10 seconds",
-        heartbeatSeconds: 10,
-        timeoutSeconds: 30,
-        firmware: "Laravel + MySQL localhost",
+        isHost: true,
         serialPort: "127.0.0.1",
-        connectionStatus: "Application responding",
-        totalReadings: 1324,
-        totalErrors: 3,
-        healthScore: 99,
-        uptime: "99.9%",
-        calibration: "Not required",
-        telemetry: [{ label: "Server State", value: "ONLINE", unit: "" }],
-        logs: ["Application heartbeat received", "Database responded successfully", "Receipt printer queue ready"],
+        heartbeat: "Per request",
+        heartbeatSeconds: 0,
+        timeoutSeconds: 0,
     },
-];
-
-const activityLogs = [
-    { event: "Mega Board Connected", device: "Mega Board", status: "No Telemetry", time: "Waiting for serial heartbeat" },
-    { event: "Barcode Scanned", device: "Barcode Scanner", status: "No Telemetry", time: "Waiting for scan event" },
-    { event: "Temperature Reading Received", device: "Temperature Sensor", status: "Online", time: "Latest telemetry received" },
-    { event: "Heart Rate Reading Received", device: "Heart Rate & SpO2 Sensor", status: "Online", time: "Latest telemetry received" },
-    { event: "SpO2 Reading Received", device: "Heart Rate & SpO2 Sensor", status: "Online", time: "Latest telemetry received" },
-    { event: "Height Measurement Completed", device: "Height Sensor", status: "Warning", time: "Recent telemetry received" },
-    { event: "Weight Measurement Completed", device: "Weight Sensor", status: "Offline", time: "Last telemetry unavailable" },
-    { event: "User Detected", device: "User Presence Detection", status: "Online", time: "Latest heartbeat received" },
-    { event: "User Left Kiosk", device: "User Presence Detection", status: "Online", time: "Latest heartbeat received" },
-];
-
-const diagnosticsTemplate = [
-    { label: "Connection Test", value: "PASS" },
-    { label: "Telemetry Test", value: "PASS" },
-    { label: "Device Response", value: "PASS" },
-    { label: "Firmware Check", value: "PASS" },
-    { label: "Overall Status", value: "HEALTHY" },
 ];
 
 const reveal = {
@@ -270,28 +157,85 @@ export default function Devices({ navigate }) {
     const [lastRefresh, setLastRefresh] = useState(new Date());
     const [selectedDevice, setSelectedDevice] = useState(null);
     const [diagnostics, setDiagnostics] = useState(null);
+    const [telemetry, setTelemetry] = useState(null);
 
+    // Poll the same endpoint the firmware posts to. Previously this timer only
+    // moved a "last refreshed" clock while the device data never changed,
+    // which made static content look live.
     useEffect(() => {
-        const timer = window.setInterval(() => {
-            setLastRefresh(new Date());
-        }, 5000);
+        let alive = true;
 
-        return () => window.clearInterval(timer);
+        const poll = async () => {
+            try {
+                const payload = await fetchKioskTelemetry();
+                if (alive) setTelemetry(payload);
+            } catch {
+                // Unreachable API is itself a real signal: no telemetry.
+                if (alive) setTelemetry(null);
+            } finally {
+                if (alive) setLastRefresh(new Date());
+            }
+        };
+
+        poll();
+        const timer = window.setInterval(poll, 5000);
+
+        return () => {
+            alive = false;
+            window.clearInterval(timer);
+        };
     }, []);
 
-    const devices = useMemo(() => {
-        return baseDevices.map((device) => ({
-            ...device,
-            refreshedAt: lastRefresh,
-        }));
-    }, [lastRefresh]);
+    const devices = useMemo(
+        () => deriveDevices(DEVICE_REGISTRY, telemetry).map((device) => ({ ...device, refreshedAt: lastRefresh })),
+        [telemetry, lastRefresh],
+    );
 
     const configuredCount = devices.length;
     const connectedCount = devices.filter((device) => device.status === "Online" || device.status === "Warning").length;
-    const offlineCount = devices.filter((device) => device.status === "Offline").length;
+    const offlineCount = devices.filter((device) => device.status === "Offline" || device.status === "No Telemetry").length;
     const warningCount = devices.filter((device) => device.status === "Warning").length;
     const activeTelemetryCount = devices.filter((device) => ["Online", "Warning"].includes(device.status)).length;
-    const healthScore = Math.round(devices.reduce((sum, device) => sum + device.healthScore, 0) / devices.length);
+
+    // Share of devices actually reporting, rather than an invented score.
+    const reportable = devices.filter((device) => device.status !== "Not Reported");
+    const healthScore = reportable.length
+        ? Math.round((reportable.filter((device) => device.status === "Online").length / reportable.length) * 100)
+        : 0;
+
+    // Built from the current telemetry payload. Nothing stores a device event
+    // history yet, so this reflects the live state rather than pretending to
+    // be a log of past events.
+    const activityLogs = useMemo(() => {
+        if (!telemetry) {
+            return [{ event: "Telemetry unreachable", device: "Mega Board", status: "No Telemetry", time: "Now" }];
+        }
+
+        const seen = formatLastSeen(telemetry.updated_at);
+        const entries = [
+            {
+                event: telemetry.fresh ? "Telemetry received" : "Telemetry stale",
+                device: "Mega Board",
+                status: telemetry.fresh ? "Online" : "No Telemetry",
+                time: seen,
+            },
+            {
+                event: `Machine state: ${telemetry.machine_state || "Unknown"}`,
+                device: "Mega Board",
+                status: telemetry.fresh ? "Online" : "No Telemetry",
+                time: seen,
+            },
+        ];
+
+        if (telemetry.sensor) {
+            entries.push({ event: "Active sensor reporting", device: telemetry.sensor, status: "Online", time: seen });
+        }
+        if (telemetry.error) {
+            entries.push({ event: `Error: ${telemetry.error}`, device: telemetry.sensor || "Mega Board", status: "Warning", time: seen });
+        }
+
+        return entries;
+    }, [telemetry]);
 
     const openDevice = (device) => {
         setSelectedDevice(device);
@@ -303,22 +247,40 @@ export default function Devices({ navigate }) {
         setDiagnostics(null);
     };
 
-    const runAction = (action, device = selectedDevice) => {
+    // Re-reads live telemetry and reports what it actually says. It does not
+    // command the hardware — there is no endpoint for that — so it is a read
+    // of current state, not a self-test, and is labelled accordingly.
+    const runAction = async (action, device = selectedDevice) => {
         if (!device) return;
 
-        const isOffline = device.status === "Offline";
-        const isNoTelemetry = device.status === "No Telemetry";
+        setDiagnostics({ action, device: device.name, generatedAt: "…", rows: [{ label: "Reading telemetry", value: "…" }] });
+
+        let payload = null;
+        try {
+            payload = await fetchKioskTelemetry();
+        } catch {
+            payload = null;
+        }
+        setTelemetry(payload);
+
+        const current = deriveDevices(DEVICE_REGISTRY, payload).find((item) => item.id === device.id) || device;
+        const linkUp = Boolean(payload?.fresh);
 
         setDiagnostics({
             action,
             device: device.name,
             generatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-            rows: diagnosticsTemplate.map((row) => {
-                if (isOffline && row.label !== "Firmware Check") return { ...row, value: row.label === "Overall Status" ? "UNHEALTHY" : "FAIL" };
-                if (isNoTelemetry && row.label === "Telemetry Test") return { ...row, value: "NO TELEMETRY" };
-                if (isNoTelemetry && row.label === "Overall Status") return { ...row, value: "NEEDS CONFIGURATION" };
-                return row;
-            }),
+            rows: [
+                { label: "API Reachable", value: payload ? "PASS" : "FAIL" },
+                { label: "Firmware Telemetry", value: linkUp ? "PASS" : "NO TELEMETRY" },
+                { label: "Reported Status", value: current.status.toUpperCase() },
+                { label: "Last Telemetry", value: current.lastActive },
+                { label: "Reported Error", value: payload?.error ? String(payload.error) : "None" },
+                {
+                    label: "Overall Status",
+                    value: !payload ? "UNHEALTHY" : linkUp ? (current.status === "Warning" ? "NEEDS ATTENTION" : "HEALTHY") : "NEEDS CONFIGURATION",
+                },
+            ],
         });
     };
 
@@ -370,7 +332,7 @@ function SystemHealthOverview({ activeTelemetryCount, configuredCount, healthSco
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.2 }}
-            className="rounded-[14px] border p-5 shadow-sm"
+            className="rounded-[1.25rem] border p-5 shadow-sm"
             style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
         >
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -386,8 +348,8 @@ function SystemHealthOverview({ activeTelemetryCount, configuredCount, healthSco
                     <button
                         type="button"
                         onClick={onRefresh}
-                        className="flex h-12 items-center gap-2 rounded-xl px-4 text-sm font-black text-white transition hk-primary-hover"
-                        style={{ backgroundColor: "var(--color-primary)" }}
+                        className="flex h-12 items-center gap-2 rounded-xl px-4 text-sm font-black transition hk-primary-hover"
+                        style={{ backgroundColor: "var(--color-primary)", color: "var(--color-primary-content)" }}
                     >
                         <RefreshCw size={17} />
                         Refresh Status
@@ -412,7 +374,7 @@ function StatusLegend() {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.2 }}
-            className="rounded-[14px] border p-5"
+            className="rounded-[1.25rem] border p-5"
             style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
         >
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -448,7 +410,7 @@ function DeviceGrid({ devices, onOpen }) {
                         viewport={{ once: true, amount: 0.18 }}
                         transition={{ delay: index * 0.03 }}
                         onClick={() => onOpen(device)}
-                        className="group rounded-[14px] border p-5 text-left shadow-sm transition hk-admin-nav-hover"
+                        className="group rounded-[1.25rem] border p-5 text-left shadow-sm transition hk-admin-nav-hover"
                         style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
                     >
                         <div className="flex items-start justify-between gap-4">
@@ -480,10 +442,10 @@ function DeviceGrid({ devices, onOpen }) {
 
                         <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4" style={{ borderColor: "var(--color-border)" }}>
                             <div className="min-w-0">
-                                <p className="text-xs font-black" style={{ color: getStatusColor(device.status) }}>Health score {device.healthScore}%</p>
-                                <div className="mt-2 h-2 w-40 max-w-full overflow-hidden rounded-full" style={{ backgroundColor: "var(--color-surface)" }}>
-                                    <div className="h-full rounded-full" style={{ width: `${device.healthScore}%`, backgroundColor: getScoreColor(device.healthScore) }} />
-                                </div>
+                                <p className="text-xs font-black" style={{ color: getStatusColor(device.status) }}>{device.health}</p>
+                                <p className="mt-1 text-[0.7rem] font-semibold" style={{ color: "var(--color-muted)" }}>
+                                    Last seen {device.lastActive}
+                                </p>
                             </div>
                             <span className="flex items-center gap-1 text-xs font-black" style={{ color: "var(--color-muted)" }}>
                                 Details
@@ -506,7 +468,7 @@ function LiveTelemetry({ devices }) {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.18 }}
-            className="rounded-[14px] border p-5 shadow-sm"
+            className="rounded-[1.25rem] border p-5 shadow-sm"
             style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
         >
             <div className="flex items-center justify-between gap-3">
@@ -553,7 +515,7 @@ function ActivityFeed({ logs }) {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.18 }}
-            className="rounded-[14px] border p-5 shadow-sm"
+            className="rounded-[1.25rem] border p-5 shadow-sm"
             style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
         >
             <div className="flex items-center justify-between gap-3">
@@ -586,7 +548,7 @@ function HardwareStatusTable({ devices, onOpen }) {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.12 }}
-            className="overflow-hidden rounded-[14px] border shadow-xl"
+            className="overflow-hidden rounded-[1.25rem] border shadow-xl"
             style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
         >
             <div className="border-b p-5" style={{ borderColor: "var(--color-border)" }}>
@@ -678,10 +640,13 @@ function DeviceDetailsDrawer({ device, diagnostics, onAction, onClose }) {
                     </button>
                 </div>
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                {/* Only values the firmware actually reports are shown. Health
+                    score, uptime, total readings and calibration have no source
+                    in the system today, so they are omitted rather than filled
+                    with invented numbers. */}
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
                     <StatusPill status={device.status} />
                     <HealthPill health={device.health} status={device.status} />
-                    <InfoBox label="Health Score" value={`${device.healthScore}%`} />
                 </div>
 
                 <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -690,14 +655,10 @@ function DeviceDetailsDrawer({ device, diagnostics, onAction, onClose }) {
                     <InfoBox label="Serial Port" value={device.serialPort} />
                     <InfoBox label="Connection Status" value={device.connectionStatus} />
                     <InfoBox label="Last Active" value={device.lastActive} />
-                    <InfoBox label="Total Readings" value={String(device.totalReadings)} />
-                    <InfoBox label="Total Errors" value={String(device.totalErrors)} />
-                    <InfoBox label="Uptime" value={device.uptime} />
-                    <InfoBox label="Calibration Status" value={device.calibration} />
                     <InfoBox label="Heartbeat Rule" value={`${device.heartbeat}, timeout ${device.timeoutSeconds}s`} />
                 </div>
 
-                <section className="mt-5 rounded-[14px] border p-4" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                <section className="mt-5 rounded-[1.25rem] border p-4" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                     <h4 className="text-sm font-black">Live telemetry</h4>
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
                         {device.telemetry.map((item) => (
@@ -712,7 +673,7 @@ function DeviceDetailsDrawer({ device, diagnostics, onAction, onClose }) {
                     </div>
                 </section>
 
-                <section className="mt-5 rounded-[14px] border p-4" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                <section className="mt-5 rounded-[1.25rem] border p-4" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                     <h4 className="text-sm font-black">Admin actions</h4>
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
                         {actions.map((action) => {
@@ -734,7 +695,7 @@ function DeviceDetailsDrawer({ device, diagnostics, onAction, onClose }) {
                     </div>
                 </section>
 
-                <section className="mt-5 rounded-[14px] border p-4" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                <section className="mt-5 rounded-[1.25rem] border p-4" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                     <h4 className="text-sm font-black">Diagnostics results</h4>
                     {diagnostics ? (
                         <div className="mt-3">
@@ -753,7 +714,7 @@ function DeviceDetailsDrawer({ device, diagnostics, onAction, onClose }) {
                     )}
                 </section>
 
-                <section className="mt-5 rounded-[14px] border p-4" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                <section className="mt-5 rounded-[1.25rem] border p-4" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                     <h4 className="text-sm font-black">Recent activity logs</h4>
                     <div className="mt-3 space-y-2">
                         {device.logs.map((log) => (

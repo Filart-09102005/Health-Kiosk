@@ -1,0 +1,511 @@
+# ALPHA-TESTING
+## ALPHA TESTING
+
+**System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+**Test Type:** Alpha Testing (Internal)
+**Environment:** XAMPP · Apache · MySQL · Laravel 12 · PHP 8.2 · React 19 · Supabase · Arduino Sensor Unit
+
+### Alpha Testing Priority
+
+The Alpha Testing of the system shall be conducted systematically to ensure that the major functions
+are properly evaluated before proceeding to the succeeding features. The testing follows a prioritized
+sequence, beginning with the general authentication functions and gradually progressing to the
+user-side features.
+
+**Sequence:** General Login → Forgot Password → Resend Email → User-Side Features
+
+Each priority must be confirmed stable and functional before proceeding to the next. Any defect
+discovered during testing shall be documented in the Defects Found table, corrected, and retested
+before the succeeding priority is started.
+
+> **How to fill this up:** Perform every step in order and mark ✅ under **Pass** or **Fail**.
+> Write anything unusual under **Comment**. Do not tick a row you have not actually run —
+> the Pass/Fail columns are the evidence that the test was performed.
+
+---
+---
+
+# PRIORITY 1 — GENERAL LOGIN
+
+*Objective: confirm that users can access the system using valid credentials, and that the system
+correctly handles invalid or incomplete login information, before any other function is tested.*
+
+---
+
+### 🧪 General Login — Valid Credentials Testing
+- **👤 Actor:** Student / Teacher / Admin
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Open the system URL | http://192.168.1.61:8000 | Display the Login Page | | | |
+| 2 | Observe the initial screen | None | Display the loading screen, then mount the Sign In panel | | | |
+| 3 | Click “Email” login method | None | Display the email and password fields | | | |
+| 4 | Click “Field for Email” | hanskurveyfilart@smcbi.edu.ph | Accept and display the entered email | | | |
+| 5 | Click “Field for Password” | Student123! | Accept the password and mask the characters | | | |
+| 6 | Click “Show/Hide Password” icon | None | Toggle the visibility of the typed password | | | |
+| 7 | Click “Sign In” | None | Verify the credentials against the database | | | |
+| 8 | Observe the screen while verifying | None | Display the loading indicator while authentication is in progress | | | |
+| 9 | Wait for authentication to finish | None | Redirect the user to the User Dashboard | | | |
+| 10 | Observe the dashboard header | None | Display the signed-in user’s own name and account details | | | |
+| 11 | Sign in using an Admin account | Admin credentials | Redirect the admin to the Admin Dashboard instead of the User Dashboard | | | |
+
+---
+
+### 🧪 General Login — Invalid and Incomplete Credentials Testing
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Click “Sign In” with both fields empty | None | Reject the attempt and state that the email and password fields are required | | | |
+| 2 | Click “Sign In” with only the email filled | hanskurveyfilart@smcbi.edu.ph | Reject the attempt and state that the password field is required | | | |
+| 3 | Click “Sign In” with only the password filled | Student123! | Reject the attempt and state that the email field is required | | | |
+| 4 | Enter an email with no @ symbol | hanskurveyfilart | Reject the entry and require a valid email address | | | |
+| 5 | Enter an unregistered email | nobody@smcbi.edu.ph | Reject the login without revealing whether the account exists | | | |
+| 6 | Enter a registered email with a wrong password | Correct email / wrongpass | Reject the login with an invalid-credentials message | | | |
+| 7 | Observe the error message placement | None | Display the error clearly beside or above the affected field | | | |
+| 8 | Correct the password and sign in again | Student123! | Clear the previous error and sign in successfully | | | |
+| 9 | Submit six failed logins within one minute | Wrong password ×6 | Block further attempts with a too-many-attempts message | | | |
+| 10 | Wait for the cooldown, then sign in correctly | Valid credentials | Allow the login once the cooldown has passed | | | |
+| 11 | Attempt to sign in with an unverified account | Newly registered account | Block the login and require email verification first | | | |
+
+---
+
+### 🧪 General Login — Barcode Login Testing
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Observe the login method selector | None | Display “Barcode” and “Email” side by side as one selector | | | |
+| 2 | Click “Barcode” | None | Display the Barcode Scanner field and the ready indicator | | | |
+| 3 | Scan a registered student ID barcode | Student ID barcode | Sign in the matching account without typing any credentials | | | |
+| 4 | Scan an unregistered barcode | Unknown barcode | Reject the login with an account-not-found message | | | |
+| 5 | Click “Sign In” with the barcode field empty | None | Reject the attempt and require a barcode | | | |
+| 6 | Scan the same barcode repeatedly in quick succession | Barcode ×10 | Block excessive attempts with a too-many-attempts message | | | |
+| 7 | Click “Email” after using Barcode | None | Switch back to the email fields without losing the page state | | | |
+
+---
+
+### 🧪 General Login — Session Handling, Duplicate Submission and Logout Testing
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Click “Sign In” twice rapidly | Valid credentials | Process only one login request and disable the button while it is loading | | | |
+| 2 | Press the Enter key twice rapidly in the password field | Valid credentials | Submit the form only once | | | |
+| 3 | Sign in successfully and open a kiosk session | Valid credentials | Create a kiosk session and display its session number | | | |
+| 4 | Refresh the browser after signing in | None | Keep the user signed in and return to the dashboard | | | |
+| 5 | Open the dashboard in a second tab | None | Keep the same session active in both tabs | | | |
+| 6 | Click “Account Menu” then “Logout” | None | Display the logout confirmation | | | |
+| 7 | Click “Cancel” in the confirmation | None | Remain signed in on the current page | | | |
+| 8 | Click “Logout” and confirm | None | End the session and redirect to the Login Page | | | |
+| 9 | Click the browser Back button after logging out | None | Prevent access to the dashboard and stay on the Login Page | | | |
+| 10 | Navigate directly to /user/dashboard while signed out | None | Redirect to the Login Page without exposing any data | | | |
+| 11 | Stop the server and click “Sign In” | Valid credentials | Display a clear connection error instead of hanging silently | | | |
+
+---
+---
+
+# PRIORITY 2 — FORGOT PASSWORD
+
+*Objective: verify the complete password recovery process, from requesting the reset until a new
+password has been successfully created and used.*
+
+---
+
+### 🧪 Forgot Password — Request and Email Validation Testing
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Click “Forgot Password” on the Login Page | None | Display the Forgot Password Page | | | |
+| 2 | Click “Send Reset Link” with the field empty | None | Reject the request and state that the email field is required | | | |
+| 3 | Enter an invalid email format | hanskurvey.smcbi | Reject the entry and require a valid email address | | | |
+| 4 | Enter an email outside the school domain | test@gmail.com | Reject the entry and require an @smcbi.edu.ph address | | | |
+| 5 | Enter an unregistered school email | nobody@smcbi.edu.ph | Respond without confirming whether the address is registered | | | |
+| 6 | Enter a registered school email | hanskurveyfilart@smcbi.edu.ph | Accept the address and enable the request | | | |
+| 7 | Click “Send Reset Link” | None | Display the loading state while the request is being sent | | | |
+| 8 | Wait for the request to finish | None | Display a confirmation that the reset link has been sent | | | |
+| 9 | Click “Send Reset Link” repeatedly | Same email ×5 | Throttle the repeated requests instead of sending an email each time | | | |
+| 10 | Open the registered email inbox | None | Receive the password reset email with a working link | | | |
+| 11 | Click “Back to Login” | None | Return to the Login Page | | | |
+
+---
+
+### 🧪 Forgot Password — Reset Link and New Password Testing
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Open the reset link from the email | Valid reset link | Display the Reset Password Page with the email pre-filled | | | |
+| 2 | Open the reset link with an altered token | Tampered token | Reject the link as invalid and refuse the reset | | | |
+| 3 | Open a reset link that has already been used | Used link | Reject the link and require a new request | | | |
+| 4 | Open an expired reset link | Expired link | State that the link has expired and require a new request | | | |
+| 5 | Click “Reset Password” with both fields empty | None | Reject and state that the password fields are required | | | |
+| 6 | Enter a weak new password | password | Reject and list the missing requirements | | | |
+| 7 | Enter a new password shorter than 8 characters | Ab1! | Reject and require at least 8 characters | | | |
+| 8 | Enter a valid new password | NewPass123! | Accept and display all strength requirements met | | | |
+| 9 | Enter a different confirmation password | NewPass456! | Reject with a confirmation-does-not-match message | | | |
+| 10 | Enter the matching confirmation password | NewPass123! | Accept the matching confirmation | | | |
+| 11 | Click “Reset Password” | None | Display the loading state, then confirm the password was reset | | | |
+| 12 | Observe the navigation after resetting | None | Redirect to the Login Page | | | |
+| 13 | Sign in using the old password | Student123! | Reject the login | | | |
+| 14 | Sign in using the new password | NewPass123! | Sign in successfully and open the User Dashboard | | | |
+| 15 | Re-open the same reset link after a successful reset | Used link | Reject the link as no longer valid | | | |
+
+---
+---
+
+# PRIORITY 3 — RESEND EMAIL
+
+*Objective: evaluate whether a user can request another verification email when the original was not
+received, and confirm the system communicates clearly with the email service.*
+
+---
+
+### 🧪 Resend Email — Verification Email Testing
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Observe the Email Verification panel on the Login Page | None | Display the panel with the “Resend Link” button | | | |
+| 2 | Click the “?” information icon | None | Display the tooltip explaining when to request a new link | | | |
+| 3 | Click “Resend Link” | None | Display the Resend Verification Email window | | | |
+| 4 | Click “Send” with the email field empty | None | Reject the request and state that the school email is required | | | |
+| 5 | Enter an invalid email format | hanskurvey.smcbi | Reject the entry and require a valid email address | | | |
+| 6 | Enter an email outside the school domain | test@gmail.com | Reject the entry and require an @smcbi.edu.ph address | | | |
+| 7 | Enter an unregistered school email | nobody@smcbi.edu.ph | State that the email is not registered in the system | | | |
+| 8 | Enter an email belonging to an already verified account | hanskurveyfilart@smcbi.edu.ph | State that the email is already verified and direct the user to sign in | | | |
+| 9 | Enter an unverified registered account’s email | Newly registered account | Accept the address and enable the request | | | |
+| 10 | Click “Send” | None | Display the loading state while the email is being sent | | | |
+| 11 | Wait for the request to finish | None | Display a success message confirming the verification email was sent | | | |
+| 12 | Open the recipient inbox | None | Receive the new verification email with a working link | | | |
+| 13 | Click “Send” repeatedly for the same address | Same email ×5 | Throttle the repeated requests instead of sending an email each time | | | |
+| 14 | Click “✕” or outside the window | None | Close the Resend Verification window and clear the entered email | | | |
+| 15 | Disconnect the internet and click “Send” | Valid unverified email | Display a clear failure message instead of reporting success | | | |
+| 16 | Open the verification link received | None | Mark the account as verified and allow it to sign in | | | |
+
+---
+---
+
+# PRIORITY 4 — USER-SIDE FEATURES
+
+*Objective: evaluate the complete experience of a registered user within the system — functionality,
+usability, validation, data processing, error handling, and interaction between components.*
+
+---
+
+### 🧪 4.1 User Dashboard Testing
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Sign in as a student | Valid credentials | Open a kiosk session and display the session number | | | |
+| 2 | Observe the welcome section | None | Display the signed-in user’s name and role | | | |
+| 3 | View the measurement cards before measuring | None | Display all five cards (Heart Rate & SpO2, Temperature, Height, Weight, BMI) as “--” and Idle | | | |
+| 4 | View the Measurement Progress panel | None | Display 0 of 5 readings captured | | | |
+| 5 | Click “Start Health Check” | None | Redirect to the Health Check options screen | | | |
+| 6 | Return to the dashboard after saving one reading | None | Display the saved value on its card and increase the progress count | | | |
+| 7 | Complete all measurements and return | All readings | Display all five cards filled and the progress as complete | | | |
+| 8 | Click “Review Results” | None | Redirect to the Results Page | | | |
+| 9 | Click each guide item in the help panel | Help topics | Display the corresponding instruction | | | |
+| 10 | Refresh the dashboard | None | Reload the same session data without losing any saved reading | | | |
+
+---
+
+### 🧪 4.2 User Profile and Account Information Testing
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Click “Account Menu” then “Profile” | None | Display the profile panel with the user’s own details | | | |
+| 2 | Observe the fields on opening | None | Display the fields locked and not editable | | | |
+| 3 | Click “Edit” | None | Unlock the profile fields for editing | | | |
+| 4 | Clear a required field and click “Save Changes” | Blank last name | Reject the change and name the required field | | | |
+| 5 | Change a detail and click “Save Changes” | Updated department | Save the change and display a success message | | | |
+| 6 | Refresh and reopen the profile | None | Display the updated details | | | |
+| 7 | Click “Cancel” after editing without saving | Any change | Discard the change and restore the original values | | | |
+| 8 | Click “Change Password” | None | Display the Change Password window with the strength guide visible | | | |
+| 9 | Enter a wrong current password | wrongpass | Reject and state that the current password does not match | | | |
+| 10 | Enter a weak new password | password | Reject and list the missing requirements | | | |
+| 11 | Enter mismatched confirmation | NewPass123! / NewPass456! | Reject with a confirmation-does-not-match message | | | |
+| 12 | Enter the correct current and matching new password | Current / NewPass123! | Update the password and confirm success | | | |
+| 13 | Sign out and sign in with the new password | NewPass123! | Sign in successfully | | | |
+
+---
+
+### 🧪 4.3 Health Measurement Process Testing — Smart Mode
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Click “Start Health Check” | None | Display the four available health checks | | | |
+| 2 | Observe the mode selector | None | Display Smart Mode as the default with Manual Mode available | | | |
+| 3 | Click “Heart Rate & SpO2” | None | Display the finger-placement instruction and live reading panel | | | |
+| 4 | Place a finger on the pulse oximeter | Finger on sensor | Display live pulse and SpO2 values until they stabilise | | | |
+| 5 | Wait for the reading to complete | None | Save the final heart rate and SpO2 to the session | | | |
+| 6 | Click “Temperature” | None | Display the forehead-positioning instruction | | | |
+| 7 | Present the forehead to the infrared sensor | Forehead on sensor | Capture and save the temperature in °C | | | |
+| 8 | Click “Height” | None | Display the standing instruction for the height sensor | | | |
+| 9 | Stand on the platform | Student standing | Capture the height in cm with the platform thickness deducted | | | |
+| 10 | Click “Weight” | None | Display the weighing platform instruction | | | |
+| 11 | Stand still on the platform | Student standing | Capture and save the weight in kg once the reading settles | | | |
+| 12 | View the BMI card | None | Compute the BMI from the saved height and weight and display its category | | | |
+| 13 | Click “Retake reading” on a completed check | None | Replace the previous value with the new reading in the same session | | | |
+| 14 | Start a Smart Mode reading with the sensor unplugged | None | Report the sensor as unavailable instead of hanging or saving a blank reading | | | |
+| 15 | Cancel a reading midway | None | Return to the health check options without saving a partial value | | | |
+
+---
+
+### 🧪 4.4 Health Measurement Process Testing — Manual Mode and Input Validation
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Click the “Manual Mode” toggle | None | Switch to Manual Mode and display the value entry fields | | | |
+| 2 | Click “Save Reading” with the field empty | None | Reject the entry and require a value | | | |
+| 3 | Enter a non-numeric value | abc | Reject the entry and require a number | | | |
+| 4 | Enter a valid temperature | 36.8 | Accept the value and save it to the session | | | |
+| 5 | Enter a low but plausible temperature | 33 | Accept and save the reading, grading it against the admin thresholds | | | |
+| 6 | Enter an impossible temperature | 3.6 | Reject with a message giving the acceptable range (25–45 °C) | | | |
+| 7 | Enter a heart rate without SpO2 | 80 / blank | Reject and state that SpO2 is required with heart rate | | | |
+| 8 | Enter a valid heart rate and SpO2 | 80 / 99 | Accept and save both values | | | |
+| 9 | Enter an out-of-range SpO2 | 150 | Reject with a message giving the acceptable range | | | |
+| 10 | Enter a valid height and weight | 176 / 60 | Accept both and compute the BMI | | | |
+| 11 | Enter a negative weight | -5 | Reject the entry as outside the acceptable range | | | |
+| 12 | Switch between Smart and Manual Mode midway | None | Change the mode without losing readings already saved | | | |
+
+---
+
+### 🧪 4.5 Measurement Validation and Health Status Testing
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Record a normal temperature | 36.5 °C | Grade the reading as Normal and display it in green | | | |
+| 2 | Record a temperature above the normal range | 38.5 °C | Grade the reading as Alert and display it in red | | | |
+| 3 | Record a temperature below the normal range | 34.0 °C | Grade the reading as Alert and display it in red | | | |
+| 4 | Record a normal heart rate | 80 bpm | Grade the reading as Normal | | | |
+| 5 | Record a heart rate below the normal range | 50 bpm | Grade the reading as Alert (bradycardia) | | | |
+| 6 | Record a heart rate above the normal range | 120 bpm | Grade the reading as Alert (tachycardia) | | | |
+| 7 | Record a normal SpO2 | 99 % | Grade the reading as Normal | | | |
+| 8 | Record a mildly low SpO2 | 93 % | Grade the reading as Watch / Needs Attention | | | |
+| 9 | Record a severely low SpO2 | 88 % | Grade the reading as Alert | | | |
+| 10 | View the overall status with one abnormal reading | Any abnormal value | Display the overall status as Alert rather than Normal | | | |
+| 11 | View the overall status with a missing measurement | One check skipped | Display the overall status as Incomplete and name the missing reading | | | |
+| 12 | Compare the dashboard card with the results screen | Same reading | Display the same status in both places | | | |
+
+---
+
+### 🧪 4.6 Health Results and Summary Testing
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Complete all four health checks | All readings | Display the Health Summary screen | | | |
+| 2 | Observe the Overall Status section | None | Display the status with its supporting advice | | | |
+| 3 | View the reading cards | None | Display all five readings with their values and units | | | |
+| 4 | View the BMI card | None | Display the BMI value and its category | | | |
+| 5 | Open the Results Page with one check missing | Incomplete session | Display Incomplete and name the missing measurement | | | |
+| 6 | Click “Repeat Health Check” | None | Return to the health check options screen | | | |
+| 7 | Click “Back to Dashboard” | None | Return to the User Dashboard with the readings intact | | | |
+| 8 | Observe the results in dark mode | Dark theme | Keep every value and status readable | | | |
+
+---
+
+### 🧪 4.7 Health Records and History Testing
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Click “Account Menu” then “Health Records” | None | Display the user’s own past sessions | | | |
+| 2 | Observe the record order | None | Display the newest record first | | | |
+| 3 | Click one health record | None | Display the full detail of that session | | | |
+| 4 | Compare a record with the results screen it came from | Same session | Display matching values in both places | | | |
+| 5 | Use the search or filter control | Date or keyword | Display only the matching records | | | |
+| 6 | Open Health Records with no saved sessions | New account | Display an empty state instead of a blank panel | | | |
+| 7 | Confirm the records shown belong to the signed-in user only | Two different accounts | Display no other user’s records in either account | | | |
+
+---
+
+### 🧪 4.8 Health Journey and School-Year Tracking Testing
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Open the Health Journey view | None | Display the user’s readings across time | | | |
+| 2 | Observe the academic level shown on a record | 4th Year College | Display the level recorded at the time of the measurement | | | |
+| 3 | Observe the school year shown on a record | S.Y. 2026 – 2027 | Display the school year recorded at the time of the measurement | | | |
+| 4 | Complete a new health check and reopen the journey | New reading | Add the new reading to the timeline in the correct order | | | |
+| 5 | Compare two readings of the same measurement | Two temperatures | Display the change between them clearly | | | |
+| 6 | Change the account’s year level, then view an older record | Year Level → 3rd Year | Keep the older record showing the level it was taken under | | | |
+| 7 | Open the journey with only one reading saved | Single record | Display the single entry without an empty or broken chart | | | |
+
+---
+
+### 🧪 4.9 Notifications and Alerts Testing
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Click the “Notification Bell” with all readings normal | 36.5 °C, 80 bpm, 99 % | Display no abnormal-reading alerts | | | |
+| 2 | Record an abnormal temperature and open the bell | 38.5 °C | Display a high body temperature alert naming the value | | | |
+| 3 | Read the range quoted in the alert | None | Display the normal range currently configured by the administrator | | | |
+| 4 | Record a low SpO2 and open the bell | 93 % | Display a low oxygen saturation alert | | | |
+| 5 | Record an abnormal heart rate and open the bell | 50 bpm | Display a low heart rate alert | | | |
+| 6 | Open the full Notifications page | None | Display the same alerts as the bell | | | |
+| 7 | Mark a notification as read | None | Update its state and reduce the unread count | | | |
+| 8 | Record a normal reading after an abnormal one | 36.5 °C | Remove the previous abnormal alert for that measurement | | | |
+| 9 | Open notifications on a new account with no readings | New account | Display an empty state | | | |
+
+---
+
+### 🧪 4.10 Health Reports and Receipt Printing Testing
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Click “Print Receipt” on the Results Page | None | Send the health summary to the thermal printer | | | |
+| 2 | Observe the button while printing | None | Display the printing state and prevent a second submission | | | |
+| 3 | Examine the printed receipt | None | Show the name, session number, readings, status and date | | | |
+| 4 | Switch the printer off and click “Print Receipt” | None | Display a printing error without losing the saved session | | | |
+| 5 | Reprint the same record from Health Records | Saved record | Produce the same receipt again | | | |
+| 6 | Print a receipt for an incomplete session | One check missing | Show the available readings and mark the record as Incomplete | | | |
+
+---
+
+### 🧪 4.11 Other User-Side Functions Testing
+- **👤 Actor:** Student / Teacher
+- **💻 System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+- **📅 Date:**
+- **⏰ Time:**
+
+| Step | Action | Input Test Data | Expected System Response | Pass | Fail | Comment |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Click “Appearance” and choose Dark Mode | Dark | Apply the dark theme immediately and keep the screen readable | | | |
+| 2 | Click “Appearance” and choose Light Mode | Light | Apply the light theme immediately | | | |
+| 3 | Choose System theme and change the device setting | System | Follow the device setting | | | |
+| 4 | Refresh after changing the theme | None | Keep the chosen theme | | | |
+| 5 | Enable the Assistant Mode toggle | None | Announce the on-screen guidance by voice | | | |
+| 6 | Move through a health check with the assistant on | Health check | Match the spoken guidance to the current screen | | | |
+| 7 | Disable the Assistant Mode toggle | None | Stop the voice guidance immediately | | | |
+| 8 | Complete a full health check using the touchscreen only | Touch input | Operate every control by touch without a keyboard except for text entry | | | |
+| 9 | Leave the kiosk idle past the session limit, then act | None | Return to the Login Page instead of showing a broken screen | | | |
+| 10 | Resize the browser window to a small width | Narrow window | Keep the layout usable without sideways scrolling | | | |
+
+---
+---
+
+**Post-Condition:**
+
+
+**Summary of Results:**
+
+| Priority | Page / Module | Total Steps | Passed | Failed | Remarks |
+| --- | --- | --- | --- | --- | --- |
+| 1 | General Login — Valid Credentials | 11 | | | |
+| 1 | General Login — Invalid and Incomplete Credentials | 11 | | | |
+| 1 | General Login — Barcode Login | 7 | | | |
+| 1 | General Login — Session, Duplicate Submission, Logout | 11 | | | |
+| 2 | Forgot Password — Request and Email Validation | 11 | | | |
+| 2 | Forgot Password — Reset Link and New Password | 15 | | | |
+| 3 | Resend Email — Verification Email | 16 | | | |
+| 4 | 4.1 User Dashboard | 10 | | | |
+| 4 | 4.2 User Profile and Account Information | 13 | | | |
+| 4 | 4.3 Health Measurement — Smart Mode | 15 | | | |
+| 4 | 4.4 Health Measurement — Manual Mode and Input Validation | 12 | | | |
+| 4 | 4.5 Measurement Validation and Health Status | 12 | | | |
+| 4 | 4.6 Health Results and Summary | 8 | | | |
+| 4 | 4.7 Health Records and History | 7 | | | |
+| 4 | 4.8 Health Journey and School-Year Tracking | 7 | | | |
+| 4 | 4.9 Notifications and Alerts | 9 | | | |
+| 4 | 4.10 Health Reports and Receipt Printing | 6 | | | |
+| 4 | 4.11 Other User-Side Functions | 10 | | | |
+| | **TOTAL** | **191** | | | |
+
+**Priority Clearance:**
+
+*A priority may only be cleared once every step has been executed and every defect found in it has
+been corrected and retested.*
+
+| Priority | Function | All Steps Executed | Defects Resolved | Cleared to Proceed | Date |
+| --- | --- | --- | --- | --- | --- |
+| 1 | General Login | | | | |
+| 2 | Forgot Password | | | | |
+| 3 | Resend Email | | | | |
+| 4 | User-Side Features | | | | |
+
+**Defects Found:**
+
+*Severity: Critical (blocks use) · Major (function works incorrectly) · Minor (cosmetic).*
+
+| No. | Priority | Page / Step | Description of the Problem | Severity | Action Taken | Retested | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | | | | | | | |
+| 2 | | | | | | | |
+| 3 | | | | | | | |
+| 4 | | | | | | | |
+| 5 | | | | | | | |
+| 6 | | | | | | | |
+
+**Conclusion:**
+
+
+**Executed by:**
+-
+-
+-
+-
+
+**Checked by:**
+-

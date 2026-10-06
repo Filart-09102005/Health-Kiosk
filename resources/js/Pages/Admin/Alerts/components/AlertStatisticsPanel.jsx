@@ -10,7 +10,7 @@ export default function AlertStatisticsPanel() {
     return (
         <div className="grid gap-3">
             {stats.map(({ label, value, icon: Icon }) => (
-                <div key={label} className="flex items-center justify-between rounded-[14px] border p-4" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+                <div key={label} className="flex items-center justify-between rounded-[1.25rem] border p-4" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
                     <div>
                         <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--color-muted)" }}>{label}</p>
                         <p className="mt-1 text-2xl font-black">{value}</p>

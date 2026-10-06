@@ -46,4 +46,14 @@ return [
         'secret_key' => env('SUPABASE_SECRET_KEY'),
     ],
 
+    // Shared secret the Python serial bridge sends in the
+    // X-Kiosk-Bridge-Token header. The bridge has no user session to
+    // authenticate with, so this is what stands in for one on the
+    // live-vitals/command endpoints. Generate with e.g.
+    // `php artisan tinker --execute="echo Str::random(40);"` and set the
+    // same value in the bridge's config.json / --bridge-token.
+    'kiosk_bridge' => [
+        'token' => env('KIOSK_BRIDGE_TOKEN'),
+    ],
+
 ];

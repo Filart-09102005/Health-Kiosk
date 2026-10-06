@@ -97,7 +97,7 @@ export default function LiveVitals() {
                 { label: "Cache Mode", value: "No-store", caption: "Fresh API request every cycle", icon: WifiOff },
             ]}
         >
-            <section className="rounded-[18px] border p-5 shadow-xl" style={{ backgroundColor: medicalTheme.page, borderColor: medicalTheme.border, color: medicalTheme.text }}>
+            <section className="rounded-[18px] border p-5 hk-admin-card" style={{ backgroundColor: medicalTheme.page, borderColor: medicalTheme.border, color: medicalTheme.text }}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: medicalTheme.blue }}>

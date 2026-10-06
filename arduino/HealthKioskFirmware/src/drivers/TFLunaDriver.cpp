@@ -41,8 +41,10 @@ namespace Drivers {
         
         uint16_t dist, strength, temp;
         unsigned long start = millis();
-        // Give it up to 1000ms to produce a valid, fresh frame
-        while (millis() - start < 1000) {
+        // Give it up to 2500ms to produce a valid, fresh frame — the TF-Luna
+        // can take over a second to start streaming clean frames right after
+        // power-up/Serial.begin(), and 1000ms was cutting that too close.
+        while (millis() - start < 2500) {
             if (readRaw(dist, strength, temp)) {
                 // Remove the strict signal strength requirement for self-test,
                 // as it can fail if testing indoors against a very close object.
@@ -76,35 +78,42 @@ namespace Drivers {
             return false;
         }
 
-        // TFLuna Frame: 0x59 0x59 Dist_L Dist_H Strength_L Strength_H Temp_L Temp_H Checksum
-        if (_serial->available() >= 9) {
-            if (_serial->read() == 0x59) {
-                if (_serial->read() == 0x59) {
-                    uint8_t uart_data[7];
-                    for (int i = 0; i < 7; i++) {
-                        uart_data[i] = _serial->read();
-                    }
+        bool gotData = false;
+        
+        // Wait until we have at least one full frame in the buffer
+        while (_serial->available() >= 9) {
+            if (_serial->peek() == 0x59) {
+                _serial->read(); // Consume the first 0x59
+                
+                if (_serial->peek() == 0x59) {
+                    _serial->read(); // Consume the second 0x59
                     
                     uint8_t checksum = 0x59 + 0x59;
-                    for (int i = 0; i < 6; i++) {
-                        checksum += uart_data[i];
+                    uint8_t data[7];
+                    
+                    for (int i = 0; i < 7; i++) {
+                        data[i] = _serial->read();
+                        if (i < 6) checksum += data[i];
                     }
                     
-                    if (checksum == uart_data[6]) {
-                        distanceCm = uart_data[0] | (uart_data[1] << 8);
-                        signalStrength = uart_data[2] | (uart_data[3] << 8);
-                        temperature = uart_data[4] | (uart_data[5] << 8); // Scaled
-                        
-                        setError(ErrorCode::OK);
-                        return true;
-                    } else {
-                        setError(ErrorCode::SENSOR_OUT_OF_RANGE); // Checksum error
-                        return false;
+                    if (checksum == data[6]) {
+                        distanceCm = data[0] | (data[1] << 8);
+                        signalStrength = data[2] | (data[3] << 8);
+                        temperature = data[4] | (data[5] << 8);
+                        gotData = true;
                     }
-                }
+                } 
+            } else {
+                // It's not 0x59, so it's a garbage/misaligned byte. Throw it away.
+                _serial->read();
             }
         }
-        setError(ErrorCode::SENSOR_TIMEOUT);
+        
+        if (gotData) {
+            setError(ErrorCode::OK);
+            return true;
+        }
+        
         return false;
     }
 

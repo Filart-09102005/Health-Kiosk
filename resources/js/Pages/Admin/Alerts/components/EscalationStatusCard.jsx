@@ -2,7 +2,7 @@ import { Siren } from "lucide-react";
 
 export default function EscalationStatusCard({ status = "Monitoring", detail = "No external escalation has been sent." }) {
     return (
-        <div className="rounded-[14px] border p-4" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <div className="rounded-[1.25rem] border p-4" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <div className="flex items-start justify-between gap-3">
                 <div>
                     <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: "var(--color-muted)" }}>Escalation</p>

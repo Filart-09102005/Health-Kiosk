@@ -7,18 +7,23 @@ import {
     Check,
     Eye,
     EyeOff,
+    Info,
     Lock,
     Mail,
     Save,
     ShieldCheck,
     UserRound,
+    Calendar,
 } from "lucide-react";
 import AuthLayout from "./components/AuthLayout";
 import BarcodeScanner from "./components/BarcodeScanner";
 import RoleSelector from "./components/RoleSelector";
 import Loader from "../Global/Loader";
+import BirthdayPicker from "../../Global/BirthdayPicker";
+import SelectField from "../Global/SelectField";
 import { useToast } from "../Global/Toast";
 import { authService, getErrorMessage, getValidationErrors } from "./services/authService";
+import Tooltip from "../Global/Tooltip";
 
 const steps = ["Scan ID", "Role", "Details", "Password"];
 const schoolEmailDomain = "@smcbi.edu.ph";
@@ -41,7 +46,7 @@ const initialForm = {
 };
 
 const studentDepartments = ["COLLEGE", "BED"];
-const personnelDepartments = ["COLLEGE", "BED", "NTP"];
+const personnelDepartments = ["COLLEGE INSTRUCTOR", "BED INSTRUCTOR", "NTP"];
 
 const gradeLevels = [
     "Grade 7",
@@ -68,10 +73,18 @@ export default function Register({ navigate }) {
         checking: false,
         available: false,
     });
+    const [emailCheckState, setEmailCheckState] = useState({
+        status: null,
+        message: "",
+        checking: false,
+        available: false,
+    });
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [saving, setSaving] = useState(false);
     const [autoProceeding, setAutoProceeding] = useState(false);
+    const [emailManuallyEdited, setEmailManuallyEdited] = useState(false);
+    const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
 
     const passwordRules = useMemo(
         () => [
@@ -97,18 +110,58 @@ export default function Register({ navigate }) {
     const needsStrand = isBed && seniorHighGrades.includes(form.grade_level);
     const departmentOptions = form.role === "teacher" ? personnelDepartments : studentDepartments;
 
+    const getDepartmentLabel = (dept, role) => {
+        if (dept === "COLLEGE") return "College Students";
+        if (dept === "BED") return "Basic Education (BED) Students";
+        if (dept === "COLLEGE INSTRUCTOR") return "College Instructors";
+        if (dept === "BED INSTRUCTOR") return "Basic Education (BED) Instructors";
+        if (dept === "NTP") return "Non-Teaching Personnel (NTP)";
+        return dept;
+    };
+
+    const calculateAge = (birthday) => {
+        if (!birthday) return null;
+        const birthDate = new Date(birthday);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
+    };
+    const computedAge = calculateAge(form.birthday);
+
     const updateField = (field, value) => {
-        setForm((current) => ({ ...current, [field]: value }));
+        setForm((current) => {
+            const next = { ...current, [field]: value };
+
+            if ((field === "firstname" || field === "lastname") && !emailManuallyEdited) {
+                const fName = (field === "firstname" ? value : current.firstname) || "";
+                const lName = (field === "lastname" ? value : current.lastname) || "";
+                
+                if (fName || lName) {
+                    const cleanName = (fName + lName).toLowerCase().replace(/[^a-z0-9._-]/g, "");
+                    next.email = cleanName ? `${cleanName}${schoolEmailDomain}` : "";
+                } else {
+                    next.email = "";
+                }
+            }
+
+            return next;
+        });
         setErrors((current) => ({ ...current, [field]: undefined }));
     };
 
     const updateSchoolEmail = (value) => {
+        setEmailManuallyEdited(true);
         const cleanValue = value
             .toLowerCase()
             .replace(schoolEmailDomain, "")
             .replace(/[^a-z0-9._-]/g, "");
 
-        updateField("email", cleanValue ? `${cleanValue}${schoolEmailDomain}` : "");
+        setForm((current) => ({ ...current, email: cleanValue ? `${cleanValue}${schoolEmailDomain}` : "" }));
+        setErrors((current) => ({ ...current, email: undefined }));
     };
 
     useEffect(() => {
@@ -122,7 +175,7 @@ export default function Register({ navigate }) {
         const timer = window.setTimeout(() => {
             setStep(1);
             setAutoProceeding(false);
-        }, 1600);
+        }, 3000);
 
         return () => window.clearTimeout(timer);
     }, [barcodeState.available, step]);
@@ -130,6 +183,36 @@ export default function Register({ navigate }) {
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
     }, [step]);
+
+    useEffect(() => {
+        if (!form.email || form.email.length <= schoolEmailDomain.length) {
+            setEmailCheckState({ status: null, message: "", checking: false, available: false });
+            return;
+        }
+
+        setEmailCheckState(prev => ({ ...prev, status: null, checking: true, available: false }));
+
+        const timer = setTimeout(async () => {
+            try {
+                const response = await authService.checkEmail(form.email);
+                setEmailCheckState({
+                    status: response.data.available ? "success" : "error",
+                    message: response.data.message,
+                    checking: false,
+                    available: response.data.available,
+                });
+            } catch (error) {
+                setEmailCheckState({
+                    status: "error",
+                    message: "Email check failed.",
+                    checking: false,
+                    available: false,
+                });
+            }
+        }, 600);
+
+        return () => clearTimeout(timer);
+    }, [form.email]);
 
     useEffect(() => {
         setForm((current) => {
@@ -242,32 +325,45 @@ export default function Register({ navigate }) {
         }
     };
 
-    const stepIsValid = () => {
-        if (step === 0) return Boolean(form.barcode && barcodeState.available);
-        if (step === 1) return Boolean(form.role);
-        if (step === 2) {
-            return Boolean(
-                form.firstname &&
-                    form.lastname &&
-                    form.email &&
-                    form.birthday &&
-                    form.gender &&
-                    form.department &&
-                    (! isBed || form.grade_level) &&
-                    (! needsStrand || form.strand) &&
-                    (! isCollege || (form.year_level && form.program)),
-            );
+    const getMissingFieldsMessage = () => {
+        const missing = [];
+        if (step === 0) {
+            if (!form.barcode) missing.push("Barcode");
+            else if (!barcodeState.available) missing.push("Valid Barcode");
         }
-        if (step === 3) return strengthScore === 5 && form.password === form.password_confirmation;
-        return true;
+        if (step === 1) {
+            if (!form.role) missing.push("Role");
+        }
+        if (step === 2) {
+            if (!form.firstname) missing.push("First name");
+            if (!form.lastname) missing.push("Last name");
+            if (!form.email) missing.push("Email");
+            else if (emailCheckState.checking) missing.push("Wait for email verification");
+            else if (!emailCheckState.available) missing.push("Unique Email");
+            if (!form.birthday) missing.push("Birthday");
+            if (!form.gender) missing.push("Gender");
+            if (!form.department) missing.push("Department");
+            if (isBed && !form.grade_level) missing.push("Grade Level");
+            if (needsStrand && !form.strand) missing.push("Strand");
+            if (isCollege) {
+                if (!form.year_level) missing.push("Year Level");
+                if (!form.program) missing.push("Program");
+            }
+        }
+        if (step === 3) {
+            if (strengthScore !== 5) missing.push("Strong Password");
+            if (form.password !== form.password_confirmation) missing.push("Matching Passwords");
+        }
+        return missing;
     };
 
     const goNext = () => {
-        if (! stepIsValid()) {
+        const missing = getMissingFieldsMessage();
+        if (missing.length > 0) {
             showToast({
                 type: "warning",
-                title: "Complete this step",
-                message: "Please fill in the required information before continuing.",
+                title: "Incomplete Information",
+                message: `Please provide: ${missing.join(', ')}`,
             });
             return;
         }
@@ -317,7 +413,7 @@ export default function Register({ navigate }) {
             panelDescription="Scan your ID barcode to join the campus health monitoring system."
             variant="register"
         >
-            {saving ? <Loader label="Saving registration" fullscreen /> : null}
+            {saving ? <Loader label="Finalizing registration" message="Securely setting up your health profile..." fullscreen /> : null}
 
             <StepTracker currentStep={step} />
 
@@ -361,20 +457,38 @@ export default function Register({ navigate }) {
                         </div>
 
                         <div className="grid gap-4 md:grid-cols-2">
-                            <TextField icon={UserRound} label="First name" value={form.firstname} error={errors.firstname} placeholder="e.g. Juan" onChange={(value) => updateField("firstname", value)} />
-                            <TextField icon={UserRound} label="Last name" value={form.lastname} error={errors.lastname} placeholder="e.g. Dela Cruz" onChange={(value) => updateField("lastname", value)} />
+                            <TextField tooltip="Your legal first name as it appears on your ID." icon={UserRound} label="First name" value={form.firstname} error={errors.firstname} placeholder="e.g. Juan" onChange={(value) => updateField("firstname", value)} />
+                            <TextField tooltip="Your legal surname." icon={UserRound} label="Last name" value={form.lastname} error={errors.lastname} placeholder="e.g. Dela Cruz" onChange={(value) => updateField("lastname", value)} />
                             <SchoolEmailField
+                                tooltip="Your official school email account used for logging in."
                                 value={form.email}
                                 error={errors.email}
                                 onChange={updateSchoolEmail}
+                                checkState={emailCheckState}
                             />
-                            <TextField label="Birthday" type="date" value={form.birthday} error={errors.birthday} max={new Date().toISOString().split("T")[0]} onChange={(value) => updateField("birthday", value)} />
-                            <SelectField label="Gender" value={form.gender} error={errors.gender} onChange={(value) => updateField("gender", value)} options={[
+                            {/* The same calendar the admin form uses, so a date of
+                                birth is picked the same way on both sides of the
+                                system rather than through a raw native date input. */}
+                            <BirthdayPicker
+                                label="Birthday"
+                                value={form.birthday}
+                                error={errors.birthday}
+                                onChange={(value) => updateField("birthday", value)}
+                                badge={
+                                    computedAge !== null ? (
+                                        <span
+                                            className="rounded-md px-2 py-0.5 text-[10px] font-bold"
+                                            style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 15%, transparent)", color: "var(--color-primary)" }}
+                                        >
+                                            {computedAge} years old
+                                        </span>
+                                    ) : null
+                                }
+                            />
+                            <SelectField tooltip="Select your biological gender for proper medical baselines." label="Gender" value={form.gender} error={errors.gender} onChange={(value) => updateField("gender", value)} options={[
                                 ["", "Choose gender"],
                                 ["male", "Male"],
                                 ["female", "Female"],
-                                ["other", "Other"],
-                                ["prefer_not_to_say", "Prefer not to say"],
                             ]} />
                             <SelectField
                                 label="Department"
@@ -383,7 +497,7 @@ export default function Register({ navigate }) {
                                 onChange={(value) => updateField("department", value)}
                                 options={[
                                     ["", "Choose department"],
-                                    ...departmentOptions.map((department) => [department, department]),
+                                    ...departmentOptions.map((department) => [department, getDepartmentLabel(department, form.role)]),
                                 ]}
                             />
                             {isBed ? (
@@ -431,7 +545,9 @@ export default function Register({ navigate }) {
                         </div>
                         <div className="space-y-5">
                             <PasswordField
+                                tooltip="Create a secure password to protect your health records."
                                 label="Password"
+                                placeholder="Enter a strong password"
                                 value={form.password}
                                 show={showPassword}
                                 error={errors.password}
@@ -439,10 +555,19 @@ export default function Register({ navigate }) {
                                 onChange={(value) => updateField("password", value)}
                             />
                             <PasswordField
+                                tooltip="Re-type your password to ensure there are no typos."
                                 label="Confirm password"
+                                placeholder="Re-enter your password to confirm"
                                 value={form.password_confirmation}
                                 show={showConfirmPassword}
                                 error={errors.password_confirmation}
+                                validationState={
+                                    form.password_confirmation.length > 0
+                                        ? form.password === form.password_confirmation
+                                            ? "match"
+                                            : "mismatch"
+                                        : null
+                                }
                                 onToggle={() => setShowConfirmPassword((current) => ! current)}
                                 onChange={(value) => updateField("password_confirmation", value)}
                             />
@@ -467,14 +592,14 @@ export default function Register({ navigate }) {
                             <button
                                 type="button"
                                 onClick={() => {
-                                    if (stepIsValid()) {
+                                    if (getMissingFieldsMessage().length === 0) {
                                         submitRegistration();
                                     } else {
                                         goNext();
                                     }
                                 }}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl px-5 py-4 font-black text-white shadow-[0_20px_55px_rgba(15,118,110,0.22)] transition hover:-translate-y-0.5"
-                                style={{ backgroundColor: "var(--color-primary)" }}
+                                className="flex w-full items-center justify-center gap-2 rounded-xl px-5 py-4 font-black shadow-[0_20px_55px_rgba(15,118,110,0.22)] transition hover:-translate-y-0.5"
+                                style={{ backgroundColor: "var(--color-primary)", color: "var(--color-primary-content)" }}
                             >
                                 <Save size={18} />
                                 Save and Register
@@ -501,8 +626,8 @@ export default function Register({ navigate }) {
                         type="button"
                         onClick={goNext}
                         disabled={barcodeState.checking}
-                        className="flex items-center gap-2 rounded-xl px-5 py-3 font-bold text-white transition hover:-translate-y-0.5 disabled:opacity-60"
-                        style={{ backgroundColor: "var(--color-primary)" }}
+                        className="flex items-center gap-2 rounded-xl px-5 py-3 font-bold transition hover:-translate-y-0.5 disabled:opacity-60"
+                        style={{ backgroundColor: "var(--color-primary)", color: "var(--color-primary-content)" }}
                     >
                         Continue
                         <ArrowRight size={18} />
@@ -556,11 +681,17 @@ function StepTracker({ currentStep }) {
     );
 }
 
-function TextField({ label, value, onChange, error, type = "text", icon: Icon, max, placeholder }) {
+function TextField({ label, rightLabel, value, onChange, error, type = "text", icon: Icon, max, placeholder, tooltip }) {
     return (
         <label className="block text-left">
-            <span className="text-sm font-black auth-strong-text">{label}</span>
-            <div className="mt-2 flex min-h-[3.25rem] items-center gap-3 rounded-xl border px-4 auth-control" style={{ borderColor: error ? "var(--color-error)" : undefined }}>
+            <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-black auth-strong-text flex items-center">
+                    {label}
+                    {tooltip && <Tooltip text={tooltip} />}
+                </span>
+                {rightLabel && <span className="text-xs font-black" style={{ color: "var(--color-primary)" }}>{rightLabel}</span>}
+            </div>
+            <div className="mt-2 relative flex h-[3.25rem] items-center gap-3 rounded-xl border px-4 auth-control" style={{ borderColor: error ? "var(--color-error)" : undefined }}>
                 {Icon ? <Icon size={18} style={{ color: "var(--color-muted)" }} /> : null}
                 <input
                     type={type}
@@ -568,7 +699,9 @@ function TextField({ label, value, onChange, error, type = "text", icon: Icon, m
                     max={max}
                     placeholder={placeholder}
                     onChange={(event) => onChange(event.target.value)}
-                    className="w-full bg-transparent text-sm font-semibold outline-none"
+                    className={`w-full bg-transparent text-sm font-semibold outline-none ${
+                        type === "date" ? "[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer" : ""
+                    } ${type === "date" && !value ? "text-muted-foreground" : ""}`}
                 />
             </div>
             {error ? <span className="mt-1 block text-xs" style={{ color: "var(--color-error)" }}>{error[0]}</span> : null}
@@ -576,38 +709,152 @@ function TextField({ label, value, onChange, error, type = "text", icon: Icon, m
     );
 }
 
-function SchoolEmailField({ value, onChange, error }) {
+function SchoolEmailField({ value, onChange, error, checkState, tooltip }) {
+    const [atTypedNotice, setAtTypedNotice] = useState(false);
+    const containerRef = useRef(null);
+    const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
+    useEffect(() => {
+        if (!containerRef.current) return;
+        const observer = new ResizeObserver((entries) => {
+            for (let entry of entries) {
+                setContainerSize({
+                    width: entry.target.clientWidth,
+                    height: entry.target.clientHeight
+                });
+            }
+        });
+        observer.observe(containerRef.current);
+        return () => observer.disconnect();
+    }, []);
+
     const localPart = value.endsWith(schoolEmailDomain)
         ? value.slice(0, -schoolEmailDomain.length)
         : value;
     const previewEmail = `${localPart}${schoolEmailDomain}`;
 
+    const handleInputChange = (e) => {
+        const raw = e.target.value;
+        if (raw.includes("@")) {
+            setAtTypedNotice(true);
+            setTimeout(() => setAtTypedNotice(false), 4000);
+        }
+        onChange(raw);
+    };
+
+    const isError = checkState?.status === "error";
+    const isSuccess = checkState?.status === "success";
+    const hasAnimation = isSuccess || isError;
+    const activeColor = isSuccess ? "#38BDF8" : isError ? "var(--color-error)" : "var(--auth-border)";
+
+    const { width: w, height: h } = containerSize;
+    const p = 2; // Offset to perfectly fit 4px stroke inside overflow-hidden bounds
+    const r = 12; // Matching the rounded-xl 12px border radius
+
+    // Perfect rectangular paths tracking exactly along the border
+    const rightPath = w > 0 ? `M ${w/2} ${p} L ${w - r} ${p} Q ${w - p} ${p} ${w - p} ${r} L ${w - p} ${h - r} Q ${w - p} ${h - p} ${w - r} ${h - p} L ${r} ${h - p} Q ${p} ${h - p} ${p} ${h - r} L ${p} ${r} Q ${p} ${p} ${r} ${p} L ${w/2} ${p}` : "";
+    const leftPath = w > 0 ? `M ${w/2} ${p} L ${r} ${p} Q ${p} ${p} ${p} ${r} L ${p} ${h - r} Q ${p} ${h - p} ${r} ${h - p} L ${w - r} ${h - p} Q ${w - p} ${h - p} ${w - p} ${h - r} L ${w - p} ${r} Q ${w - p} ${p} ${w - r} ${p} L ${w/2} ${p}` : "";
+
     return (
         <label className="block text-left md:col-span-2">
-            <span className="text-sm font-black auth-strong-text">School Email</span>
+            <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-black auth-strong-text flex items-center">
+                    School Email
+                    {tooltip && <Tooltip text={tooltip} />}
+                </span>
+                <span className="text-xs font-semibold flex items-center gap-1" style={{ color: "var(--color-primary)" }}>
+                    <Info size={13} /> Username only (Domain added automatically)
+                </span>
+            </div>
+
             <div
-                className="mt-2 flex min-h-[3.25rem] w-full flex-wrap items-center gap-3 rounded-xl border px-4 py-2 auth-control sm:flex-nowrap"
-                style={{ borderColor: error ? "var(--color-error)" : undefined }}
+                ref={containerRef}
+                className="group relative mt-2 flex h-[3.25rem] w-full flex-wrap items-center gap-3 rounded-xl border px-4 py-2 auth-control sm:flex-nowrap overflow-hidden"
+                style={{ 
+                    borderColor: hasAnimation ? "transparent" : error ? "var(--color-error)" : "var(--auth-border)",
+                    backgroundColor: hasAnimation ? `color-mix(in srgb, ${activeColor}, transparent 92%)` : "var(--auth-panel)",
+                    boxShadow: hasAnimation ? `0 12px 40px color-mix(in srgb, ${activeColor}, transparent 75%), 0 0 20px color-mix(in srgb, ${activeColor}, transparent 85%)` : "none",
+                }}
             >
+                <AnimatePresence>
+                    {hasAnimation && w > 0 && (
+                        <svg className="absolute inset-0 h-full w-full pointer-events-none z-20 overflow-visible" viewBox={`0 0 ${w} ${h}`}>
+                            <motion.path
+                                d={rightPath}
+                                fill="none"
+                                stroke={activeColor}
+                                strokeWidth="4"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                style={{ filter: `drop-shadow(0 0 8px ${activeColor}) drop-shadow(0 0 16px color-mix(in srgb, ${activeColor}, transparent 40%))` }}
+                                initial={{ pathLength: 0 }}
+                                animate={{ pathLength: 1 }}
+                                exit={{ opacity: 0, transition: { duration: 0.3 } }}
+                                transition={{ duration: 4.5, ease: [0.16, 1, 0.3, 1] }}
+                            />
+                            <motion.path
+                                d={leftPath}
+                                fill="none"
+                                stroke={activeColor}
+                                strokeWidth="4"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                style={{ filter: `drop-shadow(0 0 8px ${activeColor}) drop-shadow(0 0 16px color-mix(in srgb, ${activeColor}, transparent 40%))` }}
+                                initial={{ pathLength: 0 }}
+                                animate={{ pathLength: 1 }}
+                                exit={{ opacity: 0, transition: { duration: 0.3 } }}
+                                transition={{ duration: 4.5, ease: [0.16, 1, 0.3, 1] }}
+                            />
+                        </svg>
+                    )}
+                </AnimatePresence>
                 <Mail size={18} style={{ color: "var(--color-muted)" }} />
                 <input
                     type="text"
                     value={localPart}
-                    onChange={(event) => onChange(event.target.value)}
+                    onChange={handleInputChange}
                     placeholder="firstname.lastname"
                     className="min-w-[12rem] flex-1 bg-transparent text-sm font-semibold outline-none"
                     autoComplete="username"
                 />
-                <span className="shrink-0 rounded-lg px-3 py-1.5 text-[0.7rem] font-black" style={{ backgroundColor: "var(--auth-panel)", color: "var(--color-primary)" }}>
+                <span
+                    className="shrink-0 rounded-lg border px-3 py-1.5 text-[0.75rem] font-black shadow-sm flex items-center gap-1"
+                    style={{
+                        backgroundColor: "color-mix(in srgb, var(--color-primary) 12%, var(--auth-panel))",
+                        borderColor: "color-mix(in srgb, var(--color-primary) 30%, transparent)",
+                        color: "var(--color-primary)",
+                    }}
+                >
                     {schoolEmailDomain}
                 </span>
             </div>
+
+            <AnimatePresence>
+                {atTypedNotice && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="mt-2 rounded-lg border px-3 py-1.5 text-xs font-semibold flex items-center gap-2"
+                        style={{
+                            backgroundColor: "color-mix(in srgb, var(--color-primary) 15%, var(--auth-panel))",
+                            borderColor: "var(--color-primary)",
+                            color: "var(--color-primary)",
+                        }}
+                    >
+                        <Info size={14} className="shrink-0" />
+                        <span>No need to type <strong>@</strong> — <strong>{schoolEmailDomain}</strong> is attached automatically on the right!</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {error ? (
                 <span className="mt-1 block text-xs" style={{ color: "var(--color-error)" }}>
                     {error[0]}
                 </span>
             ) : localPart ? (
                 <span className="mt-2 block text-xs leading-5" style={{ color: "var(--color-muted)" }}>
+                    Full email address:{" "}
                     <span
                         className="rounded-lg px-2 py-1 font-black"
                         style={{
@@ -618,134 +865,133 @@ function SchoolEmailField({ value, onChange, error }) {
                         {previewEmail}
                     </span>
                 </span>
-            ) : null}
+            ) : (
+                <span className="mt-1.5 block text-[0.78rem] leading-4" style={{ color: "var(--color-muted)" }}>
+                                    Type your username only (e.g., <strong>juan.delacruz</strong>). The <strong>{schoolEmailDomain}</strong> domain is included automatically.
+                </span>
+            )}
         </label>
     );
 }
 
-function SelectField({ label, value, onChange, error, options, disabled, helper }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [dropdownPosition, setDropdownPosition] = useState("bottom");
-    const dropdownRef = useRef(null);
+
+
+function PasswordField({ label, placeholder, value, show, onToggle, onChange, onBlur, error, validationState }) {
+    const containerRef = useRef(null);
+    const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
     useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsOpen(false);
+        if (!containerRef.current) return;
+        const observer = new ResizeObserver((entries) => {
+            for (let entry of entries) {
+                setContainerSize({
+                    width: entry.target.clientWidth,
+                    height: entry.target.clientHeight
+                });
             }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
+        });
+        observer.observe(containerRef.current);
+        return () => observer.disconnect();
     }, []);
 
-    const toggleDropdown = () => {
-        if (disabled) return;
-        if (!isOpen && dropdownRef.current) {
-            const rect = dropdownRef.current.getBoundingClientRect();
-            const spaceBelow = window.innerHeight - rect.bottom;
-            const spaceAbove = rect.top;
-            if (spaceBelow < 250 && spaceAbove > spaceBelow) {
-                setDropdownPosition("top");
-            } else {
-                setDropdownPosition("bottom");
-            }
-        }
-        setIsOpen(!isOpen);
-    };
+    const { width: w, height: h } = containerSize;
+    const p = 2.5; 
+    const r = 12; 
 
-    const selectedOption = options.find((opt) => opt[0] === value) || options[0];
+    const rightPath = w > 0 ? `M ${w/2} ${p} L ${w - r} ${p} Q ${w - p} ${p} ${w - p} ${r} L ${w - p} ${h - r} Q ${w - p} ${h - p} ${w - r} ${h - p} L ${r} ${h - p} Q ${p} ${h - p} ${p} ${h - r} L ${p} ${r} Q ${p} ${p} ${r} ${p} L ${w/2} ${p}` : "";
+    const leftPath = w > 0 ? `M ${w/2} ${p} L ${r} ${p} Q ${p} ${p} ${p} ${r} L ${p} ${h - r} Q ${p} ${h - p} ${r} ${h - p} L ${w - r} ${h - p} Q ${w - p} ${h - p} ${w - p} ${h - r} L ${w - p} ${r} Q ${w - p} ${p} ${w - r} ${p} L ${w/2} ${p}` : "";
+    
+    const isMatched = validationState === "match";
+    const isMismatch = validationState === "mismatch";
+    const hasAnimation = isMatched || isMismatch;
+    const activeColor = isMatched ? "#38BDF8" : "var(--color-error)";
 
-    return (
-        <div className="block text-left" ref={dropdownRef}>
-            <span className="text-sm font-black auth-strong-text">{label}</span>
-            <div className="relative mt-2">
-                <button
-                    type="button"
-                    onClick={toggleDropdown}
-                    className={`min-h-[3.25rem] w-full flex items-center justify-between rounded-xl border px-4 text-sm font-bold uppercase outline-none transition auth-control ${disabled ? "opacity-50 cursor-not-allowed" : "hover:-translate-y-0.5"}`}
-                    style={{
-                        borderColor: error ? "var(--color-error)" : undefined,
-                        color: value ? "var(--auth-text)" : "var(--color-muted)",
-                    }}
-                >
-                    <span className="truncate">{selectedOption[1]}</span>
-                    <span
-                        className="flex items-center justify-center transition-transform duration-300 text-muted-foreground"
-                        style={{
-                            color: "var(--auth-muted)",
-                            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)"
-                        }}
-                    >
-                        <ChevronDown size={18} strokeWidth={1.5} />
-                    </span>
-                </button>
-
-                <AnimatePresence>
-                    {isOpen && (
-                        <motion.div
-                            initial={{ opacity: 0, y: dropdownPosition === "top" ? 10 : -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: dropdownPosition === "top" ? 10 : -10 }}
-                            transition={{ duration: 0.15 }}
-                            className={`absolute left-0 z-50 w-full rounded-xl border p-1 shadow-xl overflow-hidden auth-panel ${
-                                dropdownPosition === "top" ? "bottom-full mb-2" : "top-full mt-2"
-                            }`}
-                            style={{ 
-                                borderColor: "var(--color-border)", 
-                                backgroundColor: "var(--color-card)",
-                                backdropFilter: "blur(12px)" 
-                            }}
-                        >
-                            <div className="max-h-60 overflow-y-auto hk-sidebar-scroll space-y-0.5 p-1">
-                                {options.map(([optionValue, optionLabel], idx) => {
-                                    if (idx === 0) return null; // Skip the "Choose..." placeholder in the list
-
-                                    return (
-                                        <button
-                                            key={optionValue}
-                                            type="button"
-                                            className={`w-full flex items-center px-4 py-3 text-sm font-bold uppercase rounded-lg transition-colors text-left ${value === optionValue ? '' : 'hover:opacity-75'}`}
-                                            style={{
-                                                color: value === optionValue ? "var(--color-primary)" : "var(--color-text)",
-                                                backgroundColor: value === optionValue ? "color-mix(in srgb, var(--color-primary), transparent 90%)" : undefined
-                                            }}
-                                            onClick={() => {
-                                                onChange(optionValue);
-                                                setIsOpen(false);
-                                            }}
-                                        >
-                                            {optionLabel}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
-            {helper ? <span className="mt-1 block text-xs" style={{ color: "var(--color-muted)" }}>{helper}</span> : null}
-            {error ? <span className="mt-1 block text-xs" style={{ color: "var(--color-error)" }}>{error[0]}</span> : null}
-        </div>
-    );
-}
-
-function PasswordField({ label, value, show, onToggle, onChange, error }) {
     return (
         <label className="block text-left">
-            <span className="text-sm font-black auth-strong-text">{label}</span>
-            <div className="mt-2 flex min-h-[3.25rem] items-center gap-3 rounded-xl border px-4 auth-control" style={{ borderColor: error ? "var(--color-error)" : undefined }}>
-                <Lock size={18} style={{ color: "var(--color-muted)" }} />
+            <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-black auth-strong-text">{label}</span>
+                <AnimatePresence mode="wait">
+                    {isMatched ? (
+                        <motion.span 
+                            key="match"
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 5 }}
+                            className="text-xs font-black flex items-center gap-1" 
+                            style={{ color: activeColor }}
+                        >
+                            <Check size={14} /> Passwords match!
+                        </motion.span>
+                    ) : isMismatch ? (
+                        <motion.span 
+                            key="mismatch"
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 5 }}
+                            className="text-xs font-black flex items-center gap-1" 
+                            style={{ color: activeColor }}
+                        >
+                            Passwords do not match
+                        </motion.span>
+                    ) : null}
+                </AnimatePresence>
+            </div>
+            <div 
+                ref={containerRef}
+                className="mt-2 relative flex h-[3.25rem] items-center gap-3 rounded-xl border px-4 auth-control overflow-hidden" 
+                style={{ 
+                    borderColor: hasAnimation ? "transparent" : error ? "var(--color-error)" : undefined,
+                    backgroundColor: hasAnimation ? `color-mix(in srgb, ${activeColor}, transparent 92%)` : "transparent",
+                    boxShadow: hasAnimation ? `0 12px 40px color-mix(in srgb, ${activeColor}, transparent 75%), 0 0 20px color-mix(in srgb, ${activeColor}, transparent 85%)` : "none",
+                }}
+            >
+                <AnimatePresence mode="wait">
+                    {hasAnimation && w > 0 && (
+                        <svg key={activeColor} className="absolute inset-0 h-full w-full pointer-events-none z-20 overflow-visible" viewBox={`0 0 ${w} ${h}`}>
+                            <motion.path
+                                d={rightPath}
+                                fill="none"
+                                stroke={activeColor}
+                                strokeWidth="4"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                style={{ filter: `drop-shadow(0 0 8px ${activeColor}) drop-shadow(0 0 16px color-mix(in srgb, ${activeColor}, transparent 40%))` }}
+                                initial={{ pathLength: 0 }}
+                                animate={{ pathLength: 1 }}
+                                exit={{ opacity: 0, transition: { duration: 0.3 } }}
+                                transition={{ duration: 4.5, ease: [0.16, 1, 0.3, 1] }}
+                            />
+                            <motion.path
+                                d={leftPath}
+                                fill="none"
+                                stroke={activeColor}
+                                strokeWidth="4"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                style={{ filter: `drop-shadow(0 0 8px ${activeColor}) drop-shadow(0 0 16px color-mix(in srgb, ${activeColor}, transparent 40%))` }}
+                                initial={{ pathLength: 0 }}
+                                animate={{ pathLength: 1 }}
+                                exit={{ opacity: 0, transition: { duration: 0.3 } }}
+                                transition={{ duration: 4.5, ease: [0.16, 1, 0.3, 1] }}
+                            />
+                        </svg>
+                    )}
+                </AnimatePresence>
+                
+                <Lock size={18} className="z-30" style={{ color: hasAnimation ? activeColor : "var(--color-muted)" }} />
                 <input
                     type={show ? "text" : "password"}
                     value={value}
+                    placeholder={placeholder || `Enter your ${label.toLowerCase()}`}
                     onChange={(event) => onChange(event.target.value)}
-                    className="w-full bg-transparent text-sm font-semibold outline-none"
+                    onBlur={onBlur}
+                    className="w-full bg-transparent text-sm font-semibold outline-none placeholder:opacity-50 z-30 relative"
                 />
-                <button type="button" onClick={onToggle} className="rounded-lg p-1 transition hover:scale-105" style={{ color: "var(--color-muted)" }}>
+                <button type="button" onClick={onToggle} className="rounded-lg p-1 transition hover:scale-105 z-30" style={{ color: "var(--color-muted)" }}>
                     {show ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
             </div>
-            {error ? <span className="mt-1 block text-xs" style={{ color: "var(--color-error)" }}>{error[0]}</span> : null}
+            {error && !hasAnimation ? <span className="mt-1 block text-xs" style={{ color: "var(--color-error)" }}>{error[0]}</span> : null}
         </label>
     );
 }

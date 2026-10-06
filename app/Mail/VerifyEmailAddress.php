@@ -30,6 +30,7 @@ class VerifyEmailAddress extends Mailable implements ShouldQueue
     {
         return new Content(
             view: 'emails.verify-email',
+            text: 'emails.verify-email-text',
             with: [
                 'user' => $this->user,
                 'verificationUrl' => $this->verificationUrl(),

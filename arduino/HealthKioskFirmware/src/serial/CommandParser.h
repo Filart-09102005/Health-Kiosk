@@ -13,12 +13,12 @@ namespace SerialComm {
     enum class CommandType {
         UNKNOWN,
         CMD_PING,
+        CMD_STOP,
         SELF_TEST,
         GET_DIAGNOSTICS,
         START_TEMPERATURE,
         START_WEIGHT,
         START_HEIGHT,
-        START_HEART,
         START_ALL,
         ENTER_CALIBRATION,
         GET_VERSION

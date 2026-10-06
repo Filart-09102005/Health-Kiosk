@@ -7,14 +7,27 @@ export default function TemperatureFlow(props) {
             {...props}
             config={{
                 type: "temperature",
+                // Waits for the sensor's own validated COMPLETE result instead
+                // of freezing on the first live number (which is often just
+                // warm-up noise before the reading has stabilized).
+                instantCapture: false,
+                // ~3.5s: infrared reads fast, so the old shared 7s window just
+                // made a quick sensor feel slow.
+                readingDurationMs: 3500,
                 title: "Temperature",
                 sensor: "Infrared thermometer",
                 unit: "C",
+                accent: "var(--color-warning)",
+                accentContent: "var(--color-warning-content)",
                 icon: Thermometer,
                 description: "Measure body temperature using the kiosk infrared sensor.",
-                instructions: "Stand in front of the kiosk and keep your face visible to the temperature sensor.",
+                instructions: "Get the temperature gun, point it at your forehead, and maintain a 3cm distance.",
                 positioning: "Hold still at the marked distance until the reading stabilizes.",
-                format: (value) => `${Number(value).toFixed(1)} °C`,
+                manualInstructions: "Measure your temperature using a digital thermometer.",
+                manualPositioning: "Take the reading on your thermometer, then continue to enter the value.",
+                metrics: [
+                    { key: "primary", label: "Temperature", unit: "°C", decimals: 1 },
+                ],
             }}
         />
     );

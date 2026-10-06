@@ -1,0 +1,234 @@
+================================================================================
+HANDOFF BRIEF — COMPANION MOBILE APP ALPHA TESTING
+Send this to the agent working on the Android companion app.
+================================================================================
+
+Copy everything between the START and END markers.
+
+--------------------------------- START --------------------------------------
+
+You are working on the **Android companion mobile app** for a capstone project:
+the **Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile
+Application**.
+
+The web side of this system is finished and its Alpha Testing is now CLOSED. I
+need you to produce the Alpha Testing document for the companion app so the
+whole project can be finalized.
+
+## 1. What already exists (do not duplicate it)
+
+Three Alpha Testing questionnaires are finalized on the web side:
+
+  | Area              | Test cases | Questions |
+  |-------------------|-----------:|----------:|
+  | Login & Register  |         18 |        60 |
+  | User-Side (kiosk) |         11 |        62 |
+  | Admin-Side        |         12 |        74 |
+
+The companion app is ALREADY partly covered, from the admin's side, in
+**Admin-Side TC-11 "Cloud Sync and Companion Mobile Application" (Q63–Q68)**:
+
+  Q63  Admin creates a student -> the account uploads to the cloud on its own
+  Q64  Sign in to the companion app as that student -> profile loads
+  Q65  Kiosk health check, then refresh the app -> the reading appears
+  Q66  Admin header > account menu > "Sync Users & Records" -> reports what synced
+  Q67  Admin deletes the student -> mobile sign-in is refused
+  Q68  Create a student with the internet disconnected -> failure is reported
+
+**Do not repeat those six.** Reference them as a pre-condition instead. Your
+document covers what happens INSIDE the app.
+
+## 2. What I need from you
+
+A file named **Alpha-Testing-CompanionApp.txt**, written in the exact same
+format as the three existing documents (spec in section 4).
+
+Suggested coverage — adjust to what the app actually does, and DO NOT invent
+features it does not have:
+
+  - App launch, splash, first-run state, and permissions
+  - Sign-in with a school email and the default password; wrong password;
+    unknown email; empty fields; the account being inactive or deleted
+  - Session persistence: stay signed in after closing the app; sign out
+  - Home / dashboard: latest reading, overall status, when it was taken
+  - Health history: list, ordering, opening one record, empty state
+  - Reading detail: every value, its per-measurement verdict, the range it was
+    judged against
+  - Profile: details shown, what is editable, password change if supported
+  - Offline behaviour: no connection on launch, connection lost mid-use,
+    recovery when it returns
+  - Refresh / pull-to-refresh and how new kiosk readings arrive
+  - Error handling: server unreachable, expired session, malformed response
+  - Appearance / theme if the app has one
+  - Back-navigation from every screen (it must return where the user came from,
+    not always to the home screen)
+
+## 3. Rules that are not negotiable
+
+  1. **Test the app that exists.** Never change app behaviour just to make a
+     question pass. Find the problem, write it in the Comment column, fix the
+     real problem separately, then retest.
+  2. **The document must describe the real implemented app**, not an ideal one.
+     If a control is labelled "View records", the question says "View records".
+  3. **Numbering restarts at Q1** for this section and runs to Qn with no gaps.
+  4. **Every test case opens by navigating to its screen**, so the run never
+     jumps between screens without saying so. The web documents were rewritten
+     for exactly this reason.
+  5. **A new question starts untested** — Pass unchecked, Fail unchecked,
+     Comment empty. Never copy an old comment onto a new question.
+  6. **Never clear a result that has already been recorded.** If you renumber or
+     reorder, carry each recorded result to its new number.
+  7. Order the test cases the way the app is actually navigated, top to bottom.
+
+## 4. Document format (match this exactly)
+
+Header:
+
+    # ALPHA TESTING - COMPANION MOBILE APP
+
+    **System:** Health Kiosk System with IoT Sensors, Data Analytics and Companion Mobile Application
+    **Test Type:** Alpha Testing (Internal)
+    **Scope:** Android companion application
+    **Pre-Condition:** Login & Registration, User-Side and Admin-Side alpha testing completed and cleared.
+
+    **Status:** <FINALIZED once the question set is closed>
+
+    **Tester Name:** ______________________  **Testing Date:** ______________  **Testing Time:** __________
+
+    Questions are numbered **Q1-Qn** within this section. Each section of the Alpha Testing keeps its
+    own numbering, so a question is identified by its section and number together.
+
+    > Mark the result for every step performed, and write anything unusual under **Comment**.
+    > Use **Additional Test / Observation** for anything the predefined steps do not cover.
+    > A step that was not actually run must be left blank.
+
+Then one block per test case:
+
+    ### TC-1 - <Title>
+    - **Actor:** Student
+    - **Testing Date:**
+    - **Testing Time:**
+    - **Short Description:** <what it verifies. Say where to start.>
+
+    | Q | Step | Action | Input / Test Data | Expected System Response | Pass | Fail | Comment | Additional Test / Observation |
+    | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+    | Q1 | 1 | <action> | <input or None> | <expected> | | | | |
+
+    **Overall Comment - TC-1:**
+
+    ---
+
+Then the summary:
+
+    # COMPANION APP - OVERALL ALPHA TEST SUMMARY
+
+    **Tester Name:** ______________________
+    **Testing Date:** ______________________
+    **Testing Time:** ______________________
+
+    | Test Case | Description | Status | Passed | Failed | Comments |
+    | --- | --- | --- | ---: | ---: | ---: |
+    | TC-1 | <title> | | | | |
+    | | **TOTAL (n questions)** | | | | |
+
+    **Defects Found**
+
+    | No. | Q | Test Case | Description of the Problem | Severity | Action Taken | Status |
+    | --- | --- | --- | --- | --- | --- | --- |
+    | 1 | | | | | | |
+
+    **Post-Condition:**
+
+    **Executed by:**
+    -
+
+    **Checked by:**
+    -
+
+## 5. How to report results back to me
+
+Send results in exactly this shape, one block per test case, and only for
+questions that actually carry text:
+
+    INDICATOR: TC-1 — <Title>
+
+    COMMENT Q3: <what happened>
+    COMMENT Q3 ADDITIONAL: <anything the step did not cover>
+
+    OVERALL COMMENT TC-1: <overall note>
+
+## 6. Integration contract — the facts you need
+
+**Cloud:** Supabase. The kiosk pushes to it; the app reads from it.
+
+**Auth:** Supabase Auth (GoTrue). A student account is created through
+`/auth/v1/admin/users` by the kiosk. The app signs in with the school email and
+password — it must NOT use the `password` column on the profile row, which is a
+bcrypt hash carried for the kiosk's own use.
+
+**Accounts:** email domain `@smcbi.edu.ph`. Default password when an admin
+creates the account is `<Firstname>12345` — first name with spaces removed,
+e.g. `Hans12345`. Email is auto-verified on admin-created accounts.
+
+**Table `public.users`** — one row per account, upserted on `email`:
+
+    local_user_id, auth_user_id, firstname, lastname, student_id, email,
+    password, role, department, grade_level, strand, year_level, program,
+    age, gender, barcode, is_active, created_at, updated_at
+
+  role         : student | personnel | admin
+  department   : students  -> COLLEGE, BED
+                 staff     -> COLLEGE INSTRUCTOR, BED INSTRUCTOR, NTP
+  is_active    : false must block the app the same way it blocks the kiosk
+
+**Table `public.health_records`** — one row per kiosk session, upserted on
+`local_health_record_id`:
+
+    local_health_record_id, local_user_id, auth_user_id,
+    local_kiosk_session_id, session_number, session_status,
+    heart_rate, spo2, temperature, height, weight, bmi, bmi_category,
+    health_status, measurement_statuses, missing_measurements,
+    recorded_at, created_at, updated_at
+
+**Important — do not display `health_status` on its own.** It collapses a whole
+session into one word, and completeness outranks severity: a 40 °C reading taken
+during an unfinished session is stored as `Incomplete`, which hides the alert.
+Use `measurement_statuses` for the per-reading verdict, e.g.
+`{"temperature": "Alert", "spo2": "Normal"}`.
+
+**Grading bands are set by the administrator and can change.** These are the
+current values; read them as configuration, never hardcode them:
+
+    temperature : Alert < 35, Normal 35 – 37.2, Alert > 37.2   (°C)
+    heart rate  : Alert < 60, Normal 60 – 100, Alert > 100     (bpm)
+    SpO2        : Alert <= 90, Watch 91 – 94, Normal 95 – 100  (%)
+    BMI         : underweight <= 18.4, normal <= 24.9, overweight <= 29.9
+
+When an admin changes a band, the kiosk re-grades every stored record and
+re-raises or retires the matching notifications and alerts. The app should
+reflect the stored grade rather than computing its own.
+
+**Deletion:** deleting an account in the admin portal deletes the Supabase Auth
+user, which is what blocks the app from signing in.
+
+## 7. Two known issues on the web side — expect them while testing
+
+  1. **The profile row is not deleted from `public.users`.** The Auth user is
+     deleted (so sign-in is correctly refused), but the profile delete returns
+     403 / SQLSTATE 42501 because the service role lacks the grant. Until this
+     is run in the Supabase SQL editor, a deleted student's row stays in the
+     table:
+
+         GRANT DELETE ON public.users TO service_role;
+
+     Test sign-in refusal, and note the leftover row as a defect rather than
+     treating it as your bug.
+
+  2. **The admin account has no Supabase Auth user.** This is deliberate — the
+     admin is kiosk-only and is not expected to sign in to the app.
+
+Reply with the finished Alpha-Testing-CompanionApp.txt and a short note listing
+anything the app does that I have not covered above, and anything above that the
+app does not actually do.
+
+---------------------------------- END ----------------------------------------

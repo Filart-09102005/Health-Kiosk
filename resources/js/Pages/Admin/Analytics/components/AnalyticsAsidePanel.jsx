@@ -39,7 +39,7 @@ export default function AnalyticsAsidePanel({
 
             {isEmpty && emptyMessage ? (
                 <p
-                    className={`rounded-[14px] border p-3 text-xs font-bold ${hasHeader ? "mt-3" : ""} ${fillHeight ? "flex flex-1 items-center justify-center" : ""}`.trim()}
+                    className={`rounded-[1.25rem] border p-3 text-xs font-bold ${hasHeader ? "mt-3" : ""} ${fillHeight ? "flex flex-1 items-center justify-center" : ""}`.trim()}
                     style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}
                 >
                     {emptyMessage}

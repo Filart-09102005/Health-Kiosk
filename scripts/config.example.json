@@ -1,0 +1,7 @@
+{
+  "port": "COM3",
+  "baud": 115200,
+  "url": "http://127.0.0.1:8000/api/kiosk/live-vitals",
+  "command_url": "http://127.0.0.1:8000/api/kiosk/command",
+  "bridge_token": "PASTE_THE_SAME_VALUE_AS_KIOSK_BRIDGE_TOKEN_FROM_THE_LARAVEL_APP_.env_HERE"
+}

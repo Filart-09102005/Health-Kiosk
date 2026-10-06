@@ -1,5 +1,4 @@
-import { Check } from "lucide-react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 function StudentAnimation({ isActive }) {
     return (
@@ -114,53 +113,83 @@ export default function RoleSelector({ value, onChange }) {
                         key={role.value}
                         type="button"
                         onClick={() => onChange(role.value)}
-                        className="group relative rounded-[1.5rem] border p-6 text-left transition-all duration-300 overflow-hidden"
+                        className="group relative rounded-[1.5rem] border p-6 text-left transition-all duration-500 overflow-hidden"
                         whileHover={{ y: -4, scale: 1.01 }}
                         whileTap={{ scale: 0.98 }}
                         style={{
-                            backgroundColor: isSelected ? "color-mix(in srgb, var(--color-primary), transparent 94%)" : "var(--auth-panel)",
+                            backgroundColor: isSelected ? "color-mix(in srgb, var(--color-primary), transparent 92%)" : "var(--auth-panel)",
                             borderColor: isSelected ? "var(--color-primary)" : "var(--auth-border)",
                             color: "var(--auth-text)",
-                            boxShadow: isSelected ? "0 12px 40px rgba(15,118,110,0.14)" : "none"
+                            boxShadow: isSelected
+                                ? "0 12px 40px color-mix(in srgb, var(--color-primary) 25%, transparent), 0 0 20px color-mix(in srgb, var(--color-primary) 15%, transparent)"
+                                : "none",
                         }}
                     >
-                        {isSelected && (
-                            <motion.div 
-                                layoutId="activeRoleCheck"
-                                className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full text-white shadow-md z-10" 
-                                style={{ backgroundColor: "var(--color-primary)" }}
-                                initial={{ scale: 0, rotate: -45 }}
-                                animate={{ scale: 1, rotate: 0 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                            >
-                                <Check size={18} strokeWidth={3} />
-                            </motion.div>
-                        )}
-                        
-                        <div className="flex flex-col items-center text-center gap-5">
+                        {/* ── Premium Dual Energy Pulse Border Animation (Slower 3.2s Travel Speed + Long Beam Segment) ── */}
+                        <AnimatePresence>
+                            {isSelected && (
+                                <svg
+                                    className="absolute inset-0 h-full w-full pointer-events-none z-20 overflow-visible"
+                                    viewBox="0 0 200 200"
+                                    preserveAspectRatio="none"
+                                >
+                                    {/* Right Head: Top Center -> Right -> Bottom -> Left -> Top -> Top Center */}
+                                    <motion.path
+                                        d="M 100 2 L 180 2 Q 198 2 198 20 L 198 180 Q 198 198 180 198 L 20 198 Q 2 198 2 180 L 2 20 Q 2 2 20 2 L 100 2"
+                                        fill="none"
+                                        stroke="var(--color-primary)"
+                                        strokeWidth="4"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        vectorEffect="non-scaling-stroke"
+                                        style={{
+                                            filter: "drop-shadow(0 0 8px var(--color-primary)) drop-shadow(0 0 16px color-mix(in srgb, var(--color-primary) 60%, transparent))",
+                                        }}
+                                        initial={{ pathLength: 0 }}
+                                        animate={{ pathLength: 1 }}
+                                        exit={{ opacity: 0, transition: { duration: 0.3 } }}
+                                        transition={{ duration: 3.2, ease: [0.16, 1, 0.3, 1] }}
+                                    />
+                                    {/* Left Head: Top Center -> Left -> Bottom -> Right -> Top -> Top Center */}
+                                    <motion.path
+                                        d="M 100 2 L 20 2 Q 2 2 2 20 L 2 180 Q 2 198 20 198 L 180 198 Q 198 198 198 180 L 198 20 Q 198 2 180 2 L 100 2"
+                                        fill="none"
+                                        stroke="var(--color-primary)"
+                                        strokeWidth="4"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        vectorEffect="non-scaling-stroke"
+                                        style={{
+                                            filter: "drop-shadow(0 0 8px var(--color-primary)) drop-shadow(0 0 16px color-mix(in srgb, var(--color-primary) 60%, transparent))",
+                                        }}
+                                        initial={{ pathLength: 0 }}
+                                        animate={{ pathLength: 1 }}
+                                        exit={{ opacity: 0, transition: { duration: 0.3 } }}
+                                        transition={{ duration: 3.2, ease: [0.16, 1, 0.3, 1] }}
+                                    />
+                                </svg>
+                            )}
+                        </AnimatePresence>
+
+                        <div className="flex flex-col items-center text-center gap-5 relative z-10">
                             <div
                                 className="flex h-24 w-24 items-center justify-center rounded-[1.25rem] transition-colors duration-500 relative"
                                 style={{
                                     backgroundColor: isSelected ? "color-mix(in srgb, var(--color-primary), transparent 84%)" : "var(--auth-control)",
                                     color: isSelected ? "var(--color-primary)" : "var(--color-muted)",
+                                    boxShadow: isSelected ? "0 0 24px color-mix(in srgb, var(--color-primary) 35%, transparent)" : "none",
                                 }}
                             >
-                                {isSelected && (
-                                    <motion.div 
-                                        className="absolute inset-0 rounded-[1.25rem]"
-                                        style={{ border: "2px solid var(--color-primary)" }}
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 0.35, scale: 1.15 }}
-                                        transition={{ duration: 1.5, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-                                    />
-                                )}
                                 <role.Animation isActive={isSelected} />
                             </div>
                             <div>
-                                <h3 className="text-[1.15rem] font-black tracking-widest text-transparent bg-clip-text" style={{
-                                    backgroundImage: isSelected ? "linear-gradient(to right, var(--color-primary), #60a5fa)" : "none",
-                                    color: isSelected ? "transparent" : "var(--auth-text)"
-                                }}>
+                                <h3
+                                    className="text-[1.15rem] font-black tracking-widest text-transparent bg-clip-text"
+                                    style={{
+                                        backgroundImage: isSelected ? "linear-gradient(to right, var(--color-primary), color-mix(in srgb, var(--color-primary) 55%, white))" : "none",
+                                        color: isSelected ? "transparent" : "var(--auth-text)",
+                                    }}
+                                >
                                     {role.title}
                                 </h3>
                                 <p

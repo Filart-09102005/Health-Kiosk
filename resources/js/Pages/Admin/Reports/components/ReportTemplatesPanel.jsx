@@ -12,7 +12,7 @@ const templates = [
 
 export default function ReportTemplatesPanel() {
     return (
-        <section className="rounded-[14px] border p-5 shadow-xl" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
+        <section className="rounded-[1.25rem] border p-5 hk-admin-card" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
             <SectionHeader eyebrow="Templates" title="Report templates" description="Reusable reporting layouts for clinic workflows." />
             <div className="mt-5 grid gap-4 md:grid-cols-2">
                 {templates.map(([title, description]) => <ReportTemplateCard key={title} title={title} description={description} />)}

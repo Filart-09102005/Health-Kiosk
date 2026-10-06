@@ -171,7 +171,7 @@ export function AdminShellSkeleton({ children = <DashboardSkeleton /> }) {
     return (
         <main className="hk-page min-h-screen lg:flex lg:h-screen lg:overflow-hidden" style={{ backgroundColor: "var(--color-bg)", color: "var(--color-text)" }}>
             <aside className="relative hidden min-h-screen w-80 shrink-0 p-4 lg:block">
-                <div className="sticky top-4 flex h-[calc(100vh-2rem)] flex-col rounded-[16px] border p-4 shadow-xl" style={{ backgroundColor: "color-mix(in srgb, var(--color-card) 94%, transparent)", borderColor: "var(--color-border)" }}>
+                <div className="sticky top-4 flex h-[calc(100vh-2rem)] flex-col rounded-[16px] border p-4 hk-admin-card" style={{ backgroundColor: "color-mix(in srgb, var(--color-card) 94%, transparent)", borderColor: "var(--color-border)" }}>
                     <div className="flex h-16 items-center gap-3 border-b pb-4" style={{ borderColor: "var(--color-border)" }}>
                         <SkeletonBlock className="h-11 w-11" />
                         <div className="min-w-0 flex-1">
@@ -207,7 +207,7 @@ export function AdminShellSkeleton({ children = <DashboardSkeleton /> }) {
 
             <section className="min-w-0 flex-1 px-4 py-6 lg:h-screen lg:overflow-y-auto lg:px-6">
                 <div className="mx-auto max-w-[90rem]">
-                    <header className="sticky top-0 z-20 rounded-2xl border p-4 shadow-xl sm:p-5" style={{ backgroundColor: "color-mix(in srgb, var(--color-card) 90%, transparent)", borderColor: "var(--color-border)" }}>
+                    <header className="sticky top-0 z-20 rounded-2xl border p-4 hk-admin-card sm:p-5" style={{ backgroundColor: "color-mix(in srgb, var(--color-card) 90%, transparent)", borderColor: "var(--color-border)" }}>
                         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <div className="min-w-0">
                                 <SkeletonBlock className="h-3 w-36" />

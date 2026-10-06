@@ -48,7 +48,7 @@ export default function RecordsFilters({
         <motion.section
             initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 1.08, duration: 0.34, ease: "easeOut" }}
+            transition={shouldReduceMotion ? { duration: 0.01 } : { delay: 0.18, duration: 0.34, ease: "easeOut" }}
             className={`relative z-20 space-y-4 ${cardClassName} p-5`}
             style={cardStyle}
         >

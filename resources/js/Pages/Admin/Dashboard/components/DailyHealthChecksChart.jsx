@@ -7,7 +7,7 @@ export default function DailyHealthChecksChart({ data = [], period = "weekly", o
     const theme = useMemo(() => getChartTheme(), []);
 
     const action = (
-        <div className="flex items-center rounded-[10px] border p-1" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
+        <div className="flex items-center rounded-[0.875rem] border p-1" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
             {["weekly", "monthly", "yearly"].map((p) => {
                 const isActive = period === p;
                 return (

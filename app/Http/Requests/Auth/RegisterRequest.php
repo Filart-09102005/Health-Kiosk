@@ -20,7 +20,7 @@ class RegisterRequest extends FormRequest
     {
         return [
             'barcode' => ['nullable', 'string', 'max:100', 'unique:users,barcode'],
-            'role' => ['required', Rule::in(['student', 'teacher'])],
+            'role' => ['required', Rule::in(['student', 'teacher', 'personnel', 'staff', 'faculty'])],
             'firstname' => ['required', 'string', 'max:100'],
             'lastname' => ['required', 'string', 'max:100'],
             'email' => [
@@ -32,7 +32,7 @@ class RegisterRequest extends FormRequest
             ],
             'birthday' => ['required', 'date', 'before:today'],
             'gender' => ['required', Rule::in(['male', 'female', 'other', 'prefer_not_to_say'])],
-            'department' => ['required', Rule::in(['COLLEGE', 'NTP', 'BED'])],
+            'department' => ['required', Rule::in(['COLLEGE', 'NTP', 'BED', 'COLLEGE INSTRUCTOR', 'BED INSTRUCTOR'])],
             'grade_level' => [
                 'nullable',
                 Rule::requiredIf(fn () => $this->input('department') === 'BED'),
@@ -57,7 +57,8 @@ class RegisterRequest extends FormRequest
             'password' => [
                 'required',
                 'confirmed',
-                Password::min(8)->mixedCase()->numbers()->symbols(),
+                // Same policy as every other password path - see AppServiceProvider.
+                Password::defaults(),
             ],
         ];
     }

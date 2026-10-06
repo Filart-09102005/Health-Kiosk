@@ -13,6 +13,13 @@ class HealthRecord extends Model
         'synced_at',
         'kiosk_session_id',
         'user_id',
+        // Stamped at save time so a record keeps the level it was taken at.
+        'academic_level',
+        'school_year',
+        // Was missing, so MeasurementService::store() passed it to
+        // updateOrCreate() and mass-assignment protection dropped it silently —
+        // every record on file has an empty skipped list as a result.
+        'skipped_measurements',
         'heart_rate',
         'spo2',
         'temperature',
@@ -35,6 +42,7 @@ class HealthRecord extends Model
             'weight' => 'decimal:2',
             'bmi' => 'decimal:2',
             'missing_measurements' => 'array',
+            'skipped_measurements' => 'array',
             'sync_status' => 'integer',
             'synced_at' => 'datetime',
         ];

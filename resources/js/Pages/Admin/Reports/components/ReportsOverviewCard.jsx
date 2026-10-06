@@ -8,7 +8,7 @@ export default function ReportsOverviewCard({ metric }) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ y: -2 }}
-            className="rounded-[14px] border p-4 shadow-xl transition"
+            className="rounded-[1.25rem] border p-4 hk-admin-card transition"
             style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
         >
             <div className="flex items-start justify-between gap-3">

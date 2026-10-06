@@ -38,6 +38,8 @@ const AdminProfile = lazy(() => import("./Pages/Admin/Profile/Profile.jsx"));
 const UserDashboard = lazy(() => import("./Pages/User/Dashboard/Dashboard.jsx"));
 const Measurements = lazy(() => import("./Pages/User/Measurements/Measurements.jsx"));
 const Results = lazy(() => import("./Pages/User/Results/Results.jsx"));
+const UserNotifications = lazy(() => import("./Pages/User/Notifications/Notifications.jsx"));
+const AlphaTesting = lazy(() => import("./ALPHA/Alpha.jsx"));
 
 const routes = {
     "/register": Register,
@@ -48,11 +50,13 @@ const routes = {
     "/user/dashboard": UserDashboard,
     "/measurements": Measurements,
     "/results": Results,
+    "/user/notifications": UserNotifications,
+    // Internal QA questionnaire. Deliberately outside the auth guards:
+    // testers need it open while they are testing the login itself.
+    "/AlphaTest": AlphaTesting,
 };
 
-const MAINTENANCE_KEY = "healthKioskMaintenanceUntil";
 const ADMIN_PAGE_SKELETON_MIN_MS = 600;
-const kioskRestrictedRoutes = new Set(["/register", "/user/dashboard", "/measurements", "/results"]);
 
 const adminRoutes = {
     "/admin/dashboard": { component: AdminDashboard, eyebrow: "Admin Dashboard", title: "Health Kiosk Overview" },
@@ -87,11 +91,13 @@ function Router() {
 
     const [pathname, setPathname] = useState(getCurrentPath);
     const [adminPageReady, setAdminPageReady] = useState(!getCurrentPath().startsWith("/admin/"));
-    const [maintenanceUntil, setMaintenanceUntil] = useState(() => Number(window.localStorage.getItem(MAINTENANCE_KEY) || 0));
-    const [maintenanceNow, setMaintenanceNow] = useState(Date.now());
 
+    // The entry records where it was reached from, so a screen can offer a real
+    // "back" instead of guessing at one fixed destination. The Notifications
+    // page used to send everyone to the dashboard, including a user who had
+    // opened the bell from the middle of a measurement.
     const navigate = useCallback((path) => {
-        window.history.pushState({}, "", path);
+        window.history.pushState({ from: getCurrentPath() }, "", path);
         setPathname(getCurrentPath());
         window.scrollTo({ top: 0, behavior: "auto" });
     }, []);
@@ -107,23 +113,6 @@ function Router() {
         window.addEventListener("popstate", handlePopState);
 
         return () => window.removeEventListener("popstate", handlePopState);
-    }, []);
-
-    useEffect(() => {
-        const refreshMaintenance = () => {
-            setMaintenanceUntil(Number(window.localStorage.getItem(MAINTENANCE_KEY) || 0));
-            setMaintenanceNow(Date.now());
-        };
-        const timer = window.setInterval(() => setMaintenanceNow(Date.now()), 1000);
-
-        window.addEventListener("storage", refreshMaintenance);
-        window.addEventListener("health-kiosk-maintenance-change", refreshMaintenance);
-
-        return () => {
-            window.clearInterval(timer);
-            window.removeEventListener("storage", refreshMaintenance);
-            window.removeEventListener("health-kiosk-maintenance-change", refreshMaintenance);
-        };
     }, []);
 
     useEffect(() => {
@@ -158,11 +147,6 @@ function Router() {
     }
 
     const Page = routes[pathname] || Register;
-    const maintenanceActive = maintenanceUntil > maintenanceNow;
-
-    if (maintenanceActive && kioskRestrictedRoutes.has(pathname)) {
-        return <KioskMaintenanceScreen remaining={maintenanceUntil - maintenanceNow} navigate={navigate} />;
-    }
 
     return (
         <AssistantProvider>
@@ -177,43 +161,6 @@ function Router() {
             </Suspense>
         </AssistantProvider>
     );
-}
-
-function KioskMaintenanceScreen({ remaining, navigate }) {
-    return (
-        <main className="flex min-h-screen items-center justify-center p-6" style={{ backgroundColor: "var(--color-bg)", color: "var(--color-text)" }}>
-            <section className="w-full max-w-xl rounded-[20px] border p-8 text-center shadow-2xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
-                <p className="text-xs font-black uppercase tracking-[0.22em]" style={{ color: "var(--color-primary)" }}>
-                    Kiosk Maintenance
-                </p>
-                <h1 className="mt-3 text-3xl font-black">Kiosk temporarily unavailable</h1>
-                <p className="mt-3 text-sm font-semibold leading-6" style={{ color: "var(--color-muted)" }}>
-                    The health kiosk is under admin maintenance. Users can access the kiosk again when the countdown ends.
-                </p>
-                <div className="mt-6 rounded-2xl border p-5" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
-                    <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--color-muted)" }}>Time remaining</p>
-                    <p className="mt-2 text-4xl font-black" style={{ color: "var(--color-primary)" }}>{formatMaintenanceCountdown(remaining)}</p>
-                </div>
-                <button
-                    type="button"
-                    onClick={() => navigate("/login")}
-                    className="mt-6 rounded-xl border px-4 py-3 text-sm font-black transition hk-soft-hover"
-                    style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
-                >
-                    Admin Login
-                </button>
-            </section>
-        </main>
-    );
-}
-
-function formatMaintenanceCountdown(milliseconds) {
-    const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
 function getRouteFallback(pathname) {

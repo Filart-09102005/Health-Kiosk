@@ -9,7 +9,7 @@ export default function AssistantToggle({ className = "", hinted = false }) {
             <button
                 type="button"
                 onClick={toggleAssistant}
-                className={`group inline-flex min-h-11 items-center gap-3 rounded-2xl border px-3 py-2 text-sm font-black transition hk-soft-hover ${hinted ? "hk-start-measure-hint" : ""}`}
+                className={`group inline-flex min-h-9 items-center gap-2 rounded-xl border px-2 py-1.5 text-sm font-black transition hk-soft-hover sm:min-h-11 sm:gap-3 sm:rounded-2xl sm:px-3 sm:py-2 ${hinted ? "hk-start-measure-hint" : ""}`}
                 style={{
                     backgroundColor: "var(--color-surface)",
                     borderColor: enabled ? "color-mix(in srgb, var(--color-success) 44%, var(--color-border))" : "var(--color-border)",

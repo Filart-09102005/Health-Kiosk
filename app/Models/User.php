@@ -58,6 +58,16 @@ class User extends Authenticatable implements MustVerifyEmailContract
     ];
 
     /**
+     * The accessors to append to the model's array form.
+     *
+     * @var list<string>
+     */
+    protected $appends = [
+        'age',
+        'full_name',
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -98,6 +108,11 @@ class User extends Authenticatable implements MustVerifyEmailContract
         return $this->hasMany(HealthRecord::class);
     }
 
+    // Reads firstname/lastname straight off the model with no guard - if a
+    // query ever selects a restricted column list that leaves those out
+    // (none currently do), this silently returns "" instead of erroring, so
+    // a missing name in a report/export/receipt would give no hint why.
+    // Keep firstname/lastname in any select() that also reads full_name.
     public function getFullNameAttribute(): string
     {
         return trim("{$this->firstname} {$this->lastname}");

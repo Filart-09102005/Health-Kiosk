@@ -16,8 +16,9 @@ namespace SerialComm {
         static unsigned long _sequenceNumber;
         
     public:
-        // Serialize a successful measurement
         static void serializeMeasurement(const char* sensorName, const Models::MeasurementResult& result, char* outputBuffer, size_t bufferSize);
+        
+        static void serializeLiveMeasurement(const char* sensorName, const char* machineState, const Models::MeasurementResult& result, char* outputBuffer, size_t bufferSize);
         
         // Serialize an error or busy response
         static void serializeError(const char* errorType, const char* message, char* outputBuffer, size_t bufferSize);

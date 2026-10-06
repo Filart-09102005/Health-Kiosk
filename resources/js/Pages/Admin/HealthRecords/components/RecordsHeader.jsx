@@ -20,7 +20,7 @@ export default function RecordsHeader() {
             </nav>
             <div className="mt-4">
                 <div className="flex items-start gap-4">
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white" style={{ backgroundColor: "var(--color-primary)" }}>
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: "var(--color-primary)", color: "var(--color-primary-content)" }}>
                         <ClipboardList size={22} />
                     </span>
                     <div>

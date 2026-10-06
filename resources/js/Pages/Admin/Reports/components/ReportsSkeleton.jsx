@@ -2,7 +2,7 @@ import ShimmerSkeleton from "./ShimmerSkeleton";
 
 function HeaderSkeleton() {
     return (
-        <section className="rounded-[14px] border p-6 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <section className="rounded-[1.25rem] border p-6 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <div className="flex items-start gap-4">
                 <ShimmerSkeleton className="h-14 w-14" />
                 <div className="min-w-0 flex-1">
@@ -17,10 +17,10 @@ function HeaderSkeleton() {
 
 function ToolbarSkeleton() {
     return (
-        <section className="rounded-[14px] border p-4 shadow-xl" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
+        <section className="rounded-[1.25rem] border p-4 hk-admin-card" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
             <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-center">
                 <div className="min-w-0 flex-1">
-                    <div className="grid gap-3 rounded-[14px] border p-3 lg:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+                    <div className="grid gap-3 rounded-[1.25rem] border p-3 lg:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
                         <div className="flex shrink-0 items-center gap-2">
                             <ShimmerSkeleton className="h-4 w-4" />
                             <ShimmerSkeleton className="h-4 w-10" />
@@ -47,7 +47,7 @@ function ToolbarSkeleton() {
 
 function EmptyStateSkeleton() {
     return (
-        <section className="flex min-h-[22rem] flex-col items-center justify-center rounded-[14px] border p-8 text-center shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <section className="flex min-h-[22rem] flex-col items-center justify-center rounded-[1.25rem] border p-8 text-center shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <ShimmerSkeleton className="h-14 w-14" />
             <ShimmerSkeleton className="mt-4 h-6 w-56 max-w-full" />
             <ShimmerSkeleton className="mt-3 h-4 w-[28rem] max-w-full" />

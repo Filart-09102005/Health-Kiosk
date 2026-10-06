@@ -3,12 +3,19 @@ import { LogOut } from "lucide-react";
 import { createPortal } from "react-dom";
 import useModalLayer from "./useModalLayer";
 
+/**
+ * @param zIndex base stacking layer. Defaults to sitting above page content;
+ *               raise it when confirming from inside a modal, which would
+ *               otherwise paint over the dialog.
+ */
 export default function ConfirmDialog({
+    zIndex = 9000,
     open,
     title = "Confirm action",
     message,
     confirmLabel = "Continue",
     cancelLabel = "No, stay",
+    loading = false,
     onConfirm,
     onCancel,
 }) {
@@ -18,7 +25,8 @@ export default function ConfirmDialog({
         <AnimatePresence>
             {open ? (
                 <motion.div
-                    className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/65 px-4 backdrop-blur-md"
+                    className="fixed inset-0 flex items-center justify-center bg-black/65 px-4 backdrop-blur-md"
+                    style={{ zIndex }}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -37,7 +45,7 @@ export default function ConfirmDialog({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 18, scale: 0.96 }}
                         transition={{ duration: 0.18 }}
-                        className="relative z-[9010] w-full max-w-md rounded-[2rem] border p-6 text-center shadow-2xl"
+                        className="relative w-full max-w-md rounded-[2rem] border p-6 text-center shadow-2xl"
                         style={{
                             backgroundColor: "var(--color-card)",
                             borderColor: "var(--color-border)",
@@ -45,8 +53,8 @@ export default function ConfirmDialog({
                         }}
                     >
                         <div
-                            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl text-white"
-                            style={{ backgroundColor: "var(--color-error)" }}
+                            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl"
+                            style={{ backgroundColor: "var(--color-error)", color: "var(--color-error-content)" }}
                         >
                             <LogOut size={24} />
                         </div>
@@ -59,7 +67,8 @@ export default function ConfirmDialog({
                             <button
                                 type="button"
                                 onClick={onCancel}
-                                className="rounded-2xl border px-4 py-3 text-sm font-black transition hk-soft-hover"
+                                disabled={loading}
+                                className="rounded-2xl border px-4 py-3 text-sm font-black transition hk-soft-hover disabled:opacity-50 disabled:cursor-not-allowed"
                                 style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
                             >
                                 {cancelLabel}
@@ -67,10 +76,11 @@ export default function ConfirmDialog({
                             <button
                                 type="button"
                                 onClick={onConfirm}
-                                className="rounded-2xl px-4 py-3 text-sm font-black text-white transition hk-danger-solid-hover"
-                                style={{ backgroundColor: "var(--color-error)" }}
+                                disabled={loading}
+                                className="rounded-2xl px-4 py-3 text-sm font-black transition hk-danger-solid-hover disabled:opacity-75 disabled:cursor-not-allowed flex items-center justify-center"
+                                style={{ backgroundColor: "var(--color-error)", color: "var(--color-error-content)" }}
                             >
-                                {confirmLabel}
+                                {loading ? "Processing..." : confirmLabel}
                             </button>
                         </div>
                     </motion.div>

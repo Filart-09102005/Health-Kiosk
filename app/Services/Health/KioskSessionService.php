@@ -11,6 +11,12 @@ class KioskSessionService
 {
     public function start(User $user, Request $request, string $loginMethod): KioskSession
     {
+        // Close any previously abandoned active sessions for this user
+        $user->kioskSessions()->where('status', 'active')->update([
+            'status' => 'timeout',
+            'ended_at' => now(),
+        ]);
+
         $nextNumber = ((int) $user->kioskSessions()->max('session_number')) + 1;
 
         $session = KioskSession::create([

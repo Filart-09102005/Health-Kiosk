@@ -1,52 +1,40 @@
-import { CalendarRange } from "lucide-react";
+import SharedDateRangePicker from "../../../../Global/DateRangePicker";
+import TimeRangePicker from "../../../../Global/TimeRangePicker";
 
+/**
+ * Reports range control — a date range and a time-of-day range side by side.
+ *
+ * Both are the shared pickers, so this screen no longer carries its own date
+ * or time inputs. Field names on `range` are unchanged, so the report queries
+ * did not have to move.
+ */
 export default function DateRangePicker({ range, onRangeChange }) {
-    const fieldClass = "h-11 min-w-0 rounded-[12px] border px-3 text-sm font-black outline-none";
-    const fieldStyle = {
-        backgroundColor: "var(--color-card)",
-        borderColor: "var(--color-border)",
-        color: "var(--color-text)",
-    };
-
     return (
-        <div className="grid gap-3 rounded-[14px] border p-3 lg:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
-            <div className="flex shrink-0 items-center gap-2 text-sm font-black" style={{ color: "var(--color-muted)" }}>
-                <CalendarRange size={16} />
-                From
-            </div>
-            <div className="grid min-w-0 gap-2 sm:grid-cols-2">
-                <input
-                    type="date"
-                    value={range.dateFrom}
-                    onChange={(event) => onRangeChange("dateFrom", event.target.value)}
-                    className={fieldClass}
-                    style={fieldStyle}
-                />
-                <input
-                    type="time"
-                    value={range.timeFrom}
-                    onChange={(event) => onRangeChange("timeFrom", event.target.value)}
-                    className={fieldClass}
-                    style={fieldStyle}
+        <div
+            className="grid w-full gap-4 rounded-2xl border p-4 shadow-sm xl:flex xl:items-end xl:gap-5"
+            style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
+        >
+            <div className="min-w-0 xl:w-72">
+                <SharedDateRangePicker
+                    from={range.dateFrom}
+                    to={range.dateTo}
+                    label="Date range"
+                    onApply={({ from, to }) => {
+                        onRangeChange("dateFrom", from);
+                        onRangeChange("dateTo", to);
+                    }}
                 />
             </div>
-            <div className="flex shrink-0 items-center text-sm font-black" style={{ color: "var(--color-muted)" }}>
-                To
-            </div>
-            <div className="grid min-w-0 gap-2 sm:grid-cols-2">
-                <input
-                    type="date"
-                    value={range.dateTo}
-                    onChange={(event) => onRangeChange("dateTo", event.target.value)}
-                    className={fieldClass}
-                    style={fieldStyle}
-                />
-                <input
-                    type="time"
-                    value={range.timeTo}
-                    onChange={(event) => onRangeChange("timeTo", event.target.value)}
-                    className={fieldClass}
-                    style={fieldStyle}
+
+            <div className="min-w-0 xl:w-72">
+                <TimeRangePicker
+                    from={range.timeFrom}
+                    to={range.timeTo}
+                    label="Time of day"
+                    onApply={({ from, to }) => {
+                        onRangeChange("timeFrom", from);
+                        onRangeChange("timeTo", to);
+                    }}
                 />
             </div>
         </div>

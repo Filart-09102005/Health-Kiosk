@@ -3,13 +3,12 @@ import SectionHeader from "./SectionHeader";
 const items = [
     ["Temperature", "42%"],
     ["SpO2", "25%"],
-    ["Heart Rate", "21%"],
-    ["BMI", "12%"],
+    ["Heart Rate", "33%"],
 ];
 
 export default function AlertDistributionChart() {
     return (
-        <div className="rounded-[14px] border p-5" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <div className="rounded-[1.25rem] border p-5" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <SectionHeader title="Alert distribution" description="Measurement types triggering abnormal readings." />
             <div className="mt-5 flex items-center gap-6">
                 <div

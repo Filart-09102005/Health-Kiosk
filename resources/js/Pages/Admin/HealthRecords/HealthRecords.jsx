@@ -5,7 +5,7 @@ import { useToast } from "../../Global/Toast";
 import EmptyState from "./components/EmptyState";
 import HealthRecordsSkeleton from "./components/HealthRecordsSkeleton";
 import RecordDetailsDrawer from "./components/RecordDetailsDrawer";
-import RecordsAnalyticsPanel from "./components/RecordsAnalyticsPanel";
+
 import RecordsFilters from "./components/RecordsFilters";
 import RecordsHeader from "./components/RecordsHeader";
 import RecordsStatsGrid from "./components/RecordsStatsGrid";
@@ -37,6 +37,7 @@ export default function HealthRecords({ navigate }) {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [selectedRecord, setSelectedRecord] = useState(null);
     const [drawerLoading, setDrawerLoading] = useState(false);
+    const [isPageLoading, setIsPageLoading] = useState(false);
 
     const fetchRecords = useCallback(() => {
         setLoading(true);
@@ -149,7 +150,7 @@ export default function HealthRecords({ navigate }) {
         >
             <RecordsHeader />
             <RecordsStatsGrid stats={recordsData.stats} />
-            <RecordsAnalyticsPanel analytics={recordsData.analytics} />
+
             <RecordsFilters
                 filters={filters}
                 onFilterChange={handleFilterChange}
@@ -170,10 +171,16 @@ export default function HealthRecords({ navigate }) {
                     records={paginatedRecords}
                     page={page}
                     totalPages={totalPages}
-                    onPageChange={setPage}
+                    onPageChange={(newPage) => {
+                        if (newPage === page) return;
+                        setIsPageLoading(true);
+                        setPage(newPage);
+                        setTimeout(() => setIsPageLoading(false), 450);
+                    }}
                     onViewDetails={handleViewDetails}
                     exportRecords={filteredRecords}
                     totalLabel={`Showing ${paginatedRecords.length} of ${filteredRecords.length} filtered users`}
+                    loading={isPageLoading}
                 />
             )}
 

@@ -20,6 +20,9 @@ class LoginRequest extends FormRequest
             'email' => ['required', 'email:rfc'],
             'password' => ['required', 'string'],
             'remember' => ['sometimes', 'boolean'],
+            // Which sign-in the person chose on the login page. The account's
+            // own role must match it - see AuthController::login().
+            'login_as' => ['sometimes', 'nullable', 'in:student,admin'],
         ];
     }
 }

@@ -33,7 +33,6 @@ class AlertController extends Controller
             ->whereNotNull('alerts.user_id')
             ->where('users.role', '!=', 'admin')
             ->orderByDesc('alerts.created_at')
-            ->limit(100)
             ->get();
 
         $healthRecords = HealthRecord::query()
@@ -62,7 +61,7 @@ class AlertController extends Controller
                     'spo2' => $healthRecord?->spo2 ? round((float) $healthRecord->spo2).'%' : 'N/A',
                     'bmi' => $healthRecord?->bmi ? number_format((float) $healthRecord->bmi, 1) : 'N/A',
                     'advice' => $healthRecord?->advice ?: ($alert->message ?: 'Clinic review recommended.'),
-                    'newMeasurement' => $alert->new_measurement,
+                    'newMeasurement' => Alert::displayableManualMeasurement($alert->new_measurement),
                     'resolutionNotes' => $alert->resolution_notes,
                 ];
             })->values(),
@@ -169,7 +168,7 @@ class AlertController extends Controller
                 'kioskSessionId'   => $alert->kiosk_session_id,
                 'sessionNumber'    => $alert->session_number,
                 'triggeredAt'      => $alert->created_at,
-                'newMeasurement'   => $alert->new_measurement,
+                'newMeasurement'   => Alert::displayableManualMeasurement($alert->new_measurement),
                 'resolutionNotes'  => $alert->resolution_notes,
                 'reviewedBy'       => $alert->read_at ? (trim(($alert->resolver_firstname ?: '').' '.($alert->resolver_lastname ?: '')) ?: 'Clinic Admin') : 'Unassigned',
             ];
@@ -224,6 +223,15 @@ class AlertController extends Controller
     }
 
     /**
+     * Get the count of unread/unacknowledged alerts.
+     */
+    public function unreadCount(Request $request): JsonResponse
+    {
+        $count = DB::table('alerts')->whereNull('read_at')->count();
+        return response()->json(['count' => $count]);
+    }
+
+    /**
      * Acknowledge an alert by setting read_at = now().
      * This permanently prevents the modal from showing it again.
      */
@@ -242,6 +250,35 @@ class AlertController extends Controller
         $alert->update(['read_at' => now()]);
 
         return response()->json(['message' => 'Alert acknowledged.', 'read_at' => $alert->read_at]);
+    }
+
+    /**
+     * Bulk-resolve every pending (unread) alert, optionally scoped to one severity.
+     * Used by the "Resolve All" action on the Alerts page.
+     */
+    public function resolveAll(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'severity' => 'nullable|string|in:critical,high,moderate,low',
+        ]);
+
+        $query = DB::table('alerts')->whereNull('read_at');
+
+        if (! empty($validated['severity'])) {
+            $query->whereRaw('LOWER(severity) = ?', [strtolower($validated['severity'])]);
+        }
+
+        $resolvedCount = $query->update([
+            'read_at' => now(),
+            'resolved_by' => $request->user()->id,
+            'resolution_notes' => DB::raw("COALESCE(resolution_notes, 'Bulk resolved by admin.')"),
+            'updated_at' => now(),
+        ]);
+
+        return response()->json([
+            'message' => "{$resolvedCount} alert(s) resolved.",
+            'resolvedCount' => $resolvedCount,
+        ]);
     }
 
     /**

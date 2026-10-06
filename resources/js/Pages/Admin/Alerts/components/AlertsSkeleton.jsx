@@ -2,7 +2,7 @@ import ShimmerSkeleton from "./ShimmerSkeleton";
 
 function HeaderSkeleton() {
     return (
-        <section className="rounded-[14px] border p-5 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <section className="rounded-[1.25rem] border p-5 hk-admin-card" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex gap-4">
                     <ShimmerSkeleton className="h-12 w-12" />
@@ -21,7 +21,7 @@ function StatsGridSkeleton() {
     return (
         <section className="grid gap-4 md:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="rounded-[14px] border p-5 shadow-sm" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+                <div key={i} className="rounded-[1.25rem] border p-5 shadow-sm" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
                     <div className="flex items-start justify-between">
                         <div>
                             <ShimmerSkeleton className="h-4 w-24" />
@@ -38,7 +38,7 @@ function StatsGridSkeleton() {
 
 function ToolbarSkeleton() {
     return (
-        <section className="rounded-[14px] border p-4 shadow-sm" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <section className="rounded-[1.25rem] border p-4 shadow-sm" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                 <ShimmerSkeleton className="h-11 w-full xl:max-w-md" />
                 <div className="flex flex-wrap items-center gap-2">
@@ -54,9 +54,9 @@ function ToolbarSkeleton() {
 
 function TableSkeleton() {
     return (
-        <section className="rounded-[14px] border p-5 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <section className="rounded-[1.25rem] border p-5 hk-admin-card" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <ShimmerSkeleton className="h-6 w-48 mb-4" />
-            <div className="max-h-[34rem] overflow-hidden rounded-[12px] border" style={{ borderColor: "var(--color-border)" }}>
+            <div className="max-h-[34rem] overflow-hidden rounded-[1rem] border" style={{ borderColor: "var(--color-border)" }}>
                 <table className="w-full min-w-[1180px] text-left text-sm">
                     <thead className="border-b" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                         <tr>

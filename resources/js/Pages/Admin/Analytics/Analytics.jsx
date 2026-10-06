@@ -1,6 +1,10 @@
+import DateRangePicker from "../../../Global/DateRangePicker";
+import CustomSelectField from "../../../Global/CustomSelectField";
+import { departmentLabel } from "../../../Global/departments";
+import WaveIndicator from "../../../Global/WaveIndicator";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
-import { Activity, AlertTriangle, Bell, CalendarClock, Check, CheckCircle, ChevronDown, Filter, HeartPulse, RotateCcw, Search, Thermometer, UsersRound, Weight } from "lucide-react";
+import { Activity, AlertTriangle, Bell, CalendarClock, CheckCircle, Filter, HeartPulse, RotateCcw, Search, Thermometer, UsersRound, Weight } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import AnalyticsSkeleton from "./components/AnalyticsSkeleton";
 import AnalyticsAsidePanel from "./components/AnalyticsAsidePanel";
@@ -170,11 +174,28 @@ export default function Analytics({ navigate }) {
             const next = { ...current, [key]: value };
 
             if (key === "academic_level") {
-                next.grade_level = "";
-                next.section = "";
-                next.strand = "";
-                next.program = "";
-                next.year_level = "";
+                const isInstructor = ["COLLEGE INSTRUCTOR", "BED INSTRUCTOR", "NTP"].includes(String(value).toUpperCase());
+                const isBed = String(value).toUpperCase() === "BED";
+                const isCollege = String(value).toUpperCase() === "COLLEGE";
+                
+                if (!isBed) {
+                    next.grade_level = "";
+                    next.strand = "";
+                    next.section = "";
+                }
+                
+                if (!isCollege) {
+                    next.program = "";
+                    next.year_level = "";
+                }
+                
+                if (isInstructor) {
+                    next.grade_level = "";
+                    next.strand = "";
+                    next.program = "";
+                    next.year_level = "";
+                    next.section = "";
+                }
             }
 
             if (key === "grade_level" && value && !isSeniorHighGrade(value)) {
@@ -266,6 +287,8 @@ export default function Analytics({ navigate }) {
 
             <motion.div variants={sectionVariants} className="relative z-10">
                 <AnalyticsFilters
+                    applying={refreshing}
+                    resultCount={analyticsData?.summary?.total_students_measured ?? null}
                     filters={draftFilters}
                     options={analyticsData?.filters || {}}
                     onChange={handleFilterChange}
@@ -279,6 +302,28 @@ export default function Analytics({ navigate }) {
                     <SummaryCard key={item.key} {...item} />
                 ))}
             </motion.section>
+
+            {analyticsData?.summary?.total_students_measured === 0 ? (
+                <motion.section variants={sectionVariants} className="mt-8">
+                    <div className="flex flex-col items-center justify-center rounded-[24px] border border-dashed py-20 text-center" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full" style={{ backgroundColor: "var(--color-card)", color: "var(--color-muted)" }}>
+                            <Activity size={32} />
+                        </div>
+                        <h3 className="mt-4 text-lg font-black text-[var(--color-text)]">No analytics data found for the selected filters.</h3>
+                        <p className="mt-2 max-w-md text-sm font-bold text-[var(--color-muted)]">
+                            Please adjust your criteria or expand the date range to view records.
+                        </p>
+                        <button
+                            onClick={handleResetFilters}
+                            className="mt-6 rounded-[1rem] px-6 py-2.5 text-sm font-black transition hk-admin-nav-hover"
+                            style={{ backgroundColor: "var(--color-primary)", color: "var(--color-primary-content)" }}
+                        >
+                            Clear Filters
+                        </button>
+                    </div>
+                </motion.section>
+            ) : (
+                <>
 
             <motion.section variants={sectionVariants}>
                 <div className="grid items-stretch gap-4 2xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
@@ -354,6 +399,8 @@ export default function Analytics({ navigate }) {
                     setFilters((f) => ({ ...f }));
                 }}
             />
+            </>
+            )}
         </motion.div>
     );
 }
@@ -372,7 +419,7 @@ function AnalyticsHeader() {
                     Filtered analytics are based on selected date range and student profile filters.
                 </p>
                 </div>
-                <div className="inline-flex w-fit items-center gap-2 rounded-[14px] border px-3 py-2 text-xs font-black" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>
+                <div className="inline-flex w-fit items-center gap-2 rounded-[1.25rem] border px-3 py-2 text-xs font-black" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>
                     <Filter size={15} style={{ color: "var(--color-primary)" }} />
                     For monitoring and clinic follow-up only
                 </div>
@@ -409,7 +456,7 @@ function AnalyticsAside({ filters, summaryItems, analyticsData, followUpCount })
             title="Clinic decision summary"
             description="Snapshot of the selected cohort, risk pressure, and follow-up workload."
             footer={(
-                <div className="rounded-[14px] border p-3" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                <div className="rounded-[1.25rem] border p-3" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                     <p className="text-[0.68rem] font-black uppercase tracking-[0.12em]" style={{ color: "var(--color-muted)" }}>Latest Measurement</p>
                     <p className="mt-2 text-sm font-black">{latestMeasurement?.value || "No records"}</p>
                     <p className="mt-1 text-xs font-bold leading-5" style={{ color: "var(--color-muted)" }}>
@@ -464,7 +511,7 @@ function AsideStat({ item }) {
     const toneColor = item.tone === "warning" ? "var(--color-error)" : item.tone === "success" ? "var(--color-success)" : "var(--color-primary)";
 
     return (
-        <div className="rounded-[14px] border p-3" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+        <div className="rounded-[1.25rem] border p-3" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <p className="text-xs font-black uppercase tracking-[0.11em]" style={{ color: "var(--color-muted)" }}>{item.label}</p>
@@ -474,7 +521,7 @@ function AsideStat({ item }) {
                     {item.subtext ? <p className="mt-1 text-xs font-bold leading-5" style={{ color: "var(--color-muted)" }}>{item.subtext}</p> : null}
                 </div>
                 {Icon ? (
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px]" style={{ backgroundColor: "var(--color-card)", color: toneColor }}>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[1rem]" style={{ backgroundColor: "var(--color-card)", color: toneColor }}>
                         <Icon size={16} />
                     </span>
                 ) : null}
@@ -483,14 +530,85 @@ function AsideStat({ item }) {
     );
 }
 
-function AnalyticsFilters({ filters, options, onChange, onApply, onReset }) {
+/** Treats empty string / null / undefined as "not set". */
+const filled = (value) => value !== null && value !== undefined && String(value).trim() !== "";
+
+/** How long the applied confirmation stays up. */
+const APPLIED_HOLD_MS = 2000;
+
+function AnalyticsFilters({ filters, options, onChange, onApply, onReset, applying = false, resultCount = null }) {
+    // Confirmation shown briefly once a request that was in flight has landed,
+    // so applying a filter has a visible end and not just a beginning.
+    const [applied, setApplied] = useState(false);
+    const wasApplying = useRef(applying);
+
+    useEffect(() => {
+        const landed = wasApplying.current && !applying;
+        wasApplying.current = applying;
+
+        if (!landed) return undefined;
+
+        setApplied(true);
+        const timer = window.setTimeout(() => setApplied(false), APPLIED_HOLD_MS);
+        return () => window.clearTimeout(timer);
+    }, [applying]);
+
+    const shouldReduceMotionSafe = useReducedMotion();
+
+    // Human-readable summary of what is currently narrowing the data.
+    const activeFilterChips = useMemo(() => {
+        const labels = {
+            academic_level: "Department",
+            gender: "Gender",
+            grade_level: "Grade",
+            strand: "Strand",
+            program: "Course",
+            year_level: "Year",
+            section: "Section",
+        };
+
+        return Object.entries(labels)
+            .filter(([key]) => filled(filters[key]))
+            .map(([key, prefix]) =>
+                key === "academic_level"
+                    ? `${prefix}: ${departmentLabel(filters[key])}`
+                    : `${prefix}: ${formatLabel(filters[key])}`,
+            );
+    }, [filters]);
+
     const dept = String(filters.academic_level || "").toUpperCase();
     const isCollege = dept === "COLLEGE";
     const isBasicEducation = dept === "BED";
     const showStrand = isBasicEducation && (!filters.grade_level || isSeniorHighGrade(filters.grade_level));
 
     return (
-        <section className={`${cardClassName} p-4 sm:p-5`} style={cardStyle}>
+        <section className={`${cardClassName} relative p-4 sm:p-5`} style={cardStyle}>
+            {/* Indeterminate sweep along the panel's top edge. The request length
+                is unknown, so this shows that work is happening rather than
+                pretending to know how far along it is. */}
+            <AnimatePresence>
+                {applying ? (
+                    <motion.span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-x-0 top-0 h-[3px] overflow-hidden rounded-t-2xl"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <motion.span
+                            className="absolute inset-y-0 w-1/3 rounded-full"
+                            style={{
+                                background:
+                                    "linear-gradient(90deg, transparent, var(--color-primary), transparent)",
+                            }}
+                            initial={{ left: "-33%" }}
+                            animate={{ left: "100%" }}
+                            transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
+                        />
+                    </motion.span>
+                ) : null}
+            </AnimatePresence>
+
             <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                     <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: "var(--color-primary)" }}>Analytics Controls</p>
@@ -501,7 +619,8 @@ function AnalyticsFilters({ filters, options, onChange, onApply, onReset }) {
                     <button
                         type="button"
                         onClick={onReset}
-                        className="inline-flex h-11 items-center gap-2 rounded-[12px] border px-4 text-sm font-black transition hk-admin-nav-hover"
+                        disabled={applying}
+                        className="inline-flex h-12 items-center gap-2 rounded-2xl border px-4 text-sm font-black shadow-sm transition hk-admin-nav-hover disabled:cursor-not-allowed disabled:opacity-50"
                         style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)", color: "var(--color-text)" }}
                     >
                         <RotateCcw size={16} />
@@ -510,18 +629,47 @@ function AnalyticsFilters({ filters, options, onChange, onApply, onReset }) {
                     <button
                         type="button"
                         onClick={onApply}
-                        className="inline-flex h-11 items-center gap-2 rounded-[12px] px-4 text-sm font-black text-white transition hk-admin-nav-hover"
-                        style={{ backgroundColor: "var(--color-primary)" }}
+                        disabled={applying}
+                        aria-busy={applying}
+                        className="inline-flex h-12 min-w-[11rem] items-center justify-center gap-2 rounded-2xl px-4 text-sm font-black shadow-sm transition-colors duration-300 hk-admin-nav-hover disabled:cursor-not-allowed"
+                        style={{
+                            backgroundColor: applied ? "var(--color-success)" : "var(--color-primary)",
+                            color: applied ? "var(--color-success-content)" : "var(--color-primary-content)",
+                        }}
                     >
-                        <Filter size={16} />
-                        Apply Filters
+                        {applying ? (
+                            <WaveIndicator size={16} color="#ffffff" />
+                        ) : applied ? (
+                            <CheckCircle size={16} />
+                        ) : (
+                            <Filter size={16} />
+                        )}
+                        {applying ? "Applying..." : applied ? "Filters applied" : "Apply Filters"}
                     </button>
                 </div>
             </div>
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <InputField label="Date From" type="date" value={filters.date_from} onChange={(value) => onChange("date_from", value)} />
-                <InputField label="Date To" type="date" value={filters.date_to} onChange={(value) => onChange("date_to", value)} />
-                <SelectField label="Academic Level" value={filters.academic_level} options={options.academic_levels || []} onChange={(value) => onChange("academic_level", value)} />
+            <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="space-y-1.5 md:col-span-2">
+                    <span className="block text-xs font-black tracking-wide" style={{ color: "var(--color-muted)" }}>Date Range</span>
+                    <div>
+                        <DateRangePicker
+                            from={filters.date_from}
+                            to={filters.date_to}
+                            label={null}
+                            onApply={({ from, to }) => {
+                                onChange("date_from", from);
+                                onChange("date_to", to);
+                            }}
+                        />
+                    </div>
+                </div>
+                <SelectField
+                    label="Department"
+                    value={filters.academic_level}
+                    options={options.academic_levels || []}
+                    formatOption={departmentLabel}
+                    onChange={(value) => onChange("academic_level", value)}
+                />
                 <SelectField label="Gender" value={filters.gender} options={options.genders || []} onChange={(value) => onChange("gender", value)} />
 
                 {isBasicEducation ? (
@@ -539,7 +687,58 @@ function AnalyticsFilters({ filters, options, onChange, onApply, onReset }) {
                     </>
                 ) : null}
             </div>
-            <p className="mt-4 rounded-[12px] border px-3 py-2 text-xs font-bold" style={{ color: "var(--color-muted)", borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+            {/* What the applied filter actually matched. Shows the live figure from
+                the database, so the effect of a filter is visible as a number
+                rather than something the user has to infer from the charts. */}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="text-[0.68rem] font-black uppercase tracking-[0.16em]" style={{ color: "var(--color-muted)" }}>
+                    Showing
+                </span>
+
+                <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                        key={`${resultCount}-${applying}`}
+                        initial={shouldReduceMotionSafe ? false : { opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={shouldReduceMotionSafe ? undefined : { opacity: 0, y: -6 }}
+                        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                        className="rounded-full border px-3 py-1 text-xs font-black tabular-nums"
+                        style={{
+                            borderColor: applied
+                                ? "color-mix(in srgb, var(--color-success) 40%, var(--color-border))"
+                                : "var(--color-border)",
+                            backgroundColor: applied
+                                ? "color-mix(in srgb, var(--color-success) 10%, var(--color-surface))"
+                                : "var(--color-surface)",
+                            color: applied ? "var(--color-success)" : "var(--color-text)",
+                        }}
+                    >
+                        {applying
+                            ? "Updating..."
+                            : resultCount === null
+                                ? "--"
+                                : `${resultCount.toLocaleString()} ${resultCount === 1 ? "student" : "students"} measured`}
+                    </motion.span>
+                </AnimatePresence>
+
+                {activeFilterChips.length ? (
+                    activeFilterChips.map((chip) => (
+                        <span
+                            key={chip}
+                            className="rounded-full border px-3 py-1 text-xs font-bold"
+                            style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)", color: "var(--color-muted)" }}
+                        >
+                            {chip}
+                        </span>
+                    ))
+                ) : (
+                    <span className="text-xs font-bold" style={{ color: "var(--color-muted)" }}>
+                        No filters applied
+                    </span>
+                )}
+            </div>
+
+            <p className="mt-3 rounded-[1rem] border px-3 py-2 text-xs font-bold" style={{ color: "var(--color-muted)", borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                 If a grade, strand, or course is not listed, there is no matching database value for the selected cohort yet.
             </p>
         </section>
@@ -554,89 +753,41 @@ function InputField({ label, type, value, onChange }) {
                 type={type}
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
-                className="mt-2 h-11 w-full rounded-[12px] border px-3 text-sm font-black outline-none"
+                className="mt-2 h-11 w-full rounded-[1rem] border px-3 text-sm font-black outline-none"
                 style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-text)" }}
             />
         </label>
     );
 }
 
-function SelectField({ label, value, options, onChange }) {
-    const [open, setOpen] = useState(false);
-    const rootRef = useRef(null);
-    const selectedLabel = value ? formatLabel(value) : "All";
-
-    useEffect(() => {
-        if (!open) return undefined;
-
-        const closeOnOutside = (event) => {
-            if (!rootRef.current?.contains(event.target)) setOpen(false);
-        };
-        const closeOnEscape = (event) => {
-            if (event.key === "Escape") setOpen(false);
-        };
-
-        document.addEventListener("pointerdown", closeOnOutside);
-        document.addEventListener("keydown", closeOnEscape);
-
-        return () => {
-            document.removeEventListener("pointerdown", closeOnOutside);
-            document.removeEventListener("keydown", closeOnEscape);
-        };
-    }, [open]);
-
-    const handleSelect = (nextValue) => {
-        onChange(nextValue);
-        setOpen(false);
-    };
+/**
+ * Analytics filter select.
+ *
+ * A thin adapter over the shared CustomSelectField, so these controls match the
+ * Severity / Measurement dropdowns on Health Alerts and the ones on Reports and
+ * Health Records. It previously carried its own ~110-line dropdown — same idea,
+ * different trigger height, radius, label casing and panel styling, which is
+ * why this panel looked out of step with the rest of the admin.
+ *
+ * The call signature is unchanged: options arrive as plain values and the empty
+ * value means "All".
+ */
+function SelectField({ label, value, options, onChange, formatOption = formatLabel }) {
+    const items = useMemo(
+        () => [
+            { value: "", label: "All" },
+            ...(options || []).map((option) => ({ value: option, label: formatOption(option) })),
+        ],
+        [options, formatOption],
+    );
 
     return (
-        <div ref={rootRef} className="relative">
-            <span className="text-[0.68rem] font-black uppercase tracking-[0.16em]" style={{ color: "var(--color-muted)" }}>{label}</span>
-            <button
-                type="button"
-                onClick={() => setOpen((current) => !current)}
-                className="mt-2 flex h-11 w-full items-center justify-between gap-3 rounded-[12px] border px-3 pr-4 text-left text-sm font-black outline-none transition hk-admin-nav-hover"
-                style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-text)" }}
-                aria-haspopup="listbox"
-                aria-expanded={open}
-            >
-                <span className="min-w-0 truncate">{selectedLabel}</span>
-                <ChevronDown size={17} className={`shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} style={{ color: "var(--color-muted)" }} />
-            </button>
-
-            {open ? (
-                <div
-                    className="absolute left-0 right-0 z-50 mt-2 overflow-hidden rounded-[14px] border p-1.5 shadow-xl"
-                    style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "0 18px 50px rgba(0, 0, 0, 0.2)" }}
-                    role="listbox"
-                >
-                    <div className="flex max-h-56 flex-col gap-1.5 overflow-y-auto pr-1">
-                        {[{ value: "", label: "All" }, ...options.map((option) => ({ value: option, label: formatLabel(option) }))].map((option) => {
-                            const active = option.value === value;
-
-                            return (
-                                <button
-                                    key={option.value || "all"}
-                                    type="button"
-                                    onClick={() => handleSelect(option.value)}
-                                    className="flex min-h-10 w-full items-center justify-between gap-3 rounded-[10px] px-3 py-2 text-left text-sm font-black transition hk-admin-nav-hover"
-                                    style={{
-                                        backgroundColor: active ? "color-mix(in srgb, var(--color-primary) 12%, transparent)" : "transparent",
-                                        color: active ? "var(--color-primary)" : "var(--color-text)",
-                                    }}
-                                    role="option"
-                                    aria-selected={active}
-                                >
-                                    <span className="min-w-0 truncate">{option.label}</span>
-                                    {active ? <Check size={15} className="shrink-0" /> : <span className="h-[15px] w-[15px] shrink-0" />}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            ) : null}
-        </div>
+        <CustomSelectField
+            label={label}
+            value={value ?? ""}
+            options={items}
+            onChange={onChange}
+        />
     );
 }
 
@@ -647,7 +798,7 @@ function SummaryCard({ label, value, suffix, Icon, icon, subtext, tone = "primar
     return (
         <article className={`${cardClassName} min-h-[132px] p-4`} style={cardStyle}>
             <div className="flex items-center justify-between gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-[12px]" style={{ backgroundColor: "var(--color-surface)", color: toneColor }}>
+                <div className="flex h-11 w-11 items-center justify-center rounded-[1rem]" style={{ backgroundColor: "var(--color-surface)", color: toneColor }}>
                     {CardIcon ? <CardIcon size={20} /> : null}
                 </div>
                 <span className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[0.65rem] font-black uppercase tracking-[0.12em]" style={{ borderColor: "var(--color-border)", color: toneColor, backgroundColor: "var(--color-surface)" }}>
@@ -703,11 +854,11 @@ function PanelInsights({ insights, summary }) {
                                 </p>
                             </div>
                             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:justify-end">
-                                <div className="rounded-[14px] border px-3 py-2" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>
+                                <div className="rounded-[1.25rem] border px-3 py-2" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>
                                     <p className="text-[0.62rem] font-black uppercase tracking-[0.12em]" style={{ color: "var(--color-muted)" }}>Total Signals</p>
                                     <p className="mt-1 text-lg font-black">{totalSignals}</p>
                                 </div>
-                                <div className="rounded-[14px] border px-3 py-2" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>
+                                <div className="rounded-[1.25rem] border px-3 py-2" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>
                                     <p className="text-[0.62rem] font-black uppercase tracking-[0.12em]" style={{ color: "var(--color-muted)" }}>Highest</p>
                                     <p className="mt-1 max-w-36 truncate text-sm font-black">{highest?.value > 0 ? highest.name : "No data"}</p>
                                 </div>
@@ -793,7 +944,7 @@ function InsightChartTooltip({ active, payload }) {
     const insight = payload[0].payload;
 
     return (
-        <div className="max-w-[18rem] rounded-[14px] border p-3 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-text)" }}>
+        <div className="max-w-[18rem] rounded-[1.25rem] border p-3 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-text)" }}>
             <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: insight.color }} />
                 <p className="text-sm font-black">{insight.title}</p>
@@ -915,13 +1066,13 @@ function InsightSummaryCard({ insight }) {
                     <p className="truncate text-xs font-black uppercase tracking-[0.1em]" style={{ color: "var(--color-muted)" }}>{insight.title}</p>
                     <p className="mt-1 text-sm font-black">{insight.topGroup}</p>
                 </div>
-                <span className="rounded-[12px] px-3 py-1 text-sm font-black" style={{ backgroundColor: "var(--color-card)", color: insight.color, boxShadow: `0 0 20px color-mix(in srgb, ${insight.color} 18%, transparent)` }}>
+                <span className="rounded-[1rem] px-3 py-1 text-sm font-black" style={{ backgroundColor: "var(--color-card)", color: insight.color, boxShadow: `0 0 20px color-mix(in srgb, ${insight.color} 18%, transparent)` }}>
                     {insight.value}
                 </span>
             </div>
             <div className="mt-4 space-y-3">
                 {topRanks.map((rank) => (
-                    <div key={`${rank.group_type}-${rank.label}`} className="flex items-center justify-between gap-3 rounded-[10px] border px-3 py-2" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>
+                    <div key={`${rank.group_type}-${rank.label}`} className="flex items-center justify-between gap-3 rounded-[0.875rem] border px-3 py-2" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>
                         <div className="min-w-0">
                             <p className="truncate text-xs font-black">{rank.label}</p>
                             <p className="text-[0.66rem] font-bold" style={{ color: "var(--color-muted)" }}>{rank.group_type} · {rank.students} student{Number(rank.students) === 1 ? "" : "s"}</p>
@@ -951,7 +1102,7 @@ function InsightBarCard({ insight }) {
                     <p className="mt-2 text-sm font-black">{insight.group_type}: {insight.label}</p>
                     <p className="mt-1 text-xs font-bold leading-5" style={{ color: "var(--color-muted)" }}>{insight.detail}</p>
                 </div>
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-xl font-black" style={{ backgroundColor: "color-mix(in srgb, var(--color-error) 13%, var(--color-card))", color: "var(--color-error)" }}>
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1.25rem] text-xl font-black" style={{ backgroundColor: "color-mix(in srgb, var(--color-error) 13%, var(--color-card))", color: "var(--color-error)" }}>
                     {insight.count}
                 </span>
             </div>
@@ -963,7 +1114,7 @@ function InsightBarCard({ insight }) {
                     const top = index === 0;
 
                     return (
-                        <div key={`${row.group_type}-${row.label}`} className="rounded-[12px] border p-3" style={{ borderColor: top ? "color-mix(in srgb, var(--color-error) 42%, var(--color-border))" : "var(--color-border)", backgroundColor: top ? "color-mix(in srgb, var(--color-error) 8%, var(--color-card))" : "var(--color-card)" }}>
+                        <div key={`${row.group_type}-${row.label}`} className="rounded-[1rem] border p-3" style={{ borderColor: top ? "color-mix(in srgb, var(--color-error) 42%, var(--color-border))" : "var(--color-border)", backgroundColor: top ? "color-mix(in srgb, var(--color-error) 8%, var(--color-card))" : "var(--color-card)" }}>
                             <div className="mb-2 flex items-center justify-between gap-3">
                                 <div className="min-w-0">
                                     <p className="truncate text-xs font-black">{row.label}</p>
@@ -998,18 +1149,18 @@ function DistributionPanel({ title, description, data }) {
         <ChartCard title={title} description={description}>
             <div className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-[14px] border p-3" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                    <div className="rounded-[1.25rem] border p-3" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                         <p className="text-[0.68rem] font-black uppercase tracking-[0.14em]" style={{ color: "var(--color-muted)" }}>Filtered Records</p>
                         <p className="mt-2 text-2xl font-black">{total}</p>
                     </div>
-                    <div className="rounded-[14px] border p-3" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                    <div className="rounded-[1.25rem] border p-3" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                         <p className="text-[0.68rem] font-black uppercase tracking-[0.14em]" style={{ color: "var(--color-muted)" }}>Most Common</p>
                         <p className="mt-2 truncate text-sm font-black">{topItem?.name || "No data"}</p>
                         <p className="mt-1 text-xs font-bold" style={{ color: "var(--color-muted)" }}>
                             {topItem ? `${topItem.count} record${topItem.count === 1 ? "" : "s"}` : "No matching records"}
                         </p>
                     </div>
-                    <div className="rounded-[14px] border p-3" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                    <div className="rounded-[1.25rem] border p-3" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                         <p className="text-[0.68rem] font-black uppercase tracking-[0.14em]" style={{ color: "var(--color-muted)" }}>Needs Review</p>
                         <p className="mt-2 text-2xl font-black" style={{ color: riskPercent ? "var(--color-error)" : "var(--color-success)" }}>{riskPercent}%</p>
                         <div className="mt-2 h-2 overflow-hidden rounded-full border" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
@@ -1022,7 +1173,7 @@ function DistributionPanel({ title, description, data }) {
                     {chartData.length ? <VerticalBarSvg data={chartData} /> : <EmptyChart message="No distribution data for the selected filters." />}
                     <div className="mt-4 grid gap-2 sm:grid-cols-2">
                         {chartData.map((item) => (
-                            <div key={item.name} className="flex items-center justify-between gap-2 rounded-[12px] border px-3 py-2" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>
+                            <div key={item.name} className="flex items-center justify-between gap-2 rounded-[1rem] border px-3 py-2" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>
                                 <span className="inline-flex min-w-0 items-center gap-2 text-xs font-black" style={{ color: "var(--color-muted)" }}>
                                     <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: item.color }} />
                                     <span className="truncate">{item.name}</span>
@@ -1077,7 +1228,7 @@ function AcademicComparisonChart({ data }) {
 
     const reviewCount = rows.filter((row) =>
         row.average_bmi >= 30 ||
-        row.average_temperature >= 37.5 ||
+        row.average_temperature > 37.2 ||
         row.average_spo2 < 95 ||
         row.average_heart_rate > 100 ||
         row.average_heart_rate < 60,
@@ -1096,17 +1247,17 @@ function AcademicComparisonChart({ data }) {
 
             {/* ── Stats row ── */}
             <div className="mb-4 grid grid-cols-3 gap-2">
-                <div className="rounded-[12px] border p-2.5" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                <div className="rounded-[1rem] border p-2.5" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                     <p className="text-[0.62rem] font-black uppercase tracking-[0.12em]" style={{ color: "var(--color-muted)" }}>Groups Compared</p>
                     <p className="mt-1.5 text-xl font-black">{rows.length}</p>
                 </div>
-                <div className="rounded-[12px] border p-2.5" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                <div className="rounded-[1rem] border p-2.5" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                     <p className="text-[0.62rem] font-black uppercase tracking-[0.12em]" style={{ color: "var(--color-muted)" }}>Needs Review</p>
                     <p className="mt-1.5 text-xl font-black" style={{ color: reviewCount ? "var(--color-error)" : "var(--clinical-normal)" }}>
                         {reviewCount}
                     </p>
                 </div>
-                <div className="rounded-[12px] border p-2.5" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                <div className="rounded-[1rem] border p-2.5" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                     <p className="text-[0.62rem] font-black uppercase tracking-[0.12em]" style={{ color: "var(--color-muted)" }}>Highest BMI</p>
                     <p className="mt-1.5 truncate text-sm font-black">{highestBmi?.name || "No data"}</p>
                 </div>
@@ -1164,7 +1315,7 @@ function AcademicComparisonChart({ data }) {
 
                     <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                         {metrics.map(([key, label, color, , description]) => (
-                            <div key={key} className="flex items-start gap-2 rounded-[12px] border px-3 py-2" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>
+                            <div key={key} className="flex items-start gap-2 rounded-[1rem] border px-3 py-2" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>
                                 <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
                                 <div className="min-w-0">
                                     <p className="text-xs font-black" style={{ color }}>{label}</p>
@@ -1183,10 +1334,10 @@ function AcademicComparisonTooltip({ active, payload, label, metrics }) {
     if (!active || !payload?.length) return null;
 
     const row = payload[0]?.payload || {};
-    const needsReview = row.average_bmi >= 30 || row.average_temperature >= 37.5 || row.average_spo2 < 95 || row.average_heart_rate > 100 || row.average_heart_rate < 60;
+    const needsReview = row.average_bmi >= 30 || row.average_temperature > 37.2 || row.average_spo2 < 95 || row.average_heart_rate > 100 || row.average_heart_rate < 60;
 
     return (
-        <div className="max-w-[18rem] rounded-[14px] border p-3 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-text)" }}>
+        <div className="max-w-[18rem] rounded-[1.25rem] border p-3 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-text)" }}>
             <p className="text-sm font-black">{label}</p>
             <p className="mt-1 text-xs font-bold" style={{ color: "var(--color-muted)" }}>
                 {row.students} student{Number(row.students) === 1 ? "" : "s"} measured · {needsReview ? "Needs review" : "Normal range"}
@@ -1278,7 +1429,7 @@ function AcademicComparisonRows({ data }) {
 
 function MetricChip({ color, label, value }) {
     return (
-        <div className="flex items-center justify-between gap-2 rounded-[12px] border px-3 py-2" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>
+        <div className="flex items-center justify-between gap-2 rounded-[1rem] border px-3 py-2" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>
             <span className="inline-flex items-center gap-2 text-xs font-black" style={{ color: "var(--color-muted)" }}>
                 <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
                 {label}
@@ -1306,7 +1457,7 @@ function TrendPanel({ data, period, onPeriodChange }) {
                 <div className="space-y-4">
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         {metrics.map(([key, label, color]) => (
-                            <div key={key} className="rounded-[14px] border p-3" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                            <div key={key} className="rounded-[1.25rem] border p-3" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                                 <p className="text-xs font-black uppercase tracking-[0.12em]" style={{ color }}>{label}</p>
                                 <p className="mt-2 text-2xl font-black">{latestValue(data, key)}</p>
                                 <p className="mt-1 text-[0.68rem] font-bold leading-4" style={{ color: "var(--color-muted)" }}>
@@ -1382,7 +1533,7 @@ function TrendTooltip({ active, payload, label, metrics }) {
     if (!active || !payload?.length) return null;
 
     return (
-        <div className="min-w-48 rounded-[14px] border p-3 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-text)" }}>
+        <div className="min-w-48 rounded-[1.25rem] border p-3 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-text)" }}>
             <p className="text-sm font-black">{label}</p>
             <p className="mt-1 text-xs font-bold" style={{ color: "var(--color-muted)" }}>Filtered average measurements</p>
             <div className="mt-3 space-y-2">
@@ -1622,13 +1773,13 @@ function AcademicRiskChart({ data }) {
 
             {/* ── Stats row ── */}
             <div className="mb-4 grid grid-cols-2 gap-2">
-                <div className="rounded-[12px] border p-2.5" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                <div className="rounded-[1rem] border p-2.5" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                     <p className="text-[0.62rem] font-black uppercase tracking-[0.12em]" style={{ color: "var(--color-muted)" }}>Total Risk Flags</p>
                     <p className="mt-1.5 text-xl font-black" style={{ color: totalRisk ? "var(--color-error)" : "var(--clinical-normal)" }}>
                         {totalRisk}
                     </p>
                 </div>
-                <div className="rounded-[12px] border p-2.5" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
+                <div className="rounded-[1rem] border p-2.5" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                     <p className="text-[0.62rem] font-black uppercase tracking-[0.12em]" style={{ color: "var(--color-muted)" }}>Highest Group</p>
                     <p className="mt-1.5 truncate text-sm font-black">{highestGroup?.name || "No data"}</p>
                 </div>
@@ -1680,7 +1831,7 @@ function AcademicRiskChart({ data }) {
 
                         <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                             {riskSeries.map((series) => (
-                                <div key={series.key} className="flex items-start gap-2 rounded-[12px] border px-3 py-2" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>
+                                <div key={series.key} className="flex items-start gap-2 rounded-[1rem] border px-3 py-2" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>
                                     <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: series.color }} />
                                     <div className="min-w-0">
                                         <p className="text-xs font-black" style={{ color: series.color }}>{series.label}</p>
@@ -1705,7 +1856,7 @@ function RiskBreakdownTooltip({ active, payload, label, series }) {
         .sort((a, b) => Number(b.value) - Number(a.value));
 
     return (
-        <div className="max-w-[17rem] rounded-[14px] border p-3 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-text)" }}>
+        <div className="max-w-[17rem] rounded-[1.25rem] border p-3 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-text)" }}>
             <p className="text-sm font-black">{label}</p>
             <p className="mt-1 text-xs font-bold" style={{ color: "var(--color-muted)" }}>
                 {row.students} student{Number(row.students) === 1 ? "" : "s"} measured · {row.total_flags} total risk flag{Number(row.total_flags) === 1 ? "" : "s"}
@@ -1740,7 +1891,7 @@ function RiskHeatCell({ label, value, max, tone }) {
 
     return (
         <div
-            className="rounded-[12px] border px-3 py-3 text-center transition hk-admin-nav-hover"
+            className="rounded-[1rem] border px-3 py-3 text-center transition hk-admin-nav-hover"
             style={{
                 borderColor: value ? `color-mix(in srgb, ${color} 42%, var(--color-border))` : "var(--color-border)",
                 backgroundColor: value ? `color-mix(in srgb, ${color} ${intensity}%, var(--color-card))` : "var(--color-card)",
@@ -1859,12 +2010,12 @@ function FollowUpTable({ rows, search, onSearch }) {
         <section className={`${cardClassName} p-5`} style={cardStyle}>
             <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <SectionHeader title="Students requiring follow-up" description="Students with active health alerts requiring clinic follow-up. Students are automatically removed once all related alerts have been resolved." />
-                <label className="flex h-11 min-w-0 items-center gap-3 rounded-[12px] border px-3 lg:w-80" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+                <label className="flex h-11 min-w-0 items-center gap-3 rounded-[1rem] border px-3 lg:w-80" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
                     <Search size={16} style={{ color: "var(--color-muted)" }} />
                     <input value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Search student or status..." className="min-w-0 flex-1 bg-transparent text-sm font-bold outline-none" />
                 </label>
             </div>
-            <div className="overflow-auto rounded-[12px] border" style={{ borderColor: "var(--color-border)" }}>
+            <div className="overflow-auto rounded-[1rem] border" style={{ borderColor: "var(--color-border)" }}>
                 <table className="w-full min-w-[980px] text-left text-xs">
                     <thead style={{ backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>
                         <tr>
@@ -1902,19 +2053,19 @@ function FollowUpTable({ rows, search, onSearch }) {
                         type="button"
                         onClick={() => setPage((current) => Math.max(1, current - 1))}
                         disabled={currentPage === 1}
-                        className="h-10 rounded-[12px] border px-3 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-45"
+                        className="h-10 rounded-[1rem] border px-3 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-45"
                         style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)", color: "var(--color-text)" }}
                     >
                         Previous
                     </button>
-                    <span className="rounded-[12px] border px-3 py-2 text-xs font-black" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>
+                    <span className="rounded-[1rem] border px-3 py-2 text-xs font-black" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>
                         Page {currentPage} of {totalPages}
                     </span>
                     <button
                         type="button"
                         onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
                         disabled={currentPage === totalPages}
-                        className="h-10 rounded-[12px] border px-3 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-45"
+                        className="h-10 rounded-[1rem] border px-3 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-45"
                         style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)", color: "var(--color-text)" }}
                     >
                         Next
@@ -1936,7 +2087,7 @@ function ChartCard({ title, description, action = null, children }) {
                 {action ? (
                     <div className="shrink-0">{action}</div>
                 ) : (
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px]" style={{ backgroundColor: "var(--color-surface)", color: "var(--color-primary)" }}>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[1rem]" style={{ backgroundColor: "var(--color-surface)", color: "var(--color-primary)" }}>
                         <Activity size={17} />
                     </span>
                 )}
@@ -1948,8 +2099,8 @@ function ChartCard({ title, description, action = null, children }) {
 
 function EmptyChart({ message, title = "No matching records found" }) {
     return (
-        <div className="flex min-h-44 flex-col items-center justify-center rounded-[12px] border p-6 text-center" style={{ borderColor: "var(--color-border)", color: "var(--color-muted)", backgroundColor: "var(--color-surface)" }}>
-            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-[12px]" style={{ backgroundColor: "var(--color-card)", color: "var(--color-primary)" }}>
+        <div className="flex min-h-44 flex-col items-center justify-center rounded-[1rem] border p-6 text-center" style={{ borderColor: "var(--color-border)", color: "var(--color-muted)", backgroundColor: "var(--color-surface)" }}>
+            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-[1rem]" style={{ backgroundColor: "var(--color-card)", color: "var(--color-primary)" }}>
                 <Search size={18} />
             </div>
             <p className="text-sm font-black" style={{ color: "var(--color-text)" }}>{title}</p>
@@ -1960,13 +2111,13 @@ function EmptyChart({ message, title = "No matching records found" }) {
 
 function PeriodTabs({ value, onChange }) {
     return (
-        <div className="flex rounded-[12px] border p-1" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <div className="flex rounded-[1rem] border p-1" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             {["weekly", "monthly", "yearly"].map((period) => (
                 <button
                     key={period}
                     type="button"
                     onClick={() => onChange(period)}
-                    className="rounded-[10px] px-3 py-2 text-xs font-black capitalize transition"
+                    className="rounded-[0.875rem] px-3 py-2 text-xs font-black capitalize transition"
                     style={{ backgroundColor: value === period ? "var(--color-primary)" : "transparent", color: value === period ? "#fff" : "var(--color-muted)" }}
                 >
                     {period}
@@ -2068,7 +2219,7 @@ function AlertAnalyticsSection({ data, onViewAlert }) {
                             Tracks the complete lifecycle of health alerts — from kiosk detection to clinic resolution. Click any alert type bar to drill down into individual student cases.
                         </p>
                     </div>
-                    <div className="inline-flex w-fit items-center gap-2 rounded-[14px] border px-3 py-2 text-xs font-black" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>
+                    <div className="inline-flex w-fit items-center gap-2 rounded-[1.25rem] border px-3 py-2 text-xs font-black" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>
                         <Bell size={15} style={{ color: "var(--color-primary)" }} />
                         Respects active filters
                     </div>
@@ -2166,7 +2317,7 @@ function AlertDistributionChart({ data, selectedType, onTypeClick }) {
         const row = chartData.find((d) => d.name === label);
 
         return (
-            <div className="rounded-[14px] border p-3 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-text)" }}>
+            <div className="rounded-[1.25rem] border p-3 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-text)" }}>
                 <p className="text-sm font-black">{label}</p>
                 <p className="mt-1 text-xs font-bold" style={{ color: "var(--color-muted)" }}>
                     {row?.total || 0} total · {row?.recovery_rate || 0}% resolved
@@ -2260,7 +2411,7 @@ function AlertTypeKPICards({ data, selectedType, onTypeClick }) {
                                 key={item.key}
                                 type="button"
                                 onClick={() => onTypeClick(item.key)}
-                                className="w-full rounded-[14px] border p-3 text-left transition hk-admin-nav-hover"
+                                className="w-full rounded-[1.25rem] border p-3 text-left transition hk-admin-nav-hover"
                                 style={{
                                     borderColor: isSelected ? "var(--color-primary)" : "var(--color-border)",
                                     backgroundColor: isSelected
@@ -2280,7 +2431,7 @@ function AlertTypeKPICards({ data, selectedType, onTypeClick }) {
                                 <div className="grid grid-cols-3 gap-2 text-center">
                                     {[["Total", item.total, "var(--color-text)"], ["Resolved", item.resolved, "var(--color-success)"], ["Pending", item.pending, "var(--color-warning)"]].map(
                                         ([lbl, val, clr]) => (
-                                            <div key={lbl} className="rounded-[10px] border p-1.5" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>
+                                            <div key={lbl} className="rounded-[0.875rem] border p-1.5" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>
                                                 <p className="text-[0.62rem] font-black uppercase tracking-[0.1em]" style={{ color: "var(--color-muted)" }}>{lbl}</p>
                                                 <p className="mt-0.5 text-base font-black" style={{ color: clr }}>{val}</p>
                                             </div>
@@ -2300,77 +2451,19 @@ function AlertTypeKPICards({ data, selectedType, onTypeClick }) {
     );
 }
 
+// Drill-down status filter. Uses the shared CustomSelectField so it matches
+// the Reports, Health Records and Alerts dropdowns instead of carrying a
+// fourth hand-rolled implementation.
 function DrillDownStatusSelect({ value, onChange }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
     const options = [
         { value: "", label: "All Statuses" },
         { value: "Pending", label: "Pending" },
         { value: "Resolved", label: "Resolved" },
     ];
-    const selectedOption = options.find((opt) => opt.value === value) || options[0];
 
     return (
-        <div className="relative min-w-[140px] text-left" ref={dropdownRef}>
-            <button
-                type="button"
-                onClick={() => setIsOpen(!isOpen)}
-                className="flex h-10 w-full items-center justify-between gap-3 rounded-[12px] border px-3 text-sm font-black outline-none transition hk-admin-nav-hover"
-                style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-text)" }}
-            >
-                <span className="truncate">{selectedOption.label}</span>
-                <span
-                    className="flex shrink-0 items-center justify-center transition-transform duration-300"
-                    style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
-                >
-                    <ChevronDown size={14} style={{ color: "var(--color-muted)" }} />
-                </span>
-            </button>
-
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-full z-50 mt-2 w-full min-w-[140px] overflow-hidden rounded-[14px] border p-1 shadow-xl"
-                        style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}
-                    >
-                            <div className="flex flex-col gap-0.5">
-                                {options.map((option) => (
-                                    <button
-                                        key={option.value}
-                                        type="button"
-                                        className={`flex w-full items-center rounded-[10px] px-3 py-2.5 text-left text-xs font-black transition-colors ${value === option.value ? '' : 'hover:opacity-75'}`}
-                                        style={{
-                                            backgroundColor: value === option.value ? "var(--color-primary)" : "transparent",
-                                            color: value === option.value ? "var(--color-bg)" : "var(--color-text)",
-                                        }}
-                                        onClick={() => {
-                                            onChange(option.value);
-                                            setIsOpen(false);
-                                        }}
-                                    >
-                                        <span className="flex-1">{option.label}</span>
-                                        {value === option.value && <Check size={14} />}
-                                    </button>
-                                ))}
-                            </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+        <div className="min-w-[150px]">
+            <CustomSelectField value={value} options={options} onChange={onChange} />
         </div>
     );
 }
@@ -2415,7 +2508,7 @@ function AlertDrillDownTable({ rows, typeLabel, onClose, onViewAlert }) {
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <label className="flex h-10 items-center gap-2 rounded-[12px] border px-3" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+                    <label className="flex h-10 items-center gap-2 rounded-[1rem] border px-3" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
                         <Search size={14} style={{ color: "var(--color-muted)" }} />
                         <input
                             value={search}
@@ -2430,7 +2523,7 @@ function AlertDrillDownTable({ rows, typeLabel, onClose, onViewAlert }) {
                     />
                     <button
                         onClick={onClose}
-                        className="h-10 rounded-[12px] border px-3 text-sm font-black transition hk-admin-nav-hover"
+                        className="h-10 rounded-[1rem] border px-3 text-sm font-black transition hk-admin-nav-hover"
                         style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}
                     >
                         Close ✕
@@ -2439,7 +2532,7 @@ function AlertDrillDownTable({ rows, typeLabel, onClose, onViewAlert }) {
             </div>
 
             {/* Table */}
-            <div className="overflow-auto rounded-[12px] border" style={{ borderColor: "var(--color-border)" }}>
+            <div className="overflow-auto rounded-[1rem] border" style={{ borderColor: "var(--color-border)" }}>
                 <table className="w-full min-w-[820px] text-left text-xs">
                     <thead style={{ backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>
                         <tr>
@@ -2470,7 +2563,7 @@ function AlertDrillDownTable({ rows, typeLabel, onClose, onViewAlert }) {
                                     <td className="px-3 py-3">
                                         <button
                                             onClick={() => onViewAlert(row)}
-                                            className="rounded-[10px] border px-3 py-1.5 text-xs font-black transition hk-admin-nav-hover"
+                                            className="rounded-[0.875rem] border px-3 py-1.5 text-xs font-black transition hk-admin-nav-hover"
                                             style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}
                                         >
                                             View Details
@@ -2495,9 +2588,9 @@ function AlertDrillDownTable({ rows, typeLabel, onClose, onViewAlert }) {
                     Showing {filtered.length ? (currentPage - 1) * pageSize + 1 : 0}–{Math.min(currentPage * pageSize, filtered.length)} of {filtered.length} cases
                 </p>
                 <div className="flex items-center gap-2">
-                    <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9 rounded-[12px] border px-3 text-xs font-black transition disabled:opacity-45 hk-admin-nav-hover" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>Previous</button>
-                    <span className="rounded-[12px] border px-3 py-2 text-xs font-black" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>Page {currentPage} of {totalPages}</span>
-                    <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9 rounded-[12px] border px-3 text-xs font-black transition disabled:opacity-45 hk-admin-nav-hover" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>Next</button>
+                    <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9 rounded-[1rem] border px-3 text-xs font-black transition disabled:opacity-45 hk-admin-nav-hover" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>Previous</button>
+                    <span className="rounded-[1rem] border px-3 py-2 text-xs font-black" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>Page {currentPage} of {totalPages}</span>
+                    <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9 rounded-[1rem] border px-3 text-xs font-black transition disabled:opacity-45 hk-admin-nav-hover" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>Next</button>
                 </div>
             </div>
         </section>
@@ -2541,7 +2634,7 @@ function RecentlyResolvedTable({ rows, onViewAlert }) {
                     description="Latest clinic-resolved health alerts with original and new measurement values recorded by staff."
                 />
             </div>
-            <div className="overflow-auto rounded-[12px] border" style={{ borderColor: "var(--color-border)" }}>
+            <div className="overflow-auto rounded-[1rem] border" style={{ borderColor: "var(--color-border)" }}>
                 <table className="w-full min-w-[900px] text-left text-xs">
                     <thead style={{ backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>
                         <tr>
@@ -2571,7 +2664,7 @@ function RecentlyResolvedTable({ rows, onViewAlert }) {
                                     <td className="px-3 py-3">
                                         <button
                                             onClick={() => onViewAlert(row)}
-                                            className="rounded-[10px] border px-3 py-1.5 text-xs font-black transition hk-admin-nav-hover"
+                                            className="rounded-[0.875rem] border px-3 py-1.5 text-xs font-black transition hk-admin-nav-hover"
                                             style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}
                                         >
                                             View Details
@@ -2594,9 +2687,9 @@ function RecentlyResolvedTable({ rows, onViewAlert }) {
                     Showing {rows.length ? (currentPage - 1) * pageSize + 1 : 0}–{Math.min(currentPage * pageSize, rows.length)} of {rows.length} resolved alerts
                 </p>
                 <div className="flex items-center gap-2">
-                    <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9 rounded-[12px] border px-3 text-xs font-black transition disabled:opacity-45 hk-admin-nav-hover" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>Previous</button>
-                    <span className="rounded-[12px] border px-3 py-2 text-xs font-black" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>Page {currentPage} of {totalPages}</span>
-                    <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9 rounded-[12px] border px-3 text-xs font-black transition disabled:opacity-45 hk-admin-nav-hover" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>Next</button>
+                    <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9 rounded-[1rem] border px-3 text-xs font-black transition disabled:opacity-45 hk-admin-nav-hover" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>Previous</button>
+                    <span className="rounded-[1rem] border px-3 py-2 text-xs font-black" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>Page {currentPage} of {totalPages}</span>
+                    <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9 rounded-[1rem] border px-3 text-xs font-black transition disabled:opacity-45 hk-admin-nav-hover" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}>Next</button>
                 </div>
             </div>
         </section>

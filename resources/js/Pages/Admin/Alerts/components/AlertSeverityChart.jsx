@@ -9,7 +9,7 @@ const rows = [
 
 export default function AlertSeverityChart() {
     return (
-        <div className="rounded-[14px] border p-5" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <div className="rounded-[1.25rem] border p-5" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <SectionHeader title="Severity load" description="Open alert pressure by severity." />
             <div className="mt-5 space-y-4">
                 {rows.map(([label, value, color]) => (

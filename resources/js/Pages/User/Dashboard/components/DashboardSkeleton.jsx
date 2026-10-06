@@ -21,24 +21,26 @@ function SkeletonCard({ children, className = "" }) {
 function HeaderSkeleton() {
     return (
         <header
-            className="rounded-[1.5rem] border p-4 shadow-xl"
+            className="rounded-[2rem] border px-4 py-4 shadow-2xl sm:px-5"
             style={{
                 backgroundColor: "color-mix(in srgb, var(--color-card) 90%, transparent)",
                 borderColor: "var(--color-border)",
             }}
         >
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="flex min-w-0 items-center gap-3">
-                    <SkeletonBlock className="h-12 w-12 rounded-2xl" />
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex min-w-0 items-center gap-4 text-left">
+                    <SkeletonBlock className="h-14 w-14 rounded-2xl" />
                     <div className="min-w-0">
-                        <SkeletonBlock className="h-4 w-36" />
-                        <SkeletonBlock className="mt-2 h-3 w-52 max-w-full" />
+                        <SkeletonBlock className="h-3 w-32" />
+                        <SkeletonBlock className="mt-2 h-6 w-64 max-w-full" />
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center justify-end gap-3">
+                    <SkeletonBlock className="h-11 w-24 rounded-2xl" />
+                    <SkeletonBlock className="h-11 w-36 rounded-2xl" />
+                    <SkeletonBlock className="h-11 w-44 rounded-2xl" />
                     <SkeletonBlock className="h-11 w-11 rounded-2xl" />
-                    <SkeletonBlock className="h-11 w-11 rounded-2xl" />
-                    <SkeletonBlock className="h-12 w-44 rounded-2xl" />
+                    <SkeletonBlock className="h-11 w-48 rounded-2xl" />
                 </div>
             </div>
         </header>

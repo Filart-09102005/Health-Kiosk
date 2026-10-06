@@ -17,13 +17,17 @@ namespace Modules {
     private:
         HAL::HALWeight* _hal;
         MeasureState _state;
+        unsigned long _startTime;
+        unsigned long _lastSampleTime;
+        
         Models::MeasurementResult _result;
         
-        unsigned long _startTime;
         Utils::CircularBuffer<float, Config::Profiles::WEIGHT_SAMPLE_COUNT> _buffer;
         
         float _currentEMA;
+        float _lastW;
         unsigned int _stableCount;
+        unsigned long _countdownStart;
 
     public:
         WeightMeasurement(HAL::HALWeight* hal);

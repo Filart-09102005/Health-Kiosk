@@ -42,6 +42,11 @@ namespace HAL {
          * @brief Updates calibration parameters.
          */
         void setCalibration(float scale, long offset);
+        
+        /**
+         * @brief Zeroes the scale by reading the current empty weight.
+         */
+        void tare();
     };
 
 } // namespace HAL

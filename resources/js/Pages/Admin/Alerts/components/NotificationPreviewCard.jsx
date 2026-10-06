@@ -2,9 +2,9 @@ import { BellRing } from "lucide-react";
 
 export default function NotificationPreviewCard({ type, title, message }) {
     return (
-        <article className="rounded-[14px] border p-5 shadow-xl transition hk-admin-nav-hover" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <article className="rounded-[1.25rem] border p-5 hk-admin-card transition hk-admin-nav-hover" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <div className="flex items-start gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-[12px] border" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
+                <div className="flex h-11 w-11 items-center justify-center rounded-[1rem] border" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
                     <BellRing size={18} style={{ color: "var(--color-primary)" }} />
                 </div>
                 <div>

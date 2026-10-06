@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Circle, FileClock, HeartPulse, HelpCircle, LockKeyhole, LogOut, Palette, Printer, RefreshCcw, Ruler, Scale, Thermometer, UserRound } from "lucide-react";
+import { Activity, ArrowRight, CheckCircle2, Circle, Cpu, FileClock, HeartPulse, HelpCircle, LockKeyhole, LogOut, Palette, Printer, RefreshCcw, Ruler, Scale, Thermometer, UserRound } from "lucide-react";
 import Header from "../components/Header";
+import PulseBorder from "../components/PulseBorder";
 import { useToast } from "../../Global/Toast";
 import { authService, getErrorMessage } from "../../Auth/services/authService";
 import DashboardSkeleton, { USER_DASHBOARD_SKELETON_MIN_MS } from "./components/DashboardSkeleton";
 import { useAssistant } from "../AI-Assistant/context/AssistantProvider";
+import { ASSISTANT_PROMPTS } from "../AI-Assistant/constants/assistantPrompts";
+import { toneFor } from "../utils/measurementStatus";
 
 const hasReading = (value) => value !== null && value !== undefined && value !== "";
 
@@ -51,6 +54,24 @@ const measurementCards = [
             { label: "Height", value: hasReading(metrics?.height) ? Number(metrics.height).toFixed(2) : "--", unit: "cm" },
         ],
     },
+    {
+        key: "bmi",
+        title: "BMI",
+        sensor: "Calculated reading",
+        icon: Activity,
+        isComplete: (metrics) => hasReading(metrics?.weight) && hasReading(metrics?.height),
+        readings: (metrics) => {
+            const hasBoth = hasReading(metrics?.weight) && hasReading(metrics?.height);
+            let bmiValue = "--";
+            if (hasBoth) {
+                const heightM = Number(metrics.height) / 100;
+                bmiValue = (Number(metrics.weight) / (heightM * heightM)).toFixed(2);
+            }
+            return [
+                { label: "BMI", value: bmiValue, unit: "kg/m²" },
+            ];
+        }
+    },
 ];
 
 const assistantHelpItems = [
@@ -76,11 +97,25 @@ const assistantHelpItems = [
         answer: "To change appearance, press the Appearance button at the top. You can choose light mode, dark mode, or follow the system theme.",
     },
     {
+        key: "mode",
+        title: "How to switch to Manual Mode",
+        icon: Cpu,
+        hint: "startMeasurement",
+        answer: ASSISTANT_PROMPTS.modeGuide,
+    },
+    {
         key: "password",
         title: "How to change password",
         icon: LockKeyhole,
         hint: "profile",
-        answer: "To change your password, tap your account menu at the top right, then press Profile. In the profile panel, use the password section to enter your current password, new password, and confirmation.",
+        answer: "To change your password, tap your account menu at the top right, then press Profile. In the profile panel, press Change Password. A window will open where you enter your current password, then your new password twice.",
+    },
+    {
+        key: "editProfile",
+        title: "How to edit my profile",
+        icon: UserRound,
+        hint: "profile",
+        answer: "To edit your profile, tap your account menu at the top right, then press Profile. Your details start locked. Press the Edit button to unlock the fields, make your changes, then press Save changes.",
     },
     {
         key: "print",
@@ -199,6 +234,7 @@ export default function Dashboard({ navigate }) {
 
     const user = data?.user || {};
     const metrics = data?.metrics || {};
+    const measurementStatuses = data?.measurement_statuses || {};
     const firstName = user?.firstname || "User";
     const progressItems = stableMeasurementCards.map((card) => ({
         key: card.key,
@@ -263,28 +299,45 @@ export default function Dashboard({ navigate }) {
                     whileInView={shouldReduceMotion ? { opacity: 1 } : "visible"}
                     viewport={revealViewport}
                     variants={revealVariants}
-                    className="mt-8 grid gap-5 lg:grid-cols-[1.35fr_0.65fr]"
+                    className="mt-8 grid grid-cols-[1.5fr_1fr] gap-2 sm:gap-5"
                 >
                     <div
-                        className="overflow-hidden rounded-[2rem] border p-6 shadow-2xl md:p-8"
+                        className="overflow-hidden rounded-xl border p-3 shadow-2xl sm:rounded-[2rem] sm:p-6 md:p-8"
                         style={{
                             backgroundColor: "color-mix(in srgb, var(--color-card) 88%, transparent)",
                             borderColor: "var(--color-border)",
                         }}
                     >
                         <div className="max-w-2xl">
-                            <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: "var(--color-primary)" }}>
-                                Health Check Kiosk
-                            </p>
-                            <h2 className="mt-3 text-4xl font-black leading-tight md:text-5xl">
+                            <div className="flex flex-nowrap items-center gap-1.5 sm:gap-3">
+                                <p className="shrink-0 text-[0.6rem] font-black uppercase tracking-[0.1em] sm:text-sm sm:tracking-[0.18em]" style={{ color: "var(--color-primary)" }}>
+                                    Health Check Kiosk
+                                </p>
+                                {/* Shown here rather than only beside the progress bar: the session
+                                    number identifies this visit on the receipt and in the admin
+                                    records, so it has to be readable without scrolling. */}
+                                {data?.session?.session_number ? (
+                                    <span
+                                        className="shrink-0 rounded-full border px-1.5 py-0.5 text-[0.6rem] font-black tabular-nums sm:px-3 sm:py-1 sm:text-xs"
+                                        style={{
+                                            backgroundColor: "color-mix(in srgb, var(--color-primary) 12%, var(--color-surface))",
+                                            borderColor: "color-mix(in srgb, var(--color-primary) 32%, var(--color-border))",
+                                            color: "var(--color-primary)",
+                                        }}
+                                    >
+                                        Kiosk Session #{data.session.session_number}
+                                    </span>
+                                ) : null}
+                            </div>
+                            <h2 className="mt-2 text-base font-black leading-tight sm:mt-3 sm:text-3xl md:text-4xl lg:text-5xl">
                                 Welcome, {firstName}. Start with barcode scanning, then complete your health check.
                             </h2>
-                            <p className="mt-4 max-w-xl text-base leading-7" style={{ color: "var(--color-muted)" }}>
+                            <p className="mt-2 max-w-xl text-xs leading-5 sm:mt-4 sm:text-base sm:leading-7" style={{ color: "var(--color-muted)" }}>
                                 The kiosk guides the available readings for Heart Rate and SpO2, Temperature, Height, and Weight. Follow the screen instructions for each device.
                             </p>
                         </div>
 
-                        <div className="mt-8 flex flex-wrap gap-3">
+                        <div className="mt-3 flex flex-wrap gap-1.5 sm:mt-8 sm:gap-3">
                             <button
                                 type="button"
                                 onClick={() => {
@@ -292,11 +345,12 @@ export default function Dashboard({ navigate }) {
                                     speak(allMeasurementsComplete ? "You can repeat a reading to confirm your result. Choose the health check you want to take again." : "startMeasurement");
                                     navigate("/measurements");
                                 }}
-                                className={`flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-black text-white transition hk-primary-hover ${showStartHint || activeHelpHint === "measure" ? "hk-start-measure-hint" : ""}`}
+                                className={`flex items-center gap-1 rounded-lg px-2 py-1.5 text-[0.65rem] font-black text-white transition hk-primary-hover sm:gap-2 sm:rounded-2xl sm:px-5 sm:py-4 sm:text-sm ${showStartHint || activeHelpHint === "measure" || activeHelpHint === "startMeasurement" ? "hk-start-measure-hint" : ""}`}
                                 style={{ backgroundColor: "var(--color-primary)" }}
                             >
                                 {allMeasurementsComplete ? "Check Again" : "Start Health Check"}
-                                <ArrowRight size={18} />
+                                <ArrowRight size={14} className="sm:hidden" />
+                                <ArrowRight size={18} className="hidden sm:block" />
                             </button>
                             {allMeasurementsComplete ? (
                                 <button
@@ -305,37 +359,40 @@ export default function Dashboard({ navigate }) {
                                         speak("Opening your health results. You can print your receipt on the results screen.");
                                         navigate("/results");
                                     }}
-                                    className={`flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-black text-white transition hk-primary-hover ${activeHelpHint === "results" || allMeasurementsComplete ? "hk-flow-action-hint" : ""}`}
+                                    className={`flex items-center gap-1 rounded-lg px-2 py-1.5 text-[0.65rem] font-black text-white transition hk-primary-hover sm:gap-2 sm:rounded-2xl sm:px-5 sm:py-4 sm:text-sm ${activeHelpHint === "results" || allMeasurementsComplete ? "hk-flow-action-hint" : ""}`}
                                     style={{ backgroundColor: "var(--color-success)" }}
                                 >
                                     Review Results
-                                    <ArrowRight size={18} />
+                                    <ArrowRight size={14} className="sm:hidden" />
+                                    <ArrowRight size={18} className="hidden sm:block" />
                                 </button>
                             ) : null}
                             <div
-                                className="flex items-center gap-2 rounded-2xl border px-5 py-4 text-sm font-black"
+                                className="flex items-center gap-1 rounded-lg border px-2 py-1.5 text-[0.65rem] font-black sm:gap-2 sm:rounded-2xl sm:px-5 sm:py-4 sm:text-sm"
                                 style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
                             >
-                                <CheckCircle2 size={18} style={{ color: "var(--color-success)" }} />
+                                <CheckCircle2 size={14} className="sm:hidden" style={{ color: "var(--color-success)" }} />
+                                <CheckCircle2 size={18} className="hidden sm:block" style={{ color: "var(--color-success)" }} />
                                 Available devices ready
                             </div>
                         </div>
                     </div>
 
                     <div>
-                        <article className="rounded-[2rem] border p-6 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
-                            <div className="flex items-start gap-3">
-                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: "var(--color-surface)", color: "var(--color-primary)" }}>
-                                    <HelpCircle size={22} />
+                        <article className="rounded-xl border p-3 shadow-xl sm:rounded-[2rem] sm:p-6" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+                            <div className="flex items-start gap-2 sm:gap-3">
+                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg sm:h-11 sm:w-11 sm:rounded-2xl" style={{ backgroundColor: "var(--color-surface)", color: "var(--color-primary)" }}>
+                                    <HelpCircle size={15} className="sm:hidden" />
+                                    <HelpCircle size={22} className="hidden sm:block" />
                                 </div>
-                                <div>
-                                    <p className="text-sm font-black">Voice help</p>
-                                    <p className="mt-1 text-xs leading-5" style={{ color: "var(--color-muted)" }}>
+                                <div className="min-w-0">
+                                    <p className="text-xs font-black sm:text-sm">Voice help</p>
+                                    <p className="mt-1 hidden text-xs leading-5 sm:block" style={{ color: "var(--color-muted)" }}>
                                         {assistantEnabled ? "Tap a question to hear a fixed assistant answer." : "Turn on Assistant Mode first to hear answers."}
                                     </p>
                                 </div>
                             </div>
-                            <div className="voice-help-stack-wrap mt-5">
+                            <div className="voice-help-stack-wrap mt-2 sm:mt-5">
                                 <div
                                     className="voice-help-stack"
                                     aria-label="Voice help questions"
@@ -355,6 +412,13 @@ export default function Dashboard({ navigate }) {
 
                                                     speak(item.answer);
                                                     showHelpTargetHint(item.hint);
+
+                                                    if (item.key === "mode") {
+                                                        setTimeout(() => {
+                                                            setShowStartHint(false);
+                                                            navigate("/measurements");
+                                                        }, 1500);
+                                                    }
                                                 }}
                                                 className={`voice-help-item ${! assistantEnabled ? "cursor-not-allowed opacity-70" : ""}`}
                                                 style={{
@@ -389,7 +453,22 @@ export default function Dashboard({ navigate }) {
                                     {completedCount} / {progressItems.length} available readings completed
                                 </p>
                             </div>
-                            <span className="text-2xl font-black" style={{ color: "var(--color-primary)" }}>{progressPercent}%</span>
+
+                            <div className="flex items-center gap-4">
+                                {/* The kiosk session number was created on sign-in and carried on
+                                    every reading and receipt, but was never shown to the student.
+                                    It belongs beside the progress for this visit, which is the
+                                    thing the session actually scopes. */}
+                                <div className="text-right">
+                                    <p className="text-[0.65rem] font-black uppercase tracking-[0.16em]" style={{ color: "var(--color-muted)" }}>
+                                        Kiosk session
+                                    </p>
+                                    <p className="text-lg font-black tabular-nums" style={{ color: "var(--color-text)" }}>
+                                        {data?.session?.session_number ? `#${data.session.session_number}` : "--"}
+                                    </p>
+                                </div>
+                                <span className="text-2xl font-black" style={{ color: "var(--color-primary)" }}>{progressPercent}%</span>
+                            </div>
                         </div>
                         <div className="mt-4 h-3 overflow-hidden rounded-full" style={{ backgroundColor: "var(--color-surface)" }}>
                             <motion.div
@@ -403,16 +482,28 @@ export default function Dashboard({ navigate }) {
                         <p className="mt-4 text-sm leading-6" style={{ color: "var(--color-muted)" }}>
                             {progressMessage}
                         </p>
-                        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                             {progressItems.map((item) => {
                                 const Icon = item.complete ? CheckCircle2 : Circle;
 
                                 return (
-                                    <div key={item.key} className="flex items-center justify-between gap-3 rounded-2xl border p-4 text-sm font-black" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
-                                        <span style={{ color: item.complete ? "var(--color-text)" : "var(--color-muted)" }}>
+                                    <div
+                                        key={item.key}
+                                        className="relative flex items-center justify-between gap-3 overflow-hidden rounded-2xl border p-4 text-sm font-black"
+                                        style={{
+                                            backgroundColor: item.complete
+                                                ? "color-mix(in srgb, var(--color-success) 8%, var(--color-surface))"
+                                                : "var(--color-surface)",
+                                            borderColor: item.complete
+                                                ? "color-mix(in srgb, var(--color-success) 35%, var(--color-border))"
+                                                : "var(--color-border)",
+                                        }}
+                                    >
+                                        {item.complete && <PulseBorder radius={16} />}
+                                        <span className="relative z-10" style={{ color: item.complete ? "var(--color-text)" : "var(--color-muted)" }}>
                                             {item.title}
                                         </span>
-                                        <Icon size={18} style={{ color: item.complete ? "var(--color-success)" : "var(--color-muted)" }} />
+                                        <Icon className="relative z-10" size={18} style={{ color: item.complete ? "var(--color-success)" : "var(--color-muted)" }} />
                                     </div>
                                 );
                             })}
@@ -447,7 +538,7 @@ export default function Dashboard({ navigate }) {
                     </div>
 
                     <motion.div
-                        className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+                        className="grid gap-4 md:grid-cols-2 xl:grid-cols-5"
                         initial="hidden"
                         whileInView="show"
                         viewport={{ once: false, amount: 0.2 }}
@@ -465,6 +556,7 @@ export default function Dashboard({ navigate }) {
                             const Icon = card.icon;
                             const readings = card.readings(metrics);
                             const hasValue = card.isComplete(metrics);
+                            const tone = toneFor(card.key, measurementStatuses, hasValue);
 
                             return (
                                 <motion.article
@@ -484,25 +576,36 @@ export default function Dashboard({ navigate }) {
                                         exit: shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 },
                                     }}
                                     transformTemplate={(_, generated) => `${generated} translateZ(0)`}
-                                    className="cursor-default transform-gpu rounded-[1.5rem] border p-5 shadow-sm"
-                                    style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", willChange: "transform, opacity" }}
+                                    className="relative cursor-default transform-gpu overflow-hidden rounded-[1.5rem] border p-5 shadow-sm"
+                                    style={{
+                                        backgroundColor: hasValue
+                                            ? `color-mix(in srgb, ${tone.color} 6%, var(--color-card))`
+                                            : "var(--color-card)",
+                                        borderColor: hasValue
+                                            ? `color-mix(in srgb, ${tone.color} 35%, var(--color-border))`
+                                            : "var(--color-border)",
+                                        willChange: "transform, opacity",
+                                    }}
                                 >
-                                    <div className="flex items-start justify-between gap-4">
+                                    {hasValue && <PulseBorder color={tone.color} />}
+                                    <div className="relative z-10 flex items-start justify-between gap-4">
                                         <div
                                             className="flex h-12 w-12 items-center justify-center rounded-2xl"
                                             style={{ backgroundColor: "var(--color-surface)", color: "var(--color-primary)" }}
                                         >
                                             <Icon size={23} />
                                         </div>
-                                        <span
-                                            className="rounded-full px-3 py-1 text-xs font-black"
-                                            style={{
-                                                backgroundColor: "var(--color-surface)",
-                                                color: hasValue ? "var(--color-success)" : "var(--color-muted)",
-                                            }}
-                                        >
-                                            {hasValue ? "Recorded" : "Idle"}
-                                        </span>
+                                        {tone.label ? (
+                                            <span
+                                                className="rounded-full px-3 py-1 text-xs font-black"
+                                                style={{
+                                                    backgroundColor: "var(--color-surface)",
+                                                    color: tone.color,
+                                                }}
+                                            >
+                                                {tone.label}
+                                            </span>
+                                        ) : null}
                                     </div>
                                     <h4 className="mt-5 text-base font-black">{card.title}</h4>
                                     <p className="mt-1 text-sm" style={{ color: "var(--color-muted)" }}>{card.sensor}</p>

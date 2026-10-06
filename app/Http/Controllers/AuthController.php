@@ -40,6 +40,11 @@ class AuthController extends Controller
             'birthday' => $validated['birthday'],
             'gender' => $validated['gender'],
             'barcode' => $barcode,
+            // Do not rely only on the database default here. This same
+            // in-memory model is sent to Supabase immediately, before a refresh
+            // can load database defaults, and a missing value was serialized
+            // there as false (deactivated).
+            'is_active' => true,
         ]);
 
         try {
@@ -81,6 +86,35 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
         $user = $request->user();
+
+        // The login page offers a Student sign-in and an Admin sign-in. Whichever
+        // was chosen has to match the account, otherwise an administrator could
+        // sign in through the student kiosk flow and a student could sign in
+        // through the admin one. Authentication has already succeeded here, so
+        // the session is torn down again before refusing.
+        $loginAs = $request->input('login_as');
+
+        if ($loginAs && ! $this->roleMatchesLoginMode($user, $loginAs)) {
+            $chosen = $loginAs === 'admin' ? 'Admin' : 'Student';
+
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            ActivityLog::record(
+                'login_blocked_role_mismatch',
+                $user,
+                $request,
+                "Login blocked: {$user->role} account attempted the {$chosen} sign-in.",
+                ['login_as' => $loginAs, 'account_role' => $user->role],
+            );
+
+            return response()->json([
+                'message' => $loginAs === 'admin'
+                    ? 'This is not an administrator account. Please use the Student sign-in.'
+                    : 'Administrator accounts must use the Admin sign-in.',
+            ], 403);
+        }
 
         if (! $user->is_active) {
             Auth::guard('web')->logout();
@@ -174,6 +208,17 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Does the account's role match the sign-in the person chose?
+     *
+     * Admin accounts belong to the Admin sign-in; every other role (student,
+     * teacher, personnel, staff, faculty) belongs to the Student sign-in.
+     */
+    private function roleMatchesLoginMode(User $user, string $loginAs): bool
+    {
+        return $loginAs === 'admin' ? $user->isAdmin() : ! $user->isAdmin();
+    }
+
     public function logout(Request $request, KioskSessionService $sessions): JsonResponse
     {
         $user = $request->user();
@@ -212,6 +257,24 @@ class AuthController extends Controller
         ]);
     }
 
+    public function checkEmail(Request $request): JsonResponse
+    {
+        $request->validate(['email' => ['required', 'email']]);
+
+        $email = $request->input('email');
+        $user = User::where('email', $email)->first();
+        $exists = (bool) $user;
+
+        return response()->json([
+            'available' => ! $exists,
+            'verified' => $exists ? $user->hasVerifiedEmail() : false,
+            'verified_at' => $exists ? $user->email_verified_at : null,
+            'message' => $exists
+                ? 'This email is already registered.'
+                : 'Email is available.',
+        ]);
+    }
+
     private function safeUser(User $user): array
     {
         return [
@@ -230,6 +293,7 @@ class AuthController extends Controller
             'program' => $user->program,
             'age' => $user->age,
             'gender' => $user->gender,
+            'birthday' => $user->birthday?->format('Y-m-d'),
             'barcode' => $user->barcode,
             'is_active' => $user->is_active,
         ];

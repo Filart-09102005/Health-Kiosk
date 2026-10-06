@@ -6,12 +6,12 @@ export default function AlertsHeader() {
         <motion.section
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-[14px] border p-5 shadow-xl"
+            className="rounded-[1.25rem] border p-5 hk-admin-card"
             style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}
         >
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px]" style={{ backgroundColor: "var(--color-surface)", color: "var(--color-error)" }}>
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem]" style={{ backgroundColor: "var(--color-surface)", color: "var(--color-error)" }}>
                         <ShieldAlert size={24} />
                     </div>
                     <div>

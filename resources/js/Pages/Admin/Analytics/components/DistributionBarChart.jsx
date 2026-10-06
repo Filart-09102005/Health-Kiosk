@@ -32,7 +32,7 @@ function DistributionTooltip({ active, payload }) {
 
     return (
         <div
-            className="min-w-[10rem] rounded-[14px] border p-3 shadow-2xl"
+            className="min-w-[10rem] rounded-[1.25rem] border p-3 shadow-2xl"
             style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", color: "var(--color-text)" }}
         >
             <div className="flex items-center gap-2">
@@ -171,7 +171,7 @@ export default function DistributionBarChart({ title, description, data = [], ic
                     </p>
                 </div>
                 <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px]"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[1rem]"
                     style={{ backgroundColor: "var(--color-surface)", color: "var(--color-primary)" }}
                 >
                     <Icon size={17} />
@@ -182,7 +182,7 @@ export default function DistributionBarChart({ title, description, data = [], ic
             <div className="mb-4 grid grid-cols-3 gap-2">
                 {/* Filtered Records */}
                 <div
-                    className="rounded-[12px] border p-2.5"
+                    className="rounded-[1rem] border p-2.5"
                     style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}
                 >
                     <p className="text-[0.62rem] font-black uppercase tracking-[0.12em]" style={{ color: "var(--color-muted)" }}>
@@ -192,7 +192,7 @@ export default function DistributionBarChart({ title, description, data = [], ic
                 </div>
                 {/* Most Common */}
                 <div
-                    className="rounded-[12px] border p-2.5"
+                    className="rounded-[1rem] border p-2.5"
                     style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}
                 >
                     <p className="text-[0.62rem] font-black uppercase tracking-[0.12em]" style={{ color: "var(--color-muted)" }}>
@@ -205,7 +205,7 @@ export default function DistributionBarChart({ title, description, data = [], ic
                 </div>
                 {/* Needs Review */}
                 <div
-                    className="rounded-[12px] border p-2.5"
+                    className="rounded-[1rem] border p-2.5"
                     style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}
                 >
                     <p className="text-[0.62rem] font-black uppercase tracking-[0.12em]" style={{ color: "var(--color-muted)" }}>
@@ -297,7 +297,7 @@ export default function DistributionBarChart({ title, description, data = [], ic
                         {data.map((item) => (
                             <div
                                 key={item.name}
-                                className="flex items-center justify-between gap-2 rounded-[10px] border px-3 py-2 transition"
+                                className="flex items-center justify-between gap-2 rounded-[0.875rem] border px-3 py-2 transition"
                                 style={{
                                     borderColor: "var(--color-border)",
                                     backgroundColor: "var(--color-surface)",
@@ -332,11 +332,11 @@ export default function DistributionBarChart({ title, description, data = [], ic
 function EmptyState() {
     return (
         <div
-            className="flex min-h-44 flex-col items-center justify-center rounded-[14px] border p-6 text-center"
+            className="flex min-h-44 flex-col items-center justify-center rounded-[1.25rem] border p-6 text-center"
             style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}
         >
             <div
-                className="mb-3 flex h-11 w-11 items-center justify-center rounded-[12px]"
+                className="mb-3 flex h-11 w-11 items-center justify-center rounded-[1rem]"
                 style={{ backgroundColor: "var(--color-card)", color: "var(--color-primary)" }}
             >
                 <Activity size={18} />

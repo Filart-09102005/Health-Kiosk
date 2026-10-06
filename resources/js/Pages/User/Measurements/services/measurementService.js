@@ -1,5 +1,6 @@
 import axios from "axios";
 import { authService } from "../../../Auth/services/authService";
+import { notifyNotificationsChanged } from "../../utils/notifications";
 
 const withCsrf = async (callback) => {
     await authService.ensureCsrfCookie();
@@ -29,8 +30,19 @@ export const measurementService = {
         return axios.get("/api/user/health-records", { params: { per_page: perPage }, signal });
     },
 
-    save(payload) {
-        return withCsrf(() => axios.post("/api/user/measurements", payload));
+    async save(payload) {
+        const response = await withCsrf(() => axios.post("/api/user/measurements", payload));
+
+        // The server re-derives this user's notifications from the saved record,
+        // so tell any bell on screen to re-read its count rather than waiting
+        // for the next page load.
+        notifyNotificationsChanged();
+
+        return response;
+    },
+
+    getLiveVitals(signal) {
+        return axios.get("/api/kiosk/live-vitals", { signal });
     },
 
     resetLiveVitals() {

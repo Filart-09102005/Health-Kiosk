@@ -18,10 +18,20 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
         $middleware->throttleApi();
 
+        // See ForceJsonResponse's own docblock: without this, an API request
+        // with no Accept: application/json header made Laravel's auth
+        // middleware try to redirect to a named "login" route that doesn't
+        // exist in this SPA-only app, crashing with a 500 instead of a 401.
+        $middleware->api(prepend: [\App\Http\Middleware\ForceJsonResponse::class]);
+
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+            'kiosk.bridge' => \App\Http\Middleware\AuthenticateKioskBridge::class,
+            'kiosk.bridge_or_user' => \App\Http\Middleware\AuthenticateKioskBridgeOrUser::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Illuminate\Routing\Exceptions\InvalidSignatureException $e, $request) {
+            return redirect('/verify-email?expired=1');
+        });
     })->create();

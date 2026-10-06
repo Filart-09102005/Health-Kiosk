@@ -38,8 +38,8 @@ export default function RecentHealthRecordsTable({ records = [] }) {
                                 <td className="border-b px-3 py-4" style={{ borderColor: "var(--color-border)" }}>
                                     <button
                                         type="button"
-                                        className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black text-white transition hk-primary-hover"
-                                        style={{ backgroundColor: "var(--color-primary)" }}
+                                        className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black transition hk-primary-hover"
+                                        style={{ backgroundColor: "var(--color-primary)", color: "var(--color-primary-content)" }}
                                     >
                                         <Printer size={14} />
                                         Print

@@ -14,6 +14,33 @@ export const ASSISTANT_PROMPTS = {
     logout: "Thank you for using the health kiosk.",
     dashboardGuide: "Welcome. To check your health, press Start Health Check and choose an available reading.",
     startMeasurement: "Opening health checks. Please choose Heart Rate and SpO2 or Weight.",
+
+    // ── Measurement mode ──────────────────────────────────────────────
+    // Spoken when the mode actually changes, and when the user asks how.
+    modeGuide:
+        "There are two measurement modes. Smart Mode reads your values automatically from the kiosk sensors. Manual Mode lets you type in readings from your own device. To switch, press the Smart Mode or Manual Mode button at the top of the health check list.",
+    modeSmart:
+        "Smart Mode is on. Your readings will be taken automatically by the kiosk sensors.",
+    modeManual:
+        "Manual Mode is on. You will type in the readings from your own device. Press a health check to begin.",
+
+    // ── Manual entry flow ─────────────────────────────────────────────
+    manualIntro:
+        "Measure the reading using your own device first. When you have the number ready, press Next.",
+    manualPositioning:
+        "Take the reading on your device now. When you are ready, press Enter Values.",
+    manualEntry:
+        "Type the reading shown on your device, then press Review Values. The expected range is shown under each box.",
+    manualInvalid:
+        "That value is outside the expected range. Please check your device and type the reading again.",
+    manualReview:
+        "Please check the values you typed. Press Edit to correct them, or Confirm and Save to store this reading.",
+    measurementSaved: "Measurement saved.",
+};
+
+export const MODE_PROMPT_KEYS = {
+    smart: "modeSmart",
+    manual: "modeManual",
 };
 
 export const MEASUREMENT_PROMPT_KEYS = {

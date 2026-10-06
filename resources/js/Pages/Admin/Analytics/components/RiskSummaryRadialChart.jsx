@@ -83,7 +83,7 @@ export default function RiskSummaryRadialChart({
             </div>
 
             {!total ? (
-                <div className="mt-7 rounded-[14px] border p-4 text-center text-xs font-bold" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>
+                <div className="mt-7 rounded-[1.25rem] border p-4 text-center text-xs font-bold" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)", color: "var(--color-muted)" }}>
                     {emptyMessage}
                 </div>
             ) : (
@@ -168,7 +168,7 @@ export default function RiskSummaryRadialChart({
 
                         {activeRisk ? (
                             <div
-                                className="pointer-events-none absolute left-0 top-0 z-20 min-w-[190px] rounded-[14px] border px-3 py-2 shadow-xl"
+                                className="pointer-events-none absolute left-0 top-0 z-20 min-w-[190px] rounded-[1.25rem] border px-3 py-2 shadow-xl"
                                 style={{
                                     ...chartTooltipStyle,
                                     transform: `translate(${tooltipPoint.x + 14}px, ${tooltipPoint.y + 14}px)`,

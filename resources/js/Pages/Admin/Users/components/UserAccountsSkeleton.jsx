@@ -33,10 +33,10 @@ export default function UserAccountsSkeleton({ type = "students" }) {
 
     return (
         <div className="mt-5 space-y-5" aria-busy="true" aria-label={`Loading ${isStudents ? "students" : "teachers"} page`}>
-            <section className="rounded-[14px] border p-5 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+            <section className="rounded-[1.25rem] border p-5 hk-admin-card" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-start gap-4">
-                        <SkeletonBlock className="h-12 w-12 shrink-0 rounded-[12px]" />
+                        <SkeletonBlock className="h-12 w-12 shrink-0 rounded-[1rem]" />
                         <div className="min-w-0">
                             <SkeletonBlock className="h-3 w-36" />
                             <SkeletonBlock className="mt-3 h-9 w-48 max-w-full" />
@@ -49,13 +49,13 @@ export default function UserAccountsSkeleton({ type = "students" }) {
             {statsCount ? (
                 <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     {Array.from({ length: statsCount }).map((_, index) => (
-                        <article key={index} className="rounded-[14px] border p-5 shadow-sm" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+                        <article key={index} className="rounded-[1.25rem] border p-5 shadow-sm" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
                             <div className="flex items-center justify-between gap-3">
                                 <div>
                                     <SkeletonBlock className="h-4 w-28" />
                                     <SkeletonBlock className="mt-3 h-9 w-16" />
                                 </div>
-                                <SkeletonBlock className="h-10 w-10 rounded-[10px]" />
+                                <SkeletonBlock className="h-10 w-10 rounded-[0.875rem]" />
                             </div>
                             <SkeletonBlock className="mt-4 h-3 w-32" />
                         </article>
@@ -63,7 +63,7 @@ export default function UserAccountsSkeleton({ type = "students" }) {
                 </section>
             ) : null}
 
-            <section className="rounded-[14px] border p-5 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+            <section className="rounded-[1.25rem] border p-5 hk-admin-card" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
                 <div className="mb-4 flex flex-col gap-4">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                         <div>

@@ -4,13 +4,12 @@
  */
 
 #include "HALHeight.h"
-#include "../config/CalibrationData.h"
 
 namespace HealthKiosk {
 namespace HAL {
 
     HALHeight::HALHeight(HardwareSerial* serialPort) 
-        : driver(serialPort), _sensorHeightCm(Config::Calibration::SENSOR_HEIGHT_FROM_FLOOR_CM) {
+        : driver(serialPort), _sensorHeightCm(214.0f) { // Hardcoded based on physical installation
     }
 
     bool HALHeight::initialize() {
@@ -48,10 +47,7 @@ namespace HAL {
             // person_height = sensor_height - distance_to_head
             float measuredHeight = _sensorHeightCm - static_cast<float>(dist);
             
-            // Basic sanity check, negative height usually means interference or nothing under it.
-            if (measuredHeight < 0.0f) {
-                measuredHeight = 0.0f;
-            }
+            // Basic sanity check removed for debugging so negative height shows up.
             heightCm = measuredHeight;
             return true;
         }

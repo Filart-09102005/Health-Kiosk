@@ -14,14 +14,14 @@ namespace Modules {
     enum class MeasureState {
         IDLE,
         INITIALIZE,
-        WAIT_FOR_SENSOR,
-        COLLECT_SAMPLES,
-        FILTER,
-        STABILITY_CHECK,
-        CONFIDENCE_CHECK,
-        CALIBRATION,
-        VALIDATION,
+        WAITING,
+        VALIDATING,
+        READY,
+        COUNTDOWN,
+        COLLECTING,
+        PROCESSING,
         COMPLETE,
+        FAILED,
         ERROR
     };
 

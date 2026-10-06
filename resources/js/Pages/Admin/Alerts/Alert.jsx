@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { BellRing, CircleCheck, Clock3, Activity } from "lucide-react";
+import { BellRing, CircleCheck, Clock3, Activity, CheckCheck } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { authService, getErrorMessage } from "../../Auth/services/authService";
 import { useToast } from "../../Global/Toast";
+import ConfirmDialog from "../../../Global/ConfirmDialog";
 import AlertsHeader from "./components/AlertsHeader";
 import AlertsOverviewGrid from "./components/AlertsOverviewGrid";
 import AlertsToolbar from "./components/AlertsToolbar";
 import AlertsTable from "./components/AlertsTable";
 import AlertDetailsDrawer from "./components/AlertDetailsDrawer";
 import EmptyState from "./components/EmptyState";
+import MostCommonAlerts from "./components/MostCommonAlerts";
 
 export default function Alert({ navigate }) {
     const { showToast } = useToast();
@@ -17,6 +19,8 @@ export default function Alert({ navigate }) {
     const [search, setSearch] = useState("");
     const [filters, setFilters] = useState({ severity: "all", status: "Pending", measurement: "all" });
     const [refreshKey, setRefreshKey] = useState(0);
+    const [showResolveAllConfirm, setShowResolveAllConfirm] = useState(false);
+    const [resolvingAll, setResolvingAll] = useState(false);
     const shouldReduceMotion = useReducedMotion();
 
     useEffect(() => {
@@ -64,7 +68,6 @@ export default function Alert({ navigate }) {
         if (t.includes("temp")) return "Temperature";
         if (t.includes("spo2") || t.includes("oxygen")) return "SpO2";
         if (t.includes("heart") || t.includes("bpm")) return "Heart Rate";
-        if (t.includes("bmi") || t.includes("weight")) return "BMI";
         return "Other";
     };
 
@@ -114,6 +117,41 @@ export default function Alert({ navigate }) {
         setFilters(prev => ({ ...prev, [key]: value }));
     };
 
+    // Pending alerts matching the current severity filter — what "Resolve All" would act on.
+    const pendingForSeverity = useMemo(
+        () => alerts.filter((alert) =>
+            alert.status === "Pending" &&
+            (filters.severity === "all" || alert.severity === filters.severity)
+        ).length,
+        [alerts, filters.severity]
+    );
+
+    const handleResolveAll = async () => {
+        setResolvingAll(true);
+        try {
+            const severity = filters.severity !== "all" ? filters.severity.toLowerCase() : null;
+            const response = await authService.resolveAllAlerts(severity);
+            window.dispatchEvent(new Event('refresh-alert-count'));
+
+            showToast({
+                type: "success",
+                title: "Alerts resolved",
+                message: response.data?.message || "Pending alerts have been resolved.",
+            });
+
+            setShowResolveAllConfirm(false);
+            setRefreshKey((prev) => prev + 1);
+        } catch (error) {
+            showToast({
+                type: "error",
+                title: "Failed to resolve alerts",
+                message: getErrorMessage(error, "An error occurred while resolving alerts."),
+            });
+        } finally {
+            setResolvingAll(false);
+        }
+    };
+
     const getEmptyStateProps = () => {
         if (filters.status === "Pending") {
             return {
@@ -148,10 +186,10 @@ export default function Alert({ navigate }) {
                     initial={{ opacity: 0, height: 0, marginBottom: 0 }} 
                     animate={{ opacity: 1, height: "auto", marginBottom: 24 }}
                     exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                    className="flex items-center gap-4 rounded-[14px] border p-4 shadow-sm"
+                    className="flex items-center gap-4 rounded-[1.25rem] border p-4 shadow-sm"
                     style={{ backgroundColor: "color-mix(in srgb, var(--color-error) 12%, transparent)", borderColor: "var(--color-error)" }}
                 >
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px]" style={{ backgroundColor: "var(--color-error)", color: "white" }}>
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[0.875rem]" style={{ backgroundColor: "var(--color-error)", color: "white" }}>
                         <BellRing size={22} />
                     </div>
                     <div>
@@ -165,6 +203,8 @@ export default function Alert({ navigate }) {
 
             <AlertsOverviewGrid metrics={overview} />
             
+            <MostCommonAlerts alerts={filteredAlerts} />
+            
             <AlertsToolbar 
                 search={search} 
                 onSearch={setSearch} 
@@ -174,35 +214,49 @@ export default function Alert({ navigate }) {
                 measurementOptions={measurementOptions}
             />
 
-            <div className="flex items-center gap-2 border-b" style={{ borderColor: "var(--color-border)" }}>
-                {["Pending", "Resolved", "all"].map((statusOption) => {
-                    const isActive = filters.status === statusOption;
-                    const label = statusOption === "all" ? "All" : statusOption;
-                    const count = statusOption === "Pending" ? pendingCount 
-                                : statusOption === "Resolved" ? resolvedCount 
-                                : totalCount;
+            <div className="flex items-center justify-between gap-2 border-b" style={{ borderColor: "var(--color-border)" }}>
+                <div className="flex items-center gap-2">
+                    {["Pending", "Resolved", "all"].map((statusOption) => {
+                        const isActive = filters.status === statusOption;
+                        const label = statusOption === "all" ? "All" : statusOption;
+                        const count = statusOption === "Pending" ? pendingCount
+                                    : statusOption === "Resolved" ? resolvedCount
+                                    : totalCount;
 
-                    return (
-                        <button
-                            key={statusOption}
-                            onClick={() => handleFilterChange("status", statusOption)}
-                            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-black transition-colors ${
-                                isActive 
-                                    ? "border-[var(--color-primary)] text-[var(--color-primary)]" 
-                                    : "border-transparent text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-border)]"
-                            }`}
-                        >
-                            {label}
-                            <span className={`rounded-full px-2 py-0.5 text-xs ${
-                                isActive 
-                                    ? "bg-[color-mix(in_srgb,var(--color-primary)_15%,transparent)]" 
-                                    : "bg-[var(--color-card)] border border-[var(--color-border)]"
-                            }`}>
-                                {count}
-                            </span>
-                        </button>
-                    );
-                })}
+                        return (
+                            <button
+                                key={statusOption}
+                                onClick={() => handleFilterChange("status", statusOption)}
+                                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-black transition-colors ${
+                                    isActive
+                                        ? "border-[var(--color-primary)] text-[var(--color-primary)]"
+                                        : "border-transparent text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-border)]"
+                                }`}
+                            >
+                                {label}
+                                <span className={`rounded-full px-2 py-0.5 text-xs ${
+                                    isActive
+                                        ? "bg-[color-mix(in_srgb,var(--color-primary)_15%,transparent)]"
+                                        : "bg-[var(--color-card)] border border-[var(--color-border)]"
+                                }`}>
+                                    {count}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {pendingForSeverity > 0 && (
+                    <button
+                        type="button"
+                        onClick={() => setShowResolveAllConfirm(true)}
+                        className="mb-2 flex shrink-0 items-center gap-1.5 rounded-[0.875rem] border px-3 py-2 text-xs font-black transition hk-soft-hover"
+                        style={{ borderColor: "var(--color-border)", color: "var(--color-primary)" }}
+                    >
+                        <CheckCheck size={14} />
+                        Resolve All{filters.severity !== "all" ? ` (${filters.severity})` : ""} · {pendingForSeverity}
+                    </button>
+                )}
             </div>
 
             {filteredAlerts.length ? (
@@ -219,6 +273,17 @@ export default function Alert({ navigate }) {
                     setSelectedAlert(null);
                     setRefreshKey(prev => prev + 1);
                 }}
+            />
+
+            <ConfirmDialog
+                open={showResolveAllConfirm}
+                title="Resolve all pending alerts?"
+                message={`This will resolve ${pendingForSeverity} pending alert${pendingForSeverity === 1 ? "" : "s"}${filters.severity !== "all" ? ` with severity "${filters.severity}"` : ""}. This action cannot be undone.`}
+                confirmLabel="Resolve All"
+                cancelLabel="Cancel"
+                loading={resolvingAll}
+                onConfirm={handleResolveAll}
+                onCancel={() => setShowResolveAllConfirm(false)}
             />
         </motion.div>
     );

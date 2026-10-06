@@ -170,10 +170,19 @@ class HealthRecordController extends Controller
 
     private function buildTopAlerts($records)
     {
+        // Driven by the admin thresholds rather than fixed numbers, which had
+        // drifted from them: temperature counted from 37.5 while the alert bound
+        // is 37.2, and heart rate counted 100 bpm itself as high when 100 is the
+        // top of the normal range.
+        $settings = \App\Support\AdminSettings::all();
+        $tempHigh = (float) $settings['temperature']['alertHigh'];
+        $spo2Normal = (float) $settings['spo2']['normalLow'];
+        $hrHigh = (float) $settings['heartRate']['alertHigh'];
+
         return collect([
-            'Elevated Temperature' => $records->filter(fn (HealthRecord $record) => (float) $record->temperature >= 37.5)->count(),
-            'Low SpO2' => $records->filter(fn (HealthRecord $record) => (float) $record->spo2 > 0 && (float) $record->spo2 < 95)->count(),
-            'High Heart Rate' => $records->filter(fn (HealthRecord $record) => (float) $record->heart_rate >= 100)->count(),
+            'Elevated Temperature' => $records->filter(fn (HealthRecord $record) => (float) $record->temperature > $tempHigh)->count(),
+            'Low SpO2' => $records->filter(fn (HealthRecord $record) => (float) $record->spo2 > 0 && (float) $record->spo2 < $spo2Normal)->count(),
+            'High Heart Rate' => $records->filter(fn (HealthRecord $record) => (float) $record->heart_rate > $hrHigh)->count(),
         ])
             ->map(fn ($count, $label) => ['label' => $label, 'count' => $count])
             ->filter(fn ($item) => $item['count'] > 0)

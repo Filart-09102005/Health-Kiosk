@@ -95,7 +95,7 @@ function ActivityLogsTable({ rows = [] }) {
     const visibleRows = useMemo(() => rows.slice(pageStart, pageStart + PAGE_SIZE), [pageStart, rows]);
 
     return (
-        <section className="rounded-[14px] border p-5 shadow-xl" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
+        <section className="rounded-[1.25rem] border p-5 hk-admin-card" style={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)" }}>
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h3 className="text-lg font-black">Activity log</h3>

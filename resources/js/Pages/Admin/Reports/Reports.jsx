@@ -7,6 +7,7 @@ import ReportsToolbar from "./components/ReportsToolbar";
 import ReportsTable from "./components/ReportsTable";
 import ReportPreviewDrawer from "./components/ReportPreviewDrawer";
 import EmptyState from "./components/EmptyState";
+import ReportGenerationOverlay, { GENERATION_MIN_MS } from "./components/ReportGenerationOverlay";
 
 const defaultRange = {
     dateFrom: new Date().toISOString().slice(0, 10),
@@ -58,6 +59,8 @@ export default function Reports({ navigate }) {
     const [filterOptions, setFilterOptions] = useState(emptyFilterOptions);
     const [generatedReports, setGeneratedReports] = useState([]);
     const [selectedReport, setSelectedReport] = useState(null);
+    // null while idle; { status, count } drives the generation sequence.
+    const [generation, setGeneration] = useState(null);
     const shouldReduceMotion = useReducedMotion();
 
     useEffect(() => {
@@ -74,6 +77,12 @@ export default function Reports({ navigate }) {
                     message: getErrorMessage(error, "Unable to load report filter options."),
                 });
             });
+
+        // Deliberately no report load here. Fetching on mount meant the results
+        // table was already on screen before anyone asked for it, listing every
+        // report type at "0 records" - which reads as though a report had been
+        // generated and came back empty. The empty state now stands until the
+        // admin actually clicks Generate report.
 
         return () => {
             alive = false;
@@ -105,7 +114,16 @@ export default function Reports({ navigate }) {
         });
     };
 
-    const handleGenerateReport = () => {
+    /**
+     * @param {boolean} withOverlay  Show the generation sequence. False for the
+     *                               silent load on mount — nobody asked for that
+     *                               one, so it should not take over the screen.
+     */
+    const handleGenerateReport = (withOverlay = false) => {
+        if (withOverlay) setGeneration({ status: "running", count: 0 });
+
+        const startedAt = performance.now();
+
         authService.adminReports({
             date_from: range.dateFrom,
             time_from: range.timeFrom,
@@ -118,13 +136,37 @@ export default function Reports({ navigate }) {
             grade_level: filters.grade_level,
             gender: filters.gender || undefined,
         })
-            .then((response) => setGeneratedReports(response.data?.data || []))
+            .then((response) => {
+                const rows = response.data?.data || [];
+                setGeneratedReports(rows);
+
+                if (!withOverlay) return;
+
+                // Success waits for the data AND for the stages to have played
+                // through, so a fast response still reads as a sequence rather
+                // than a flash — but a slow one is never cut short.
+                const elapsed = performance.now() - startedAt;
+                window.setTimeout(
+                    () => setGeneration({ status: "success", count: rows.length }),
+                    Math.max(GENERATION_MIN_MS - elapsed, 0),
+                );
+            })
             .catch((error) => {
-                showToast({
-                    type: "error",
-                    title: "Report unavailable",
-                    message: getErrorMessage(error, "Unable to generate the report right now."),
-                });
+                // The overlay switches to its error state rather than vanishing,
+                // so the progress animation stops and the admin gets a retry in
+                // place instead of a toast that scrolls away. The silent load on
+                // mount has no overlay to switch, so it still toasts.
+                if (withOverlay) {
+                    setGeneration({ status: "error", count: 0 });
+                } else {
+                    setGeneration(null);
+
+                    showToast({
+                        type: "error",
+                        title: "Report unavailable",
+                        message: getErrorMessage(error, "Unable to generate the report right now."),
+                    });
+                }
 
                 if (error?.response?.status === 401 || error?.response?.status === 403) {
                     navigate("/login");
@@ -175,7 +217,7 @@ export default function Reports({ navigate }) {
                     onRangeChange={handleRangeChange}
                     onFilterChange={handleFilterChange}
                     onSetArrayFilter={handleSetArrayFilter}
-                    onGenerate={handleGenerateReport}
+                    onGenerate={() => handleGenerateReport(true)}
                     onRefresh={handleRefresh}
                 />
             </motion.div>
@@ -191,13 +233,21 @@ export default function Reports({ navigate }) {
                 ) : (
                     <EmptyState
                         className="-mt-3 rounded-t-[10px] pt-12"
-                        title="No generated report yet"
-                        description="Select the date and time range above, then click Generate report to display report data."
+                        title="No reports generated yet"
+                        description="Choose a date range and any filters above, then click Generate report to build your clinic reports."
                     />
                 )}
             </motion.div>
 
             <ReportPreviewDrawer report={selectedReport} open={Boolean(selectedReport)} onClose={() => setSelectedReport(null)} />
+
+            <ReportGenerationOverlay
+                open={Boolean(generation)}
+                status={generation?.status || "running"}
+                count={generation?.count || 0}
+                onDone={() => setGeneration(null)}
+                onRetry={() => handleGenerateReport(true)}
+            />
         </motion.div>
     );
 }

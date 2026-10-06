@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { CalendarClock, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import useModalLayer from "../../../../Global/useModalLayer";
+import UserAvatar from "../../Users/components/UserAvatar";
 import BMIStatusCard from "./BMIStatusCard";
 import MeasurementSummaryCard from "./MeasurementSummaryCard";
 import PrintReceiptButton from "./PrintReceiptButton";
@@ -12,11 +13,39 @@ import SessionInformationCard from "./SessionInformationCard";
 
 export default function RecordDetailsDrawer({ open, record, loading, onClose }) {
     const [activeRecord, setActiveRecord] = useState(record);
+    // Set while swapping between sessions in the history list.
+    const [switching, setSwitching] = useState(false);
+    const bodyRef = useRef(null);
+    const switchTimer = useRef(null);
     useModalLayer(open);
 
     useEffect(() => {
         setActiveRecord(record);
     }, [record]);
+
+    useEffect(() => () => window.clearTimeout(switchTimer.current), []);
+
+    /**
+     * Switch the drawer to another session from the history list.
+     *
+     * The record is already in memory, so there is nothing to fetch — but
+     * swapping the whole body instantly, while the reader is scrolled somewhere
+     * down the previous session, lands them mid-content with no sense that
+     * anything changed. A brief skeleton plus a jump back to the top makes the
+     * change legible.
+     */
+    const viewSession = (session) => {
+        if (session?.id === activeRecord?.id) return;
+
+        setSwitching(true);
+        bodyRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+
+        window.clearTimeout(switchTimer.current);
+        switchTimer.current = window.setTimeout(() => {
+            setActiveRecord(session);
+            setSwitching(false);
+        }, 260);
+    };
 
     const sessions = useMemo(() => {
         if (!record) return [];
@@ -48,36 +77,82 @@ export default function RecordDetailsDrawer({ open, record, loading, onClose }) 
                             borderColor: "var(--color-border)",
                         }}
                     >
-                        <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderColor: "var(--color-border)" }}>
-                            <div>
-                                <p className="text-xs font-black uppercase tracking-wide" style={{ color: "var(--color-primary)" }}>
-                                    Record details
-                                </p>
-                                <h3 className="mt-1 text-lg font-black">{activeRecord?.fullName || "Loading record"}</h3>
+                        {/* Header carries the person, not just a label — the
+                            avatar and identifiers here mean the cards below no
+                            longer have to repeat who this record belongs to. */}
+                        <div
+                            className="relative flex items-start justify-between gap-4 overflow-hidden border-b px-5 py-5"
+                            style={{ borderColor: "var(--color-border)" }}
+                        >
+                            <span
+                                aria-hidden="true"
+                                className="pointer-events-none absolute -right-10 -top-16 h-44 w-44 rounded-full"
+                                style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--color-primary) 14%, transparent), transparent 70%)" }}
+                            />
+
+                            <div className="relative flex min-w-0 items-center gap-3.5">
+                                <UserAvatar
+                                    firstname={(activeRecord?.fullName || "").split(" ")[0] || "?"}
+                                    lastname={(activeRecord?.fullName || "").split(" ").slice(-1)[0] || ""}
+                                    size={48}
+                                />
+                                <div className="min-w-0">
+                                    <p className="text-[0.62rem] font-black uppercase tracking-[0.2em]" style={{ color: "var(--color-primary)" }}>
+                                        Record details
+                                    </p>
+                                    <h3 className="mt-0.5 truncate text-xl font-black tracking-tight">
+                                        {activeRecord?.fullName || "Loading record"}
+                                    </h3>
+                                    {activeRecord ? (
+                                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                            <span className="hk-pill" style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 12%, transparent)", color: "var(--color-primary)" }}>
+                                                {activeRecord.role}
+                                            </span>
+                                            <span className="hk-pill" style={{ backgroundColor: "var(--color-surface)", color: "var(--color-muted)", border: "1px solid var(--color-border)" }}>
+                                                {activeRecord.department}
+                                            </span>
+                                            <span className="text-[0.68rem] font-bold" style={{ color: "var(--color-muted)" }}>
+                                                {activeRecord.schoolId}
+                                            </span>
+                                        </div>
+                                    ) : null}
+                                </div>
                             </div>
+
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="flex h-10 w-10 items-center justify-center rounded-xl border transition hk-soft-hover"
+                                aria-label="Close record details"
+                                className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition hk-soft-hover"
                                 style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}
                             >
                                 <X size={18} />
                             </button>
                         </div>
 
-                        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                            {loading || ! activeRecord ? (
+                        <div ref={bodyRef} className="hk-slim-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                            {loading || switching || ! activeRecord ? (
                                 <RecordDetailsSkeleton />
                             ) : (
                                 <div className="space-y-4 p-5">
-                                    <article className="rounded-2xl border p-4" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
-                                        <p className="text-xs font-black uppercase tracking-wide" style={{ color: "var(--color-muted)" }}>User information</p>
-                                        <p className="mt-2 text-sm font-black">{activeRecord.fullName}</p>
-                                        <div className="mt-3 grid gap-2 text-xs font-bold sm:grid-cols-2" style={{ color: "var(--color-muted)" }}>
-                                            <p>School ID: <span style={{ color: "var(--color-text)" }}>{activeRecord.schoolId}</span></p>
-                                            <p>Role: <span style={{ color: "var(--color-text)" }}>{activeRecord.role}</span></p>
-                                            <p>Department: <span style={{ color: "var(--color-text)" }}>{activeRecord.department}</span></p>
-                                            <p>Recorded: <span style={{ color: "var(--color-text)" }}>{activeRecord.recordedAt}</span></p>
+                                    {/* Identity now lives in the drawer header, so
+                                        this card carries only what the header
+                                        does not: when the reading was taken. */}
+                                    <article
+                                        className="flex items-center gap-3 rounded-2xl border px-4 py-3.5"
+                                        style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}
+                                    >
+                                        <span
+                                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                                            style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 11%, transparent)", color: "var(--color-primary)" }}
+                                        >
+                                            <CalendarClock size={17} />
+                                        </span>
+                                        <div className="min-w-0">
+                                            <p className="text-[0.62rem] font-black uppercase tracking-[0.16em]" style={{ color: "var(--color-muted)" }}>
+                                                Recorded
+                                            </p>
+                                            <p className="mt-0.5 text-sm font-black">{activeRecord.recordedAt}</p>
                                         </div>
                                     </article>
                                     <SessionInformationCard record={activeRecord} />
@@ -102,7 +177,7 @@ export default function RecordDetailsDrawer({ open, record, loading, onClose }) 
                                             <SessionHistoryCard
                                                 activeRecord={activeRecord}
                                                 sessions={sessions}
-                                                onView={setActiveRecord}
+                                                onView={viewSession}
                                             />
                                         </>
                                     ) : null}

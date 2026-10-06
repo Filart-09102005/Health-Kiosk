@@ -3,12 +3,39 @@
 namespace App\Services;
 
 use App\Models\HealthRecord;
+use App\Services\Health\HealthEvaluationService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class SupabaseHealthRecordSyncService
 {
+    /**
+     * Resolved once per sync run rather than per record: the constructor reads
+     * admin_settings from the database, and a 50-record chunk would otherwise
+     * issue 50 identical queries.
+     */
+    private ?HealthEvaluationService $evaluator = null;
+
+    /**
+     * Mark every row as needing an upload.
+     *
+     * The sync decides what to send from local flags alone, so a row deleted in
+     * the Supabase dashboard still looks synced here and is skipped — the sync
+     * then reports success while the cloud stays empty. Clearing the flags is
+     * the only way back from a cloud-side delete.
+     *
+     * Timestamps are untouched: updated_at is a fact about the record, not
+     * about whether it has been uploaded.
+     *
+     * @return int rows marked
+     */
+    public static function markAllPending(): int
+    {
+        return DB::table('health_records')->update(['sync_status' => 0, 'synced_at' => null]);
+    }
+
     public function syncHealthRecords(): array
     {
         $url = rtrim((string) config('services.supabase.url'), '/');
@@ -70,7 +97,11 @@ class SupabaseHealthRecordSyncService
                             'body' => $response->body(),
                         ]);
 
-                        throw new RuntimeException($response->body());
+                        if ($response->status() === 521) {
+                            throw new RuntimeException('Supabase project is currently PAUSED or offline (HTTP 521). Please log in to https://supabase.com/dashboard and click "Restore project".');
+                        }
+
+                        throw new RuntimeException($response->body() ?: "HTTP error {$response->status()}");
                     }
 
                     $syncedRows = collect($response->json() ?: []);
@@ -146,10 +177,45 @@ class SupabaseHealthRecordSyncService
             'bmi' => $record->bmi,
             'bmi_category' => $record->bmi_category,
             'health_status' => $record->health_status,
+            'measurement_statuses' => $this->measurementStatuses($record),
             'missing_measurements' => $record->missing_measurements,
             'recorded_at' => $record->created_at?->toISOString(),
             'created_at' => $record->created_at?->toISOString(),
             'updated_at' => $record->updated_at?->toISOString(),
         ];
+    }
+
+    /**
+     * Per-measurement verdicts, e.g. ['temperature' => 'Alert', 'spo2' => 'Normal'].
+     *
+     * `health_status` collapses a whole session into one word, and completeness
+     * outranks severity in overallStatus() — so a 40°C reading taken during an
+     * unfinished session is stored as 'Incomplete', and the alert disappears.
+     * The mobile push needs to see that alert, so the breakdown is forwarded
+     * alongside the summary rather than derived a second time downstream.
+     *
+     * Nothing about the existing status changes: this is purely additive, and
+     * the kiosk UI, printed summary and admin views are untouched.
+     */
+    private function measurementStatuses(HealthRecord $record): array|\stdClass
+    {
+        $this->evaluator ??= app(HealthEvaluationService::class);
+
+        // summarize() treats a key as missing via isset(), so nulls correctly
+        // read as "not measured" rather than as a zero reading.
+        $statuses = $this->evaluator->summarize([
+            'temperature' => $record->temperature,
+            'heart_rate' => $record->heart_rate,
+            'spo2' => $record->spo2,
+            'height' => $record->height,
+            'weight' => $record->weight,
+        ])['measurement_statuses'] ?? [];
+
+        // A session where nothing could be evaluated yields an empty PHP array,
+        // which json_encode renders as `[]` — a JSON *array*. Supabase's push
+        // trigger calls jsonb_each_text() on this column and that requires an
+        // object, so one such row raises 22023 and fails the ENTIRE batch it
+        // was posted in, not just itself. Force an object.
+        return $statuses === [] ? new \stdClass() : $statuses;
     }
 }
